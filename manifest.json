@@ -1,0 +1,24 @@
+{
+  "name": "Sentinela·RS — Monitor de Catástrofes",
+  "short_name": "Sentinela·RS",
+  "description": "Monitoramento de eventos extremos e catástrofes no Rio Grande do Sul",
+  "start_url": "/sentinela-rs/",
+  "display": "standalone",
+  "background_color": "#070b12",
+  "theme_color": "#070b12",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/sentinela-rs/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/sentinela-rs/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
