@@ -114,7 +114,7 @@ const wmoCodeToEmoji = (code) => {
 
 const dayNames = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
-export default function SentinelRS() {
+export default function SentinelaRS() {
   const [stationData, setStationData] = useState({});
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(null);
@@ -232,7 +232,7 @@ export default function SentinelRS() {
                 </span>
               </div>
               <h1 style={{ margin: "4px 0 0", fontSize: 28, fontWeight: 700, letterSpacing: -1, color: "#f8fafc" }}>
-                SENTINEL<span style={{ color: "#22d3ee" }}>·RS</span>
+                SENTINELA<span style={{ color: "#22d3ee" }}>·RS</span>
               </h1>
               <p style={{ margin: 0, fontSize: 11, color: "#475569", letterSpacing: 2 }}>
                 MONITOR DE CATÁSTROFES E EVENTOS EXTREMOS
@@ -723,7 +723,7 @@ export default function SentinelRS() {
         {activeTab === "apis" && (
           <div style={{ display: "grid", gap: 10 }}>
             <div style={{ fontSize: 11, color: "#475569", marginBottom: 8 }}>
-              APIs e fontes de dados integradas e planejadas para o Sentinel·RS
+              APIs e fontes de dados integradas e planejadas para o Sentinela·RS
             </div>
             {[
               {
@@ -758,7 +758,7 @@ export default function SentinelRS() {
               },
               {
                 name: "Copernicus Emergency (EU)", url: "emergency.copernicus.eu", status: "FUTURO",
-                desc: "Imagens de satélite Sentinel-1/2 para análise de alagamentos.",
+                desc: "Imagens de satélite Sentinela-1/2 para análise de alagamentos.",
                 auth: "Registro gratuito, API key", color: "#8b5cf6",
               },
             ].map(api => (
@@ -782,7 +782,7 @@ export default function SentinelRS() {
         {/* Footer */}
         <div style={{ marginTop: 32, borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 16, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
           <div style={{ fontSize: 10, color: "#1e293b" }}>
-            SENTINEL·RS v1.0 · Rio Grande do Sul · Dados: Open-Meteo API (ativo) + INMET/ANA (integração planejada)
+            SENTINELA·RS v1.0 · Rio Grande do Sul · Dados: Open-Meteo API (ativo) + INMET/ANA (integração planejada)
           </div>
           <div style={{ fontSize: 10, color: "#1e293b" }}>
             Atualização automática: 30 min

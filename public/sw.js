@@ -1,8 +1,8 @@
-// sentinel-rs/public/sw.js
+// sentinela-rs/public/sw.js
 // Service Worker — Push Notifications + Cache offline
 
-const CACHE_NAME = "sentinel-rs-v1";
-const STATIC_ASSETS = ["/sentinel-rs/", "/sentinel-rs/index.html"];
+const CACHE_NAME = "sentinela-rs-v1";
+const STATIC_ASSETS = ["/sentinela-rs/", "/sentinela-rs/index.html"];
 
 // ── Instalação: cacheia assets estáticos
 self.addEventListener("install", (event) => {
@@ -38,16 +38,16 @@ self.addEventListener("push", (event) => {
   try {
     payload = event.data.json();
   } catch {
-    payload = { title: "Sentinel·RS", body: event.data.text() };
+    payload = { title: "Sentinela·RS", body: event.data.text() };
   }
 
   const { title, body, risk, station, url } = payload;
 
   const iconByRisk = {
-    CRITICO: "/sentinel-rs/icon-critico.png",
-    EMERGENCIA: "/sentinel-rs/icon-emergencia.png",
-    ALERTA: "/sentinel-rs/icon-alerta.png",
-    ATENCAO: "/sentinel-rs/icon-atencao.png",
+    CRITICO: "/sentinela-rs/icon-critico.png",
+    EMERGENCIA: "/sentinela-rs/icon-emergencia.png",
+    ALERTA: "/sentinela-rs/icon-alerta.png",
+    ATENCAO: "/sentinela-rs/icon-atencao.png",
   };
 
   const badgeByRisk = {
@@ -58,14 +58,14 @@ self.addEventListener("push", (event) => {
   };
 
   event.waitUntil(
-    self.registration.showNotification(title || "Sentinel·RS — Alerta", {
+    self.registration.showNotification(title || "Sentinela·RS — Alerta", {
       body: body || "Novo evento detectado no Rio Grande do Sul.",
-      icon: iconByRisk[risk] || "/sentinel-rs/icon-192.png",
-      badge: "/sentinel-rs/icon-192.png",
-      tag: `sentinel-${station || "rs"}`,          // agrupa por estação
+      icon: iconByRisk[risk] || "/sentinela-rs/icon-192.png",
+      badge: "/sentinela-rs/icon-192.png",
+      tag: `sentinela-${station || "rs"}`,          // agrupa por estação
       renotify: true,
       requireInteraction: risk === "CRITICO" || risk === "EMERGENCIA",
-      data: { url: url || "/sentinel-rs/" },
+      data: { url: url || "/sentinela-rs/" },
       actions: [
         { action: "ver", title: "Ver detalhes" },
         { action: "fechar", title: "Fechar" },
@@ -79,10 +79,10 @@ self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   if (event.action === "fechar") return;
 
-  const targetUrl = event.notification.data?.url || "/sentinel-rs/";
+  const targetUrl = event.notification.data?.url || "/sentinela-rs/";
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-      const existing = clientList.find((c) => c.url.includes("sentinel-rs"));
+      const existing = clientList.find((c) => c.url.includes("sentinela-rs"));
       if (existing) return existing.focus();
       return clients.openWindow(targetUrl);
     })

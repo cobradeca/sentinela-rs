@@ -1,10 +1,10 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-// Troque "sentinel-rs" pelo nome exato do seu repositório GitHub
+// Troque "sentinela-rs" pelo nome exato do seu repositório GitHub
 export default defineConfig({
   plugins: [react()],
-  base: "/sentinel-rs/",
+  base: "/sentinela-rs/",
   build: {
     outDir: "dist",
   },

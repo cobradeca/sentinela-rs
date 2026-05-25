@@ -3,7 +3,7 @@
 // Agenda: a cada 30min via pg_cron (configurar no SQL Editor)
 //
 // SQL para agendar (rodar no SQL Editor do Supabase):
-//   select cron.schedule('poll-sentinel', '*/30 * * * *',
+//   select cron.schedule('poll-sentinela', '*/30 * * * *',
 //     $$ select net.http_post(
 //       url := 'https://SEU_PROJETO.supabase.co/functions/v1/poll-apis',
 //       headers := '{"Authorization": "Bearer SEU_SERVICE_ROLE_KEY"}'::jsonb

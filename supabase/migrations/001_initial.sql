@@ -1,5 +1,5 @@
 -- ============================================================
--- Sentinel·RS — Schema Supabase
+-- Sentinela·RS — Schema Supabase
 -- Execute em: app.supabase.com → SQL Editor
 -- ============================================================
 

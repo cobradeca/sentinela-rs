@@ -37,7 +37,7 @@ export function usePush() {
     setError(null);
     try {
       // 1. Registra o SW
-      const reg = await navigator.serviceWorker.register("/sentinel-rs/sw.js");
+      const reg = await navigator.serviceWorker.register("/sentinela-rs/sw.js");
       await navigator.serviceWorker.ready;
 
       // 2. Pede permissão

@@ -16,10 +16,10 @@ const VAPID_SUBJECT     = Deno.env.get("VAPID_SUBJECT") || "mailto:seuemail@exem
 
 // Títulos por nível de risco
 const RISK_TITLES: Record<string, string> = {
-  CRITICO:    "🔴 CRÍTICO — Sentinel·RS",
-  EMERGENCIA: "🟠 EMERGÊNCIA — Sentinel·RS",
-  ALERTA:     "🟡 ALERTA — Sentinel·RS",
-  ATENCAO:    "🔵 ATENÇÃO — Sentinel·RS",
+  CRITICO:    "🔴 CRÍTICO — Sentinela·RS",
+  EMERGENCIA: "🟠 EMERGÊNCIA — Sentinela·RS",
+  ALERTA:     "🟡 ALERTA — Sentinela·RS",
+  ATENCAO:    "🔵 ATENÇÃO — Sentinela·RS",
 };
 
 async function sendWebPush(subscription: any, payload: object) {
@@ -76,11 +76,11 @@ Deno.serve(async (req) => {
         await sendWebPush(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
           {
-            title: RISK_TITLES[alert.risk_level] || "Sentinel·RS — Alerta",
+            title: RISK_TITLES[alert.risk_level] || "Sentinela·RS — Alerta",
             body: `${alert.station_name}: ${alert.message}`,
             risk: alert.risk_level,
             station: alert.station_id,
-            url: `/sentinel-rs/?alerta=${alert.id}`,
+            url: `/sentinela-rs/?alerta=${alert.id}`,
           }
         );
         sent++;

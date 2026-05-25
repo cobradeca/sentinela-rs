@@ -1,4 +1,4 @@
-# Sentinel·RS — Monitor de Catástrofes
+# Sentinela·RS — Monitor de Catástrofes
 
 Sistema de monitoramento de eventos extremos para o Rio Grande do Sul.  
 Stack: React + Vite → GitHub Pages · Supabase (banco + Edge Functions + Realtime)
@@ -24,8 +24,8 @@ Stack: React + Vite → GitHub Pages · Supabase (banco + Edge Functions + Realt
 ### 1. Clone e instale dependências
 
 ```bash
-git clone https://github.com/SEU_USUARIO/sentinel-rs
-cd sentinel-rs
+git clone https://github.com/cobradeca/sentinela-rs
+cd sentinela-rs
 npm install
 ```
 
@@ -77,7 +77,7 @@ No SQL Editor do Supabase:
 
 ```sql
 select cron.schedule(
-  'poll-sentinel',
+  'poll-sentinela',
   '*/30 * * * *',
   $$
   select net.http_post(
@@ -127,7 +127,7 @@ npm run deploy
 ## Estrutura do projeto
 
 ```
-sentinel-rs/
+sentinela-rs/
 ├── public/
 │   ├── manifest.json          # PWA manifest
 │   └── sw.js                  # Service Worker (push notifications)
