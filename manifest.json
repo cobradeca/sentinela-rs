@@ -1,24 +1,48 @@
 {
-  "name": "Sentinela·RS — Monitor de Catástrofes",
-  "short_name": "Sentinela·RS",
-  "description": "Monitoramento de eventos extremos e catástrofes no Rio Grande do Sul",
+  "name": "Sentinela RS",
+  "short_name": "Sentinela",
+  "description": "Sistema de monitoramento de catástrofes e eventos extremos — Rio Grande do Sul.",
   "start_url": "/sentinela-rs/",
+  "scope": "/sentinela-rs/",
   "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui",
+    "browser"
+  ],
   "background_color": "#070b12",
   "theme_color": "#070b12",
-  "orientation": "portrait-primary",
+  "orientation": "any",
+  "lang": "pt-BR",
+  "categories": [
+    "utilities",
+    "weather",
+    "news"
+  ],
   "icons": [
     {
-      "src": "/sentinela-rs/icon-192.png",
+      "src": "/sentinela-rs/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/sentinela-rs/icon-512.png",
+      "src": "/sentinela-rs/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/sentinela-rs/icons/maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/sentinela-rs/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

@@ -1,90 +1,67 @@
-// sentinela-rs/public/sw.js
-// Service Worker — Push Notifications + Cache offline
-
 const CACHE_NAME = "sentinela-rs-v1";
-const STATIC_ASSETS = ["/sentinela-rs/", "/sentinela-rs/index.html"];
+const APP_BASE = "/sentinela-rs/";
 
-// ── Instalação: cacheia assets estáticos
+const APP_SHELL = [
+  APP_BASE,
+  APP_BASE + "index.html",
+  APP_BASE + "manifest.json",
+  APP_BASE + "icons/icon-192.png",
+  APP_BASE + "icons/icon-512.png",
+  APP_BASE + "icons/apple-touch-icon.png"
+];
+
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
-  );
   self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
+  );
 });
 
-// ── Ativação: limpa caches antigos
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
+      Promise.all(
+        keys
+          .filter((key) => key !== CACHE_NAME)
+          .map((key) => caches.delete(key))
+      )
+    ).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// ── Fetch: serve do cache quando offline
 self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
-  event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
-  );
-});
+  const request = event.request;
 
-// ── Push: recebe notificação do Supabase Edge Function
-self.addEventListener("push", (event) => {
-  if (!event.data) return;
+  if (request.method !== "GET") return;
 
-  let payload;
-  try {
-    payload = event.data.json();
-  } catch {
-    payload = { title: "Sentinela·RS", body: event.data.text() };
+  const url = new URL(request.url);
+
+  if (!url.pathname.startsWith(APP_BASE)) return;
+
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request).catch(() => caches.match(APP_BASE + "index.html"))
+    );
+    return;
   }
 
-  const { title, body, risk, station, url } = payload;
+  event.respondWith(
+    caches.match(request).then((cached) => {
+      if (cached) return cached;
 
-  const iconByRisk = {
-    CRITICO: "/sentinela-rs/icon-critico.png",
-    EMERGENCIA: "/sentinela-rs/icon-emergencia.png",
-    ALERTA: "/sentinela-rs/icon-alerta.png",
-    ATENCAO: "/sentinela-rs/icon-atencao.png",
-  };
+      return fetch(request)
+        .then((response) => {
+          const responseClone = response.clone();
 
-  const badgeByRisk = {
-    CRITICO: "#dc2626",
-    EMERGENCIA: "#ef4444",
-    ALERTA: "#f97316",
-    ATENCAO: "#eab308",
-  };
+          if (response.ok && url.origin === self.location.origin) {
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, responseClone);
+            });
+          }
 
-  event.waitUntil(
-    self.registration.showNotification(title || "Sentinela·RS — Alerta", {
-      body: body || "Novo evento detectado no Rio Grande do Sul.",
-      icon: iconByRisk[risk] || "/sentinela-rs/icon-192.png",
-      badge: "/sentinela-rs/icon-192.png",
-      tag: `sentinela-${station || "rs"}`,          // agrupa por estação
-      renotify: true,
-      requireInteraction: risk === "CRITICO" || risk === "EMERGENCIA",
-      data: { url: url || "/sentinela-rs/" },
-      actions: [
-        { action: "ver", title: "Ver detalhes" },
-        { action: "fechar", title: "Fechar" },
-      ],
-    })
-  );
-});
-
-// ── Clique na notificação: abre o app
-self.addEventListener("notificationclick", (event) => {
-  event.notification.close();
-  if (event.action === "fechar") return;
-
-  const targetUrl = event.notification.data?.url || "/sentinela-rs/";
-  event.waitUntil(
-    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-      const existing = clientList.find((c) => c.url.includes("sentinela-rs"));
-      if (existing) return existing.focus();
-      return clients.openWindow(targetUrl);
+          return response;
+        })
+        .catch(() => cached);
     })
   );
 });
