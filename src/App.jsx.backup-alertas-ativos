@@ -369,15 +369,13 @@ export default function SentinelaRS() {
         // Risco da lagoa só entra no score quando há dado real
         const risk = getRiskLevel(precip, tempMin, windMax, lagoa?.isReal ? lagoa.atual : null);
         results[st.id] = { weather, inmet, lagoa, precip, tempMin, windMax, risk, realLevel };
-        // Só ALERTA, EMERGÊNCIA e CRÍTICO entram na aba Alertas.
-        // ATENÇÃO permanece visível no card, mas não infla o contador de alertas ativos.
-        if (["ALERTA", "EMERGENCIA", "CRITICO"].includes(risk)) {
+        if (risk !== "NORMAL") {
           const parts=[];
           if (precip>80) parts.push(`chuva ${precip.toFixed(0)}mm/14d`);
           if (tempMin<5) parts.push(`temp. mín. ${tempMin.toFixed(1)}°C`);
           if (windMax>50) parts.push(`rajadas ${windMax.toFixed(0)}km/h`);
           if (lagoa?.isReal && lagoa.atual>0.8) parts.push(`lagoa ${lagoa.atual.toFixed(2)}m (ANA)`);
-          newAlerts.push({ id:`${st.id}_${Date.now()}`, station:st.name, risk_level:risk, message:parts.join(" · ")||"Parâmetros acima do normal", at:new Date(), official:false });
+          newAlerts.push({ id:`${st.id}_${Date.now()}`, station:st.name, risk_level:risk, message:parts.join(" · ")||"Parâmetros em atenção", at:new Date() });
         }
       } catch { results[st.id]={ error:true, risk:"NORMAL" }; }
     }
@@ -1073,7 +1071,7 @@ export default function SentinelaRS() {
               <div style={{ textAlign:"center", padding:50, border:"1px solid rgba(34,197,94,0.3)", borderRadius:5, background:"rgba(34,197,94,0.05)" }}>
                 <div style={{ fontSize:36, marginBottom:10 }}>✓</div>
                 <div style={{ fontSize:13, color:"#22c55e", letterSpacing:2 }}>NENHUM ALERTA ATIVO</div>
-                <div style={{ fontSize:10, color:t.textMuted, marginTop:5 }}>Sem alertas operacionais severos. Condições de atenção podem aparecer no Dashboard.</div>
+                <div style={{ fontSize:10, color:t.textMuted, marginTop:5 }}>Estações dentro dos parâmetros normais.</div>
               </div>
             ) : (
               <div style={{ display:"grid", gap:8 }}>
