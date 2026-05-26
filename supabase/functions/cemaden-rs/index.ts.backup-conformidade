@@ -171,9 +171,6 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({
       ok: true,
       source: "CEMADEN PED",
-      attribution: "DADOS DA REDE OBSERVACIONAL DO CEMADEN/MCTIC",
-      usage_note: "Usuários externos devem respeitar o limite informado pela PED/CEMADEN de até 12 requisições por minuto.",
-      cache_seconds: 600,
       mode: "recent_accumulations",
       fetched_at: new Date().toISOString(),
       count: results.filter((r) => r.ok).length,
@@ -182,7 +179,7 @@ Deno.serve(async (req) => {
       headers: {
         ...corsHeaders,
         "Content-Type": "application/json; charset=utf-8",
-        "Cache-Control": "public, max-age=600, stale-while-revalidate=300",
+        "Cache-Control": "public, max-age=300",
       },
     });
   } catch (error) {
