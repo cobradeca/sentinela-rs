@@ -103,7 +103,7 @@ function getRiskLevel(precipAccum, tempMin, windMax, lagoaLevel = null) {
   else if (precipAccum > 40) score += 2; else if (precipAccum > 20) score += 1;
   if (tempMin < 0) score += 3; else if (tempMin < 5) score += 2; else if (tempMin < 10) score += 1;
   if (windMax > 80) score += 3; else if (windMax > 50) score += 2; else if (windMax > 30) score += 1;
-  // ENSO é contexto climático, não alerta operacional local. Não entra no score das cidades.
+  if (ENSO.nino34 >= 1.5) score += 3; else if (ENSO.nino34 >= 0.5) score += 2; else if (ENSO.nino34 > 0) score += 1;
   if (lagoaLevel !== null) {
     if (lagoaLevel > 1.2) score += 4; else if (lagoaLevel > 0.8) score += 3; else if (lagoaLevel > 0.5) score += 1;
   }
@@ -452,7 +452,7 @@ export default function SentinelaRS() {
               { l:"Precip. 14d", v:`${d.precip?.toFixed(0)} mm`,    alert: d.precip>80 },
               { l:"Temp. mínima", v:`${d.tempMin?.toFixed(1)} °C`,   alert: d.tempMin<5 },
               { l:"Vento máx.",   v:`${d.windMax?.toFixed(0)} km/h`, alert: d.windMax>50 },
-              { l:"Contexto ENSO",v:`${(ENSO.prob.elNino*100).toFixed(0)}%`, alert:false },
+              { l:"El Niño prob.",v:`${(ENSO.prob.elNino*100).toFixed(0)}%`, alert:true },
               ...(d.lagoa ? [
                 { l:"Nível lagoa", v: d.lagoa.isReal && d.lagoa.atual !== null ? `${d.lagoa.atual.toFixed(2)} m (ANA)` : "– (ANA indisponível)", alert: d.lagoa.isReal && d.lagoa.atual > 0.8 },
               ] : []),
@@ -603,7 +603,7 @@ export default function SentinelaRS() {
                         { l:"Precip. 14d", v:`${d.precip?.toFixed(0)}mm` },
                         { l:"Temp. mín.",  v:`${d.tempMin?.toFixed(1)}°C` },
                         { l:"Vento",       v:`${d.windMax?.toFixed(0)}km/h` },
-                        { l:"Contexto ENSO", v:`${(ENSO.prob.elNino*100).toFixed(0)}%`, highlight:true },
+                        { l:"El Niño",     v:`${(ENSO.prob.elNino*100).toFixed(0)}%`, highlight:true },
                       ].map(item => (
                         <div key={item.l} style={{ background: dark?"rgba(0,0,0,0.3)":t.bg, padding:"5px 7px", borderRadius:3 }}>
                           <div style={{ fontSize:8, color:t.textMuted }}>{item.l}</div>
@@ -704,7 +704,7 @@ export default function SentinelaRS() {
                       { l:"Precipitação", v:`${selData.precip?.toFixed(0)} mm`, a:selData.precip>80 },
                       { l:"Temp. mínima", v:`${selData.tempMin?.toFixed(1)}°C`,  a:selData.tempMin<5 },
                       { l:"Vento máx.",   v:`${selData.windMax?.toFixed(0)} km/h`, a:selData.windMax>50 },
-                      { l:"Contexto ENSO",v:`${(ENSO.prob.elNino*100).toFixed(0)}%`, a:false },
+                      { l:"El Niño prob.",v:`${(ENSO.prob.elNino*100).toFixed(0)}%`, a:true },
                     ].map(item=>(
                       <div key={item.l} style={{ display:"flex", justifyContent:"space-between" }}>
                         <span style={{ fontSize:10, color:t.textMuted }}>{item.l}</span>
