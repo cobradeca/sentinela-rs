@@ -1,0 +1,16 @@
+# Sentinela RS — arquivos PWA prontos
+
+Copie os arquivos para o repositório mantendo a estrutura:
+
+- `index.html` vai na raiz do projeto, substituindo o `index.html` atual.
+- A pasta `public/` vai na raiz do projeto.
+- O arquivo `responsivo-extra.css` é opcional: cole o conteúdo dele no CSS global do app.
+
+Depois rode:
+
+```cmd
+git add .
+git commit -m "Adiciona suporte PWA para Android iOS e tablets"
+git push
+npm run deploy
+```
