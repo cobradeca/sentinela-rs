@@ -51,7 +51,6 @@ const CEMADEN_RS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functi
 const CEMADEN_ATTRIBUTION = "DADOS DA REDE OBSERVACIONAL DO CEMADEN/MCTIC";
 const ANA_RS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/ana-rs";
 const LAGOA_RADAR_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/lagoa-patos-radar";
-const HIDROSENS_LARANJAL_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/hidrosens-laranjal";
 
 // ENSO — dados reais NOAA/IRI mai 2026
 // ⚠ Estes valores são ESTÁTICOS — publicados pelo NOAA/IRI em mai/2026.
@@ -141,38 +140,6 @@ async function fetchWeather14Days(lat, lon) {
 
 // Lagoa dos Patos — sensores RADAR do portal de monitoramento.
 // Fonte principal para pontos onde a ANA não retorna nível operacional.
-
-// HidroSens/UFPel — Estação Laranjal / Pelotas.
-// Fonte específica para o ponto Pelotas/Laranjal, via ThingsBoard público.
-async function fetchHidroSensLaranjalLevel() {
-  try {
-    const res = await fetch(HIDROSENS_LARANJAL_FUNCTION_URL, { signal: AbortSignal.timeout(15000) });
-    if (!res.ok) return null;
-
-    const data = await res.json();
-    if (!data?.ok || typeof data.level_m !== "number") return null;
-
-    return {
-      ok: true,
-      station_id: data.station_id,
-      name: data.name,
-      source_label: "HidroSens/UFPel",
-      measured_at: data.measured_at,
-      received_at: data.fetched_at,
-      level_m: data.level_m,
-      level_cm: data.level_cm,
-      distance_m: data.distance_m,
-      sensor_height_m: data.sensor_height_m,
-      threshold_m: data.threshold_m ?? null,
-      threshold_cm: data.threshold_cm ?? null,
-      status: data.status || "SEM_LIMIAR",
-      note: data.note,
-    };
-  } catch {
-    return null;
-  }
-}
-
 async function fetchLagoaRadarLevels() {
   try {
     const res = await fetch(LAGOA_RADAR_FUNCTION_URL, { signal: AbortSignal.timeout(15000) });
@@ -459,7 +426,6 @@ export default function SentinelaRS() {
     const newAlerts = [];
     const cemadenByCityId = await fetchCemadenAccumulations();
     const lagoaRadarByStationId = await fetchLagoaRadarLevels();
-    const hidrosensLaranjal = await fetchHidroSensLaranjalLevel();
 
     for (const st of STATIONS) {
       try {
@@ -467,7 +433,6 @@ export default function SentinelaRS() {
         let realLevel = null;
         if (st.anaCode) realLevel = await fetchAnaLevel(st.anaCode);
         const radarLevel = lagoaRadarByStationId[st.id] || null;
-        const hidrosensLevel = st.id === "lagoa_patos_pelotas" ? hidrosensLaranjal : null;
         const inmet = st.ibgeCode ? await fetchInmetForecast(st.ibgeCode) : null;
         const cemaden = cemadenByCityId[st.id] || null;
         const precip  = weather.daily?.precipitation_sum?.reduce((a,b)=>a+b,0)||0;
@@ -477,14 +442,13 @@ export default function SentinelaRS() {
         // Nível real disponível: prioriza RADAR da Lagoa quando houver sensor validado.
         // ANA permanece como fonte complementar/parcial.
         const lagoa = st.type==="lagoa" ? {
-          atual: hidrosensLevel?.level_m ?? radarLevel?.level_m ?? realLevel,
-          isReal: Boolean(hidrosensLevel?.level_m ?? radarLevel?.level_m ?? realLevel),
-          source: hidrosensLevel ? "HIDROSENS" : (radarLevel ? "RADAR" : (realLevel !== null ? "ANA" : null)),
+          atual: radarLevel?.level_m ?? realLevel,
+          isReal: Boolean(radarLevel?.level_m ?? realLevel),
+          source: radarLevel ? "RADAR" : (realLevel !== null ? "ANA" : null),
           radar: radarLevel,
-          hidrosens: hidrosensLevel,
           anaLevel: realLevel,
-          threshold_m: hidrosensLevel?.threshold_m ?? radarLevel?.threshold_m ?? null,
-          levelStatus: hidrosensLevel?.status ?? radarLevel?.status ?? "SEM_LIMIAR",
+          threshold_m: radarLevel?.threshold_m ?? null,
+          levelStatus: radarLevel?.status ?? "SEM_LIMIAR",
         } : null;
 
         // Não usa limiar único de 0,8m. Risco de nível só entra quando a fonte traz limiar próprio validado.
@@ -1286,7 +1250,7 @@ export default function SentinelaRS() {
         )}
 
         <div style={{ marginTop:28, borderTop:`1px solid ${t.border}`, paddingTop:12, display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:6 }}>
-          <div style={{ fontSize:9, color:t.textFaint }}>SENTINELA·RS v2.2 · Open-Meteo + INMET + CEMADEN + Lagoa RADAR + HidroSens + ANA HidroWeb + NOAA ENSO + INPE + Copernicus · Fonte CEMADEN: {CEMADEN_ATTRIBUTION}</div>
+          <div style={{ fontSize:9, color:t.textFaint }}>SENTINELA·RS v2.2 · Open-Meteo + INMET + CEMADEN + Lagoa RADAR + ANA HidroWeb + NOAA ENSO + INPE + Copernicus · Fonte CEMADEN: {CEMADEN_ATTRIBUTION}</div>
           <div style={{ fontSize:9, color:t.textFaint }}>Atualização: 30 min · PWA · github.com/cobradeca/sentinela-rs</div>
         </div>
       </div>
