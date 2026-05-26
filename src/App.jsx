@@ -46,10 +46,14 @@ const RISK_LEVELS = {
 const dayNames = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
 
 // ENSO — dados reais NOAA/IRI mai 2026
+// ⚠ Estes valores são ESTÁTICOS — publicados pelo NOAA/IRI em mai/2026.
+// Para atualização automática, integrar: https://iri.columbia.edu/our-expertise/climate/forecasts/enso/current/
 const ENSO = {
   nino34: +0.9,
   oni3m: +0.47,
   phase: "EL_NINO_DEVELOPING",
+  referenceDate: "mai 2026",            // data de publicação NOAA/IRI
+  referenceSource: "NOAA/CPC + IRI/CCSR — Atualização mensal",
   prob: { elNino: 0.98, neutral: 0.02, laNina: 0.00 },
   superThreshold: 1.5,
   forecast: [
@@ -72,17 +76,20 @@ const ENSO = {
   ],
 };
 
+// Copernicus — indicadores de referência (dados históricos/publicados, NÃO tempo real)
+// Cada indicator está marcado com a data de referência da publicação.
 const COPERNICUS_DATA = {
   lastUpdate: "mai 2026",
+  referenceNote: "Indicadores abaixo são dados de referência publicados — não atualizados em tempo real.",
   themes: [
-    { id:"enchentes",   icon:"🌊", name:"Enchentes / Inundações",    status:"CRITICO",  color:"#ef4444", rsHistory:"Maio 2024: 2,4 milhões afetados, 478 municípios, 154 mortes. Maior desastre climático gaúcho.", current:"El Niño emergindo (+0,9°C) eleva risco de recorrência em 2026/27.", copSource:"Copernicus EMS — EMSR728 (RS 2024)", indicator:"Área inundada 2024: ~540 km² (Sentinel-1 SAR)" },
-    { id:"queimadas",   icon:"🔥", name:"Queimadas / Incêndios",     status:"ALERTA",   color:"#f97316", rsHistory:"2022: recorde de focos no RS (3.200+ focos INPE). Pampa e Serra Gaúcha mais afetados.", current:"El Niño aumenta risco de seca e queimadas no verão 2026/27.", copSource:"Copernicus EFFIS + INPE BDQueimadas", indicator:"Monitoramento diário via Sentinel-3 SLSTR" },
-    { id:"desmatamento",icon:"🌳", name:"Desmatamento / Vegetação",  status:"ATENCAO",  color:"#eab308", rsHistory:"Pampa: bioma com maior taxa de perda no BR. Mata Atlântica RS: <12% da cobertura original.", current:"Sentinel-2 monitora NDVI mensal. Alertas automáticos de supressão.", copSource:"Copernicus Land — Sentinel-2 MSI", indicator:"NDVI RS médio: 0.48 (mai 2026)" },
-    { id:"clima",       icon:"🌡️", name:"Clima / Temperatura",      status:"ALERTA",   color:"#f97316", rsHistory:"RS registrou +1,8°C acima da média no verão 2023/24. Ondas de calor mais frequentes.", current:"Anomalia TSM Atlântico Sul: +0,6°C. El Niño potencializa aquecimento.", copSource:"Copernicus C3S — ERA5 Reanalysis", indicator:"Anomalia mai 2026: +0,4°C acima da média" },
-    { id:"oceanos",     icon:"🌊", name:"Oceanos / Nível do Mar",   status:"ATENCAO",  color:"#eab308", rsHistory:"Nível médio em Rio Grande subiu ~3,2mm/ano (1993–2023). Surtos de maré associados a El Niño.", current:"Maré meteorológica + El Niño = risco costeiro elevado.", copSource:"Copernicus Marine — CMEMS", indicator:"Anomalia nível mar Atlântico Sul: +12cm vs 1993-2023" },
-    { id:"poluicao",    icon:"💨", name:"Poluição / Qualidade do Ar",status:"ATENCAO", color:"#eab308", rsHistory:"POA: episódios de qualidade do ar ruim por queimadas (2020, 2022).", current:"Sentinel-5P TROPOMI monitora NO₂, CO, aerossóis diariamente.", copSource:"Copernicus Atmosphere — CAMS + Sentinel-5P", indicator:"IQA Porto Alegre mai 2026: Moderado (42 µg/m³ PM2.5)" },
-    { id:"uso_solo",    icon:"🗺️", name:"Uso do Solo",              status:"NORMAL",   color:"#22c55e", rsHistory:"RS: 60% agropecuária, 12% vegetação nativa, 28% outros. Expansão da soja pressiona Pampa.", current:"Mapeamento anual via Sentinel-2 + MapBiomas RS.", copSource:"Copernicus Land — CORINE adapted + MapBiomas", indicator:"Área agrícola RS 2025: 14,8 milhões ha (+2,1% vs 2024)" },
-    { id:"seca",        icon:"🏜️", name:"Seca / Estiagem",         status:"ATENCAO",  color:"#eab308", rsHistory:"2021/22: pior seca em 91 anos no RS. Prejuízo de R$ 19 bilhões.", current:"Índice SPI-3 atual: -0,4 (próximo da normalidade). El Niño deve aumentar chuvas no RS.", copSource:"Copernicus Emergency — EDO", indicator:"SPI-3 RS mai 2026: -0,4 (atenção)" },
+    { id:"enchentes",   icon:"🌊", name:"Enchentes / Inundações",     status:"CRITICO",  color:"#ef4444", rsHistory:"Maio 2024: 2,4 milhões afetados, 478 municípios, 154 mortes. Maior desastre climático gaúcho.", current:"El Niño emergindo (+0,9°C) eleva risco de recorrência em 2026/27.", copSource:"Copernicus EMS — EMSR728 (RS 2024)", indicator:"Área inundada 2024: ~540 km² · Fonte: Copernicus EMS EMSR728", indicatorIsRealtime: false },
+    { id:"queimadas",   icon:"🔥", name:"Queimadas / Incêndios",      status:"ALERTA",   color:"#f97316", rsHistory:"2022: recorde de focos no RS (3.200+ focos INPE). Pampa e Serra Gaúcha mais afetados.", current:"El Niño aumenta risco de seca e queimadas no verão 2026/27.", copSource:"Copernicus EFFIS + INPE BDQueimadas", indicator:"Focos consultados em tempo real via INPE BDQueimadas (aba Queimadas)", indicatorIsRealtime: true },
+    { id:"desmatamento",icon:"🌳", name:"Desmatamento / Vegetação",   status:"ATENCAO",  color:"#eab308", rsHistory:"Pampa: bioma com maior taxa de perda no BR. Mata Atlântica RS: <12% da cobertura original.", current:"Sentinel-2 monitora NDVI mensal. Alertas automáticos de supressão.", copSource:"Copernicus Land — Sentinel-2 MSI", indicator:"NDVI RS médio: 0.48 · Referência: MapBiomas RS 2024", indicatorIsRealtime: false },
+    { id:"clima",       icon:"🌡️", name:"Clima / Temperatura",       status:"ALERTA",   color:"#f97316", rsHistory:"RS registrou +1,8°C acima da média no verão 2023/24. Ondas de calor mais frequentes.", current:"Anomalia TSM Atlântico Sul: +0,6°C. El Niño potencializa aquecimento.", copSource:"Copernicus C3S — ERA5 Reanalysis", indicator:"Anomalia +0,4°C acima da média · Ref: ERA5 mai/2026", indicatorIsRealtime: false },
+    { id:"oceanos",     icon:"🌊", name:"Oceanos / Nível do Mar",    status:"ATENCAO",  color:"#eab308", rsHistory:"Nível médio em Rio Grande subiu ~3,2mm/ano (1993–2023). Surtos de maré associados a El Niño.", current:"Maré meteorológica + El Niño = risco costeiro elevado.", copSource:"Copernicus Marine — CMEMS", indicator:"Anomalia +12cm vs 1993-2023 · Ref: CMEMS Altimetry 2023", indicatorIsRealtime: false },
+    { id:"poluicao",    icon:"💨", name:"Poluição / Qualidade do Ar", status:"ATENCAO",  color:"#eab308", rsHistory:"POA: episódios de qualidade do ar ruim por queimadas (2020, 2022).", current:"Sentinel-5P TROPOMI monitora NO₂, CO, aerossóis diariamente.", copSource:"Copernicus Atmosphere — CAMS + Sentinel-5P", indicator:"IQA POA: ref. histórica — integrar QUALAR/IBAMA para dado em tempo real", indicatorIsRealtime: false },
+    { id:"uso_solo",    icon:"🗺️", name:"Uso do Solo",               status:"NORMAL",   color:"#22c55e", rsHistory:"RS: 60% agropecuária, 12% vegetação nativa, 28% outros. Expansão da soja pressiona Pampa.", current:"Mapeamento anual via Sentinel-2 + MapBiomas RS.", copSource:"Copernicus Land — CORINE adapted + MapBiomas", indicator:"Área agrícola RS 2025: 14,8 milhões ha · Fonte: MapBiomas 2025", indicatorIsRealtime: false },
+    { id:"seca",        icon:"🏜️", name:"Seca / Estiagem",          status:"ATENCAO",  color:"#eab308", rsHistory:"2021/22: pior seca em 91 anos no RS. Prejuízo de R$ 19 bilhões.", current:"Índice SPI-3: -0,4 (próximo da normalidade). El Niño deve aumentar chuvas no RS.", copSource:"Copernicus Emergency — EDO (European Drought Observatory)", indicator:"SPI-3 RS: -0,4 · Ref: EDO mai/2026 — integrar SPI dinâmico via CHIRPS para atualização", indicatorIsRealtime: false },
   ],
 };
 
@@ -256,19 +263,21 @@ export default function SentinelaRS() {
         const precip  = weather.daily?.precipitation_sum?.reduce((a,b)=>a+b,0)||0;
         const tempMin  = Math.min(...(weather.daily?.temperature_2m_min||[20]));
         const windMax  = Math.max(...(weather.daily?.windspeed_10m_max||[0]));
+        // lagoa.atual: só dado real ANA — nunca simulado
+        // lagoa.projetado: removido (fórmula empírica sem base hidrológica)
         const lagoa = st.type==="lagoa" ? {
-          atual:    realLevel!==null ? realLevel : +(0.3+Math.random()*0.2).toFixed(2),
-          projetado: +(0.3+precip*0.008).toFixed(2),
-          isReal:   realLevel!==null,
+          atual:  realLevel, // null quando ANA indisponível — exibido como "–"
+          isReal: realLevel !== null,
         } : null;
-        const risk = getRiskLevel(precip, tempMin, windMax, lagoa?.atual||null);
+        // Risco da lagoa só entra no score quando há dado real
+        const risk = getRiskLevel(precip, tempMin, windMax, lagoa?.isReal ? lagoa.atual : null);
         results[st.id] = { weather, lagoa, precip, tempMin, windMax, risk, realLevel };
         if (risk !== "NORMAL") {
           const parts=[];
           if (precip>80) parts.push(`chuva ${precip.toFixed(0)}mm/14d`);
           if (tempMin<5) parts.push(`temp. mín. ${tempMin.toFixed(1)}°C`);
           if (windMax>50) parts.push(`rajadas ${windMax.toFixed(0)}km/h`);
-          if (lagoa?.atual>0.8) parts.push(`lagoa ${lagoa.atual.toFixed(2)}m`);
+          if (lagoa?.isReal && lagoa.atual>0.8) parts.push(`lagoa ${lagoa.atual.toFixed(2)}m (ANA)`);
           newAlerts.push({ id:`${st.id}_${Date.now()}`, station:st.name, risk_level:risk, message:parts.join(" · ")||"Parâmetros em atenção", at:new Date() });
         }
       } catch { results[st.id]={ error:true, risk:"NORMAL" }; }
@@ -346,8 +355,7 @@ export default function SentinelaRS() {
               { l:"Vento máx.",   v:`${d.windMax?.toFixed(0)} km/h`, alert: d.windMax>50 },
               { l:"El Niño prob.",v:`${(ENSO.prob.elNino*100).toFixed(0)}%`, alert:true },
               ...(d.lagoa ? [
-                { l:"Nível lagoa", v:`${d.lagoa.atual.toFixed(2)} m`, alert: d.lagoa.atual>0.8 },
-                { l:"Projetado",   v:`${d.lagoa.projetado.toFixed(2)} m`, alert: d.lagoa.projetado>0.8 },
+                { l:"Nível lagoa", v: d.lagoa.isReal && d.lagoa.atual !== null ? `${d.lagoa.atual.toFixed(2)} m (ANA)` : "– (ANA indisponível)", alert: d.lagoa.isReal && d.lagoa.atual > 0.8 },
               ] : []),
             ].map(item=>(
               <div key={item.l} style={{ background: dark?"rgba(0,0,0,0.3)":t.bg, padding:"8px 11px", borderRadius:5, borderLeft:`3px solid ${item.alert?rColor:t.textFaint}` }}>
@@ -503,13 +511,19 @@ export default function SentinelaRS() {
                   {station.type==="lagoa" && d.lagoa && (
                     <div style={{ marginTop:7 }}>
                       <div style={{ fontSize:8, color:t.textMuted, marginBottom:3, display:"flex", justifyContent:"space-between" }}>
-                        <span>NÍVEL {d.lagoa.isReal?"REAL":"ESTIMADO"}</span>
+                        <span>NÍVEL {d.lagoa.isReal ? "REAL" : "INDISPONÍVEL"}</span>
                         {d.lagoa.isReal && <span style={{ color:"#22c55e" }}>● ANA</span>}
                       </div>
-                      <div style={{ height:4, background:t.barBg, borderRadius:2, overflow:"hidden" }}>
-                        <div style={{ height:"100%", width:`${Math.min(100,(d.lagoa.atual/1.5)*100)}%`, background:d.lagoa.atual>1.2?"#ef4444":d.lagoa.atual>0.8?"#f97316":"#22c55e", borderRadius:2 }} />
-                      </div>
-                      <div style={{ fontSize:8, color:t.textMuted, marginTop:2 }}>{d.lagoa.atual.toFixed(2)}m / alerta 0.8m</div>
+                      {d.lagoa.isReal && d.lagoa.atual !== null ? (
+                        <>
+                          <div style={{ height:4, background:t.barBg, borderRadius:2, overflow:"hidden" }}>
+                            <div style={{ height:"100%", width:`${Math.min(100,(d.lagoa.atual/1.5)*100)}%`, background:d.lagoa.atual>1.2?"#ef4444":d.lagoa.atual>0.8?"#f97316":"#22c55e", borderRadius:2 }} />
+                          </div>
+                          <div style={{ fontSize:8, color:t.textMuted, marginTop:2 }}>{d.lagoa.atual.toFixed(2)}m / alerta 0.8m</div>
+                        </>
+                      ) : (
+                        <div style={{ fontSize:8, color:t.textFaint, marginTop:2 }}>ANA HidroWeb indisponível</div>
+                      )}
                     </div>
                   )}
                   {/* Indicador clicável */}
@@ -627,19 +641,31 @@ export default function SentinelaRS() {
                     </div>
                   </div>
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:12 }}>
-                    {[
-                      { l:`NÍVEL ${isReal?"REAL":"ESTIMADO"}`, v:atual, c:cor, label_alt: isReal?"ANA HidroWeb":"estimativa" },
-                      { l:"PROJETADO 7 DIAS", v:projetado, c:projetado>0.8?"#f97316":"#94a3b8" },
-                    ].map(item=>(
-                      <div key={item.l}>
-                        <div style={{ fontSize:8, color:t.textMuted, letterSpacing:2, marginBottom:5 }}>{item.l}</div>
-                        <div style={{ height:6, background:t.barBg, borderRadius:3, overflow:"hidden", marginBottom:3 }}>
-                          <div style={{ height:"100%", width:`${Math.min(100,(item.v/1.5)*100)}%`, background:item.c, borderRadius:3, transition:"width 0.5s" }} />
-                        </div>
-                        <div style={{ fontSize:18, fontWeight:700, color:item.c }}>{item.v.toFixed(2)}m</div>
-                        {item.label_alt && <div style={{ fontSize:8, color:t.textFaint }}>{item.label_alt}</div>}
+                    <div>
+                      <div style={{ fontSize:8, color:t.textMuted, letterSpacing:2, marginBottom:5 }}>
+                        NÍVEL {isReal ? "REAL — ANA HIDROWEB" : "INDISPONÍVEL"}
                       </div>
-                    ))}
+                      {isReal ? (
+                        <>
+                          <div style={{ height:6, background:t.barBg, borderRadius:3, overflow:"hidden", marginBottom:3 }}>
+                            <div style={{ height:"100%", width:`${Math.min(100,(atual/1.5)*100)}%`, background:cor, borderRadius:3, transition:"width 0.5s" }} />
+                          </div>
+                          <div style={{ fontSize:18, fontWeight:700, color:cor }}>{atual.toFixed(2)}m</div>
+                          <div style={{ fontSize:8, color:t.textFaint }}>Telemetria horária ANA</div>
+                        </>
+                      ) : (
+                        <div style={{ fontSize:13, fontWeight:600, color:t.textMuted }}>
+                          – <span style={{ fontSize:9, fontWeight:400 }}>ANA indisponível</span>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <div style={{ fontSize:8, color:t.textMuted, letterSpacing:2, marginBottom:5 }}>PREVISÃO DE NÍVEL</div>
+                      <div style={{ fontSize:11, color:t.textMuted, lineHeight:1.5 }}>
+                        Projeção hidrológica requer integração com modelo CPRM/ANA.
+                        <span style={{ display:"block", marginTop:4, fontSize:8, color:t.textFaint }}>Não disponível nesta versão.</span>
+                      </div>
+                    </div>
                   </div>
                   {/* Thresholds */}
                   <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:6 }}>
@@ -650,9 +676,9 @@ export default function SentinelaRS() {
                       </div>
                     ))}
                   </div>
-                  {atual>0.8 && (
+                  {isReal && atual>0.8 && (
                     <div style={{ marginTop:8, padding:"7px 10px", background:atual>1.2?"rgba(239,68,68,0.1)":"rgba(249,115,22,0.1)", border:`1px solid ${atual>1.2?"rgba(239,68,68,0.4)":"rgba(249,115,22,0.4)"}`, borderRadius:3, fontSize:10, color:atual>1.2?"#fca5a5":"#fdba74" }}>
-                      ⚠ Nível acima do threshold de {atual>1.2?"emergência":"alerta"}. Monitoramento intensificado.
+                      ⚠ Nível acima do threshold de {atual>1.2?"emergência":"alerta"}. Dado real ANA HidroWeb.
                     </div>
                   )}
                 </div>
@@ -676,6 +702,10 @@ export default function SentinelaRS() {
                   Índice Niño 3.4: <strong>+0,9°C</strong> · IRI/CCSR: <strong>98%</strong> de prob. mai–jul 2026 · NOAA: <em>El Niño Watch</em> ativo
                 </div>
               </div>
+            </div>
+            {/* Aviso de dados estáticos */}
+            <div style={{ padding:"8px 14px", background: dark?"rgba(234,179,8,0.07)":"rgba(234,179,8,0.06)", border:"1px solid rgba(234,179,8,0.25)", borderRadius:4, fontSize:9, color: dark?"#fef08a":"#854d0e", display:"flex", gap:8, alignItems:"center" }}>
+              🗓 <span><strong>Dados de referência: {ENSO.referenceDate}</strong> — {ENSO.referenceSource}. Estes valores são estáticos e refletem a publicação mais recente disponível. Para dados em tempo real, acesse <a href="https://iri.columbia.edu/our-expertise/climate/forecasts/enso/current/" target="_blank" rel="noreferrer" style={{ color:"#22d3ee" }}>IRI/CCSR</a> ou <a href="https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/" target="_blank" rel="noreferrer" style={{ color:"#22d3ee" }}>NOAA/CPC</a>.</span>
             </div>
 
             {/* Cards status */}
@@ -733,7 +763,7 @@ export default function SentinelaRS() {
                   </div>
                 ))}
               </div>
-              <div style={{ fontSize:8, color:t.textFaint, marginTop:8 }}>Fonte: IRI/CCSR Columbia University + NOAA/CPC — mai 2026</div>
+              <div style={{ fontSize:8, color:t.textFaint, marginTop:8 }}>Fonte: IRI/CCSR Columbia University + NOAA/CPC · Referência: {ENSO.referenceDate} · Dados estáticos — atualização manual necessária</div>
             </div>
 
             {/* Histórico */}
@@ -784,6 +814,10 @@ export default function SentinelaRS() {
             <div style={{ padding:"10px 14px", background: dark?"rgba(139,92,246,0.08)":"rgba(139,92,246,0.05)", border:"1px solid rgba(139,92,246,0.3)", borderRadius:5, fontSize:10, color: dark?"#c4b5fd":"#7c3aed" }}>
               🛰️ <strong>Programa Copernicus (UE)</strong> — Monitoramento por satélite. Dados: Sentinel-1, 2, 3, 5P, 6. Última atualização: {COPERNICUS_DATA.lastUpdate}.
             </div>
+            {/* Aviso de dados de referência */}
+            <div style={{ padding:"8px 14px", background: dark?"rgba(234,179,8,0.07)":"rgba(234,179,8,0.06)", border:"1px solid rgba(234,179,8,0.25)", borderRadius:4, fontSize:9, color: dark?"#fef08a":"#854d0e" }}>
+              🗓 <strong>Atenção:</strong> {COPERNICUS_DATA.referenceNote} Cada indicador exibe sua fonte e data de referência. Exceção: focos de queimada são consultados em tempo real via INPE BDQueimadas (aba Queimadas).
+            </div>
             <div style={{ display:"grid", gap:8 }}>
               {COPERNICUS_DATA.themes.map(theme=>(
                 <div key={theme.id} style={{ background:t.cardBg, border:`1px solid ${theme.color}44`, borderLeft:`4px solid ${theme.color}`, borderRadius:5, overflow:"hidden", boxShadow:t.shadowCard }}>
@@ -798,9 +832,14 @@ export default function SentinelaRS() {
                       <div style={{ fontSize:10, color:t.textMuted, marginBottom:4 }}><strong style={{ color:t.text }}>Atual:</strong> {theme.current}</div>
                       <div style={{ fontSize:9, color:t.textFaint }}>📡 {theme.copSource}</div>
                     </div>
-                    <div style={{ flexShrink:0, textAlign:"right" }}>
-                      <div style={{ fontSize:9, color:t.textMuted, marginBottom:4 }}>INDICADOR</div>
-                      <div style={{ fontSize:9, color:theme.color, fontWeight:600, maxWidth:160, textAlign:"right", lineHeight:1.4 }}>{theme.indicator}</div>
+                    <div style={{ flexShrink:0, textAlign:"right", maxWidth:170 }}>
+                      <div style={{ fontSize:8, color:t.textMuted, marginBottom:4, display:"flex", justifyContent:"flex-end", alignItems:"center", gap:4 }}>
+                        {theme.indicatorIsRealtime
+                          ? <span style={{ color:"#22c55e" }}>● TEMPO REAL</span>
+                          : <span style={{ color:"#eab308" }}>○ REFERÊNCIA</span>
+                        }
+                      </div>
+                      <div style={{ fontSize:9, color:theme.color, fontWeight:600, textAlign:"right", lineHeight:1.4 }}>{theme.indicator}</div>
                     </div>
                   </div>
                 </div>
@@ -870,38 +909,39 @@ export default function SentinelaRS() {
 
             {/* APAs */}
             <div style={{ ...s.card }}>
-              <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:12 }}>UNIDADES DE CONSERVAÇÃO — RS</div>
+              <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:4 }}>UNIDADES DE CONSERVAÇÃO — RS</div>
+              <div style={{ fontSize:9, color: dark?"#eab308":"#a16207", marginBottom:12, padding:"6px 10px", background: dark?"rgba(234,179,8,0.07)":"rgba(234,179,8,0.06)", border:"1px solid rgba(234,179,8,0.2)", borderRadius:4 }}>
+                ⚠ Risco por UC não disponível nesta versão — exigiria integração com API ICMBio (tempo real de focos por UC). Os dados abaixo são de cadastro georreferenciado oficial.
+              </div>
               <div style={{ display:"grid", gap:7 }}>
-                {APAS_RS.map(apa=>{
-                  const riskScore = ENSO.nino34 > 0.5 ? "ATENCAO" : "NORMAL";
-                  const r = RISK_LEVELS[riskScore];
-                  const rColor = getRiskColor(riskScore);
-                  return (
-                    <div key={apa.id} style={{ display:"grid", gridTemplateColumns:"1fr auto auto", gap:10, alignItems:"center", padding:"9px 12px", background: dark?"rgba(0,0,0,0.2)":t.bg, border:`1px solid ${t.border}`, borderRadius:4 }}>
-                      <div>
-                        <div style={{ fontSize:11, fontWeight:600, color:t.text }}>{apa.name}</div>
-                        <div style={{ fontSize:9, color:t.textMuted }}>{apa.municipio}</div>
-                      </div>
-                      <div style={{ fontSize:9, color:t.textFaint }}>{apa.lat.toFixed(2)}°S</div>
-                      <div style={{ fontSize:9, padding:"2px 7px", border:`1px solid ${rColor}`, color:rColor, borderRadius:3 }}>{r.icon} {r.label}</div>
+                {APAS_RS.map(apa=>(
+                  <div key={apa.id} style={{ display:"grid", gridTemplateColumns:"1fr auto auto", gap:10, alignItems:"center", padding:"9px 12px", background: dark?"rgba(0,0,0,0.2)":t.bg, border:`1px solid ${t.border}`, borderRadius:4 }}>
+                    <div>
+                      <div style={{ fontSize:11, fontWeight:600, color:t.text }}>{apa.name}</div>
+                      <div style={{ fontSize:9, color:t.textMuted }}>{apa.municipio}</div>
                     </div>
-                  );
-                })}
+                    <div style={{ fontSize:9, color:t.textFaint }}>{apa.lat.toFixed(2)}°S</div>
+                    <div style={{ fontSize:8, padding:"2px 7px", border:`1px solid ${t.textFaint}`, color:t.textMuted, borderRadius:3 }}>sem dado</div>
+                  </div>
+                ))}
               </div>
               <div style={{ marginTop:10, padding:"8px 10px", background: dark?"rgba(249,115,22,0.06)":"rgba(249,115,22,0.04)", border:"1px solid rgba(249,115,22,0.15)", borderRadius:4, fontSize:9, color:t.textMuted }}>
-                ⚠ El Niño (+0,9°C) eleva risco nas UCs do Pampa e Serra Gaúcha. Monitoramento Sentinel-3 SLSTR + INPE BDQueimadas.
+                Para risco em tempo real por UC, integre: <span style={{ color:t.accent }}>geo.icmbio.gov.br/portal</span> (WFS focos) + INPE BDQueimadas filtrado por geocerca.
               </div>
             </div>
 
             {/* EFFIS */}
             <div style={{ ...s.card }}>
-              <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:10 }}>COPERNICUS EFFIS — RISCO DE INCÊNDIO RS</div>
+              <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:4 }}>COPERNICUS EFFIS — RISCO ESTRUTURAL DE INCÊNDIO RS</div>
+              <div style={{ fontSize:9, color: dark?"#fef08a":"#854d0e", marginBottom:10, padding:"5px 10px", background: dark?"rgba(234,179,8,0.07)":"rgba(234,179,8,0.05)", border:"1px solid rgba(234,179,8,0.2)", borderRadius:4 }}>
+                🗓 Risco estrutural por bioma — dado de referência EFFIS, não tempo real. Valores reflectem histórico + sazonalidade + El Niño.
+              </div>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))", gap:8 }}>
                 {[
-                  { l:"Pampa Gaúcho",  v:"Médio-Alto", c:"#f97316", d:"Vegetação seca no verão · EFFIS" },
-                  { l:"Serra Gaúcha",  v:"Médio",       c:"#eab308", d:"Mata Atlântica úmida · EFFIS" },
-                  { l:"Litoral RS",    v:"Baixo",        c:"#22c55e", d:"Restinga úmida · EFFIS" },
-                  { l:"Missões",       v:"Médio",        c:"#eab308", d:"Campos e matas · EFFIS" },
+                  { l:"Pampa Gaúcho",  v:"Médio-Alto", c:"#f97316", d:"Vegetação seca · bioma Pampa" },
+                  { l:"Serra Gaúcha",  v:"Médio",       c:"#eab308", d:"Mata Atlântica úmida" },
+                  { l:"Litoral RS",    v:"Baixo",        c:"#22c55e", d:"Restinga úmida" },
+                  { l:"Missões",       v:"Médio",        c:"#eab308", d:"Campos e matas" },
                 ].map(item=>(
                   <div key={item.l} style={{ background: dark?"rgba(0,0,0,0.3)":t.bg, padding:"10px 12px", borderRadius:4, borderTop:`3px solid ${item.c}` }}>
                     <div style={{ fontSize:9, color:t.textMuted, marginBottom:4 }}>{item.l}</div>
@@ -910,7 +950,9 @@ export default function SentinelaRS() {
                   </div>
                 ))}
               </div>
-              <div style={{ fontSize:8, color:t.textFaint, marginTop:8 }}>Copernicus EFFIS — European Forest Fire Information System · mai 2026</div>
+              <div style={{ fontSize:8, color:t.textFaint, marginTop:8 }}>
+                Copernicus EFFIS — European Forest Fire Information System · Referência estrutural · Para dados em tempo real: <a href="https://effis.jrc.ec.europa.eu/" target="_blank" rel="noreferrer" style={{ color:t.accent }}>effis.jrc.ec.europa.eu</a>
+              </div>
             </div>
           </div>
         )}
@@ -937,7 +979,7 @@ export default function SentinelaRS() {
                     <div key={i} style={{ padding:"12px 14px", background:rBg, border:`1px solid ${rColor}55`, borderLeft:`4px solid ${rColor}`, borderRadius:5 }}>
                       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:5 }}>
                         <div style={{ fontSize:12, fontWeight:700, color:rColor }}>{r.icon} {r.label.toUpperCase()} — {alert.station}</div>
-                        <div style={{ fontSize:9, color:t.textMuted }}>{new Date(alert.at).toLocaleString("pt-BR")}</div>
+                        <div style={{ fontSize:9, color:t.textMuted }}>detectado {new Date(alert.at).toLocaleString("pt-BR")}</div>
                       </div>
                       <div style={{ fontSize:11, color:t.textMuted }}>{alert.message}</div>
                     </div>
@@ -979,10 +1021,11 @@ export default function SentinelaRS() {
         {activeTab==="apis" && (
           <div style={{ display:"grid", gap:8 }}>
             {[
-              { n:"Open-Meteo",               st:"ATIVO",     c:"#22c55e", d:"Previsão meteorológica 14 dias — temperatura, precipitação, vento.", a:"Gratuita, sem chave", h:null },
-              { n:"ANA HidroWeb (Telemetria)", st:"ATIVO",     c:"#22c55e", d:"Nível real da Lagoa dos Patos em 4 pontos horários.",              a:"API pública, sem chave", h:null },
-              { n:"NOAA/IRI — Índice ENSO",   st:"ATIVO",     c:"#22c55e", d:"El Niño/La Niña: Niño 3.4, ONI, probabilidades 8 meses.",          a:"Dados públicos, atualização mensal", h:null },
-              { n:"INPE BDQueimadas",          st:"ATIVO",     c:"#22c55e", d:"Focos de queimada últimas 48h no RS — API pública.",               a:"Sem chave", h:null },
+              { n:"Open-Meteo",               st:"ATIVO",     c:"#22c55e", d:"Previsão meteorológica 14 dias — temperatura, precipitação, vento. Atualização automática.", a:"Gratuita, sem chave", h:null },
+              { n:"ANA HidroWeb (Telemetria)", st:"ATIVO",     c:"#22c55e", d:"Nível real da Lagoa dos Patos em 4 pontos. Exibe '–' quando indisponível — sem simulação.",  a:"API pública, sem chave", h:null },
+              { n:"NOAA/IRI — Índice ENSO",   st:"ESTÁTICO",  c:"#eab308", d:"El Niño/La Niña: Niño 3.4, ONI, probabilidades 8 meses. Dados de referência mai/2026 — requer atualização manual mensal.", a:"Dados públicos, atualização mensal", h:"1. iri.columbia.edu/our-expertise/climate/forecasts/enso/current/\n2. Atualizar valores ENSO.nino34, oni3m, prob e forecast no código\n3. Publicação NOAA/IRI: primeira semana de cada mês" },
+              { n:"INPE BDQueimadas",          st:"ATIVO",     c:"#22c55e", d:"Focos de queimada últimas 48h no RS — API pública. Exibe histórico de referência quando API indisponível.", a:"Sem chave", h:null },
+              { n:"Copernicus — Indicadores",  st:"ESTÁTICO",  c:"#eab308", d:"NDVI, SPI-3, IQA, nível do mar: dados de referência de publicações Copernicus/MapBiomas. NÃO são consultados em tempo real.", a:"Registro gratuito para APIs reais", h:"Para tempo real:\n- NDVI: Sentinel-2 via dataspace.copernicus.eu\n- SPI-3: CHIRPS + cálculo local\n- IQA: QUALAR/IBAMA\n- Nível mar: CMEMS altimetry API" },
               { n:"INMET",                     st:"PLANEJADO", c:"#eab308", d:"Estações automáticas RS: temperatura, umidade, pressão em tempo real.", a:"Token gratuito", h:"1. portal.inmet.gov.br → Dados → API\n2. Token gratuito\n3. GET apitempo.inmet.gov.br/estacao/{token}/{data}/{est}" },
               { n:"CPTEC/INPE",                st:"PLANEJADO", c:"#eab308", d:"Previsão climática sazonal, boletins ENSO oficiais BR.",           a:"API pública", h:"1. servicos.cptec.inpe.br/XML/cidade/{id}/previsao.xml\n2. Proxy via Supabase Edge Function (CORS)" },
               { n:"AlertaRS / Defesa Civil",   st:"PLANEJADO", c:"#eab308", d:"Boletins e avisos oficiais de catástrofes do Estado.",             a:"RSS / Webhook", h:"1. alertas.rs.gov.br/rss\n2. Edge Function lê RSS a cada 30min" },
