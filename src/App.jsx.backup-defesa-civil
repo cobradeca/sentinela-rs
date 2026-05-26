@@ -45,8 +45,6 @@ const RISK_LEVELS = {
 
 const dayNames = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
 
-const DEFESA_CIVIL_RS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/defesa-civil-rs";
-
 // ENSO — dados reais NOAA/IRI mai 2026
 // ⚠ Estes valores são ESTÁTICOS — publicados pelo NOAA/IRI em mai/2026.
 // Para atualização automática, integrar: https://iri.columbia.edu/our-expertise/climate/forecasts/enso/current/
@@ -152,47 +150,6 @@ async function fetchQueimadas() {
     if (!res.ok) return null;
     return res.json();
   } catch { return null; }
-}
-
-// Defesa Civil RS — RSS oficial via Supabase Edge Function.
-// Não buscar o RSS direto no navegador: o site oficial bloqueia por CORS.
-function normalizeOfficialRiskLevel(alert) {
-  const text = `${alert?.title || ""} ${alert?.message || ""}`.toUpperCase();
-
-  if (text.includes("RISCO EXTREMO") || text.includes("EMERGÊNCIA METEOROLÓGICA") || text.includes("EMERGENCIA METEOROLOGICA")) {
-    return "EMERGENCIA";
-  }
-
-  if (text.includes("RISCO MUITO ALTO") || text.includes("CRÍTICO") || text.includes("CRITICO")) {
-    return "CRITICO";
-  }
-
-  if (text.includes("ALERTA") || text.includes("RISCO ALTO")) {
-    return "ALERTA";
-  }
-
-  return alert?.risk_level || "ATENCAO";
-}
-
-async function fetchDefesaCivilAlerts() {
-  try {
-    const res = await fetch(DEFESA_CIVIL_RS_FUNCTION_URL, { signal: AbortSignal.timeout(10000) });
-    if (!res.ok) return [];
-
-    const data = await res.json();
-    if (!data?.ok || !Array.isArray(data.alerts)) return [];
-
-    return data.alerts.map((alert) => ({
-      ...alert,
-      id: alert.id || `defesa_civil_rs_${alert.at || alert.title}`,
-      station: alert.station || "Defesa Civil RS",
-      risk_level: normalizeOfficialRiskLevel(alert),
-      official: true,
-      source: "Defesa Civil RS",
-    }));
-  } catch {
-    return [];
-  }
 }
 
 const wmoDesc  = (c) => c<=3?"Céu claro":c<=9?"Neblina":c<=29?"Chuva":c<=39?"Neve":c<=59?"Garoa":c<=79?"Neve intensa":c<=84?"Pancadas":c<=94?"Tempestade":"Tempestade severa";
@@ -325,10 +282,8 @@ export default function SentinelaRS() {
         }
       } catch { results[st.id]={ error:true, risk:"NORMAL" }; }
     }
-    const officialAlerts = await fetchDefesaCivilAlerts();
-
     setStationData(results);
-    setAlerts([...officialAlerts, ...newAlerts]);
+    setAlerts(newAlerts);
     setLastUpdate(new Date());
     setLoading(false);
   }, []);
@@ -1041,7 +996,7 @@ export default function SentinelaRS() {
                   { i:"📱", n:"Push nativo (PWA)",  s:"Ativo — botão no header",  ok:true,  h:null },
                   { i:"🔔", n:"Alertas na tela",    s:"Ativo — 30min",            ok:true,  h:null },
                   { i:"📧", n:"E-mail (Resend)",    s:"Configurar",               ok:false, h:"1. resend.com → API key\n2. RESEND_API_KEY nos secrets Supabase\n3. Chamar resend.emails.send() no send-alerts" },
-                  { i:"📢", n:"Defesa Civil RS",    s:"Ativo — RSS oficial",      ok:true,  h:"Fonte oficial conectada via Supabase Edge Function. RSS: www.defesacivil.rs.gov.br/rss" },
+                  { i:"📢", n:"Defesa Civil RS",    s:"Webhook planejado",        ok:false, h:"1. alertas.rs.gov.br/rss\n2. Edge Function lê RSS a cada 30min\n3. Badge OFICIAL nos alertas" },
                   { i:"📲", n:"SMS (Twilio)",       s:"Configurar",               ok:false, h:"1. twilio.com → Account SID + Token\n2. Secrets no Supabase\n3. SMS só para EMERGENCIA/CRITICO" },
                   { i:"🔊", n:"Sirene IoT",         s:"Requer hardware",          ok:false, h:"1. ESP32 + relê\n2. Webhook Supabase → POST /trigger\n3. Ativa em CRITICO" },
                 ].map(c=>(
@@ -1073,7 +1028,7 @@ export default function SentinelaRS() {
               { n:"Copernicus — Indicadores",  st:"ESTÁTICO",  c:"#eab308", d:"NDVI, SPI-3, IQA, nível do mar: dados de referência de publicações Copernicus/MapBiomas. NÃO são consultados em tempo real.", a:"Registro gratuito para APIs reais", h:"Para tempo real:\n- NDVI: Sentinel-2 via dataspace.copernicus.eu\n- SPI-3: CHIRPS + cálculo local\n- IQA: QUALAR/IBAMA\n- Nível mar: CMEMS altimetry API" },
               { n:"INMET",                     st:"PLANEJADO", c:"#eab308", d:"Estações automáticas RS: temperatura, umidade, pressão em tempo real.", a:"Token gratuito", h:"1. portal.inmet.gov.br → Dados → API\n2. Token gratuito\n3. GET apitempo.inmet.gov.br/estacao/{token}/{data}/{est}" },
               { n:"CPTEC/INPE",                st:"PLANEJADO", c:"#eab308", d:"Previsão climática sazonal, boletins ENSO oficiais BR.",           a:"API pública", h:"1. servicos.cptec.inpe.br/XML/cidade/{id}/previsao.xml\n2. Proxy via Supabase Edge Function (CORS)" },
-              { n:"Defesa Civil RS",           st:"ATIVO",     c:"#22c55e", d:"Avisos oficiais via RSS da Defesa Civil do Rio Grande do Sul, consumidos por Supabase Edge Function para evitar bloqueio CORS.", a:"RSS oficial via proxy", h:"Endpoint ativo: https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/defesa-civil-rs" },
+              { n:"AlertaRS / Defesa Civil",   st:"PLANEJADO", c:"#eab308", d:"Boletins e avisos oficiais de catástrofes do Estado.",             a:"RSS / Webhook", h:"1. alertas.rs.gov.br/rss\n2. Edge Function lê RSS a cada 30min" },
               { n:"CEMADEN",                   st:"PLANEJADO", c:"#eab308", d:"Municípios em risco: deslizamentos, enchentes, estiagem.",          a:"API pública", h:"1. cemaden.gov.br → API\n2. Filtrar estado RS (cod 43)" },
               { n:"Copernicus Emergency (EU)", st:"FUTURO",    c:"#8b5cf6", d:"Sentinel-1 SAR para detecção de alagamentos.",                     a:"Registro gratuito", h:"1. dataspace.copernicus.eu → cadastro\n2. API STAC Sentinel-1" },
             ].map(api=>(
