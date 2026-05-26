@@ -50,7 +50,6 @@ const INMET_FORECAST_BASE_URL = "https://apiprevmet3.inmet.gov.br/previsao";
 const CEMADEN_RS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/cemaden-rs";
 const CEMADEN_ATTRIBUTION = "DADOS DA REDE OBSERVACIONAL DO CEMADEN/MCTIC";
 const ANA_RS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/ana-rs";
-const LAGOA_RADAR_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/lagoa-patos-radar";
 
 // ENSO — dados reais NOAA/IRI mai 2026
 // ⚠ Estes valores são ESTÁTICOS — publicados pelo NOAA/IRI em mai/2026.
@@ -135,33 +134,6 @@ async function fetchWeather14Days(lat, lon) {
   const res = await fetch(url);
   if (!res.ok) throw new Error("Open-Meteo indisponível");
   return res.json();
-}
-
-
-// Lagoa dos Patos — sensores RADAR do portal de monitoramento.
-// Fonte principal para pontos onde a ANA não retorna nível operacional.
-async function fetchLagoaRadarLevels() {
-  try {
-    const res = await fetch(LAGOA_RADAR_FUNCTION_URL, { signal: AbortSignal.timeout(15000) });
-    if (!res.ok) return {};
-
-    const data = await res.json();
-    if (!data?.ok || !Array.isArray(data.sensors)) return {};
-
-    return Object.fromEntries(
-      data.sensors
-        .filter((sensor) => sensor?.ok && sensor?.station_id)
-        .map((sensor) => [sensor.station_id, sensor])
-    );
-  } catch {
-    return {};
-  }
-}
-
-function radarRiskToLevel(status) {
-  if (status === "ALERTA") return "ALERTA";
-  if (status === "ATENCAO") return "ATENCAO";
-  return "NORMAL";
 }
 
 // ANA HidroWeb — nível real via Supabase Edge Function.
@@ -425,38 +397,26 @@ export default function SentinelaRS() {
     const results = {};
     const newAlerts = [];
     const cemadenByCityId = await fetchCemadenAccumulations();
-    const lagoaRadarByStationId = await fetchLagoaRadarLevels();
 
     for (const st of STATIONS) {
       try {
         const weather = await fetchWeather14Days(st.lat, st.lon);
         let realLevel = null;
         if (st.anaCode) realLevel = await fetchAnaLevel(st.anaCode);
-        const radarLevel = lagoaRadarByStationId[st.id] || null;
         const inmet = st.ibgeCode ? await fetchInmetForecast(st.ibgeCode) : null;
         const cemaden = cemadenByCityId[st.id] || null;
         const precip  = weather.daily?.precipitation_sum?.reduce((a,b)=>a+b,0)||0;
         const tempMin  = Math.min(...(weather.daily?.temperature_2m_min||[20]));
         const windMax  = Math.max(...(weather.daily?.windspeed_10m_max||[0]));
-
-        // Nível real disponível: prioriza RADAR da Lagoa quando houver sensor validado.
-        // ANA permanece como fonte complementar/parcial.
+        // lagoa.atual: só dado real ANA — nunca simulado
+        // lagoa.projetado: removido (fórmula empírica sem base hidrológica)
         const lagoa = st.type==="lagoa" ? {
-          atual: radarLevel?.level_m ?? realLevel,
-          isReal: Boolean(radarLevel?.level_m ?? realLevel),
-          source: radarLevel ? "RADAR" : (realLevel !== null ? "ANA" : null),
-          radar: radarLevel,
-          anaLevel: realLevel,
-          threshold_m: radarLevel?.threshold_m ?? null,
-          levelStatus: radarLevel?.status ?? "SEM_LIMIAR",
+          atual:  realLevel, // null quando ANA indisponível — exibido como "–"
+          isReal: realLevel !== null,
         } : null;
-
-        // Não usa limiar único de 0,8m. Risco de nível só entra quando a fonte traz limiar próprio validado.
-        const baseRisk = getRiskLevel(precip, tempMin, windMax, null);
-        const levelRisk = lagoa?.radar ? radarRiskToLevel(lagoa.levelStatus) : "NORMAL";
-        const order = ["NORMAL","ATENCAO","ALERTA","EMERGENCIA","CRITICO"];
-        const risk = order.indexOf(levelRisk) > order.indexOf(baseRisk) ? levelRisk : baseRisk;
-        results[st.id] = { weather, inmet, cemaden, lagoa, precip, tempMin, windMax, risk, realLevel, radarLevel };
+        // Risco da lagoa só entra no score quando há dado real
+        const risk = getRiskLevel(precip, tempMin, windMax, lagoa?.isReal ? lagoa.atual : null);
+        results[st.id] = { weather, inmet, cemaden, lagoa, precip, tempMin, windMax, risk, realLevel };
         // Só ALERTA, EMERGÊNCIA e CRÍTICO entram na aba Alertas.
         // ATENÇÃO permanece visível no card, mas não infla o contador de alertas ativos.
         if (["ALERTA", "EMERGENCIA", "CRITICO"].includes(risk)) {
@@ -464,7 +424,7 @@ export default function SentinelaRS() {
           if (precip>80) parts.push(`chuva ${precip.toFixed(0)}mm/14d`);
           if (tempMin<5) parts.push(`temp. mín. ${tempMin.toFixed(1)}°C`);
           if (windMax>50) parts.push(`rajadas ${windMax.toFixed(0)}km/h`);
-          if (lagoa?.radar && lagoa.levelStatus === "ALERTA") parts.push(`lagoa ${lagoa.atual.toFixed(2)}m / limiar ${lagoa.threshold_m.toFixed(2)}m (RADAR)`);
+          if (lagoa?.isReal && lagoa.atual>0.8) parts.push(`lagoa ${lagoa.atual.toFixed(2)}m (ANA)`);
           newAlerts.push({ id:`${st.id}_${Date.now()}`, station:st.name, risk_level:risk, message:parts.join(" · ")||"Parâmetros acima do normal", at:new Date(), official:false });
         }
       } catch { results[st.id]={ error:true, risk:"NORMAL" }; }
@@ -1250,7 +1210,7 @@ export default function SentinelaRS() {
         )}
 
         <div style={{ marginTop:28, borderTop:`1px solid ${t.border}`, paddingTop:12, display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:6 }}>
-          <div style={{ fontSize:9, color:t.textFaint }}>SENTINELA·RS v2.2 · Open-Meteo + INMET + CEMADEN + Lagoa RADAR + ANA HidroWeb + NOAA ENSO + INPE + Copernicus · Fonte CEMADEN: {CEMADEN_ATTRIBUTION}</div>
+          <div style={{ fontSize:9, color:t.textFaint }}>SENTINELA·RS v2.2 · Open-Meteo + INMET + CEMADEN + ANA HidroWeb + NOAA ENSO + INPE + Copernicus · Fonte CEMADEN: {CEMADEN_ATTRIBUTION}</div>
           <div style={{ fontSize:9, color:t.textFaint }}>Atualização: 30 min · PWA · github.com/cobradeca/sentinela-rs</div>
         </div>
       </div>

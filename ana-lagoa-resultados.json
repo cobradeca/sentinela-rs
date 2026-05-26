@@ -1,0 +1,86 @@
+[
+  {
+    "regiao": "Rio Grande / Regatas",
+    "codigo": "87980000",
+    "periodo": "3 dias",
+    "status": "SEM_DADOS_NO_PERIODO",
+    "erro": "Sem dados para esta estação (Código: 87980000) no período solicitado!"
+  },
+  {
+    "regiao": "Rio Grande / Regatas",
+    "codigo": "87980000",
+    "periodo": "maio 2026",
+    "status": "SEM_DADOS_NO_PERIODO",
+    "erro": "Sem dados para esta estação (Código: 87980000) no período solicitado!"
+  },
+  {
+    "regiao": "Pelotas / Laranjal",
+    "codigo": "87955000",
+    "periodo": "3 dias",
+    "status": "SEM_DADOS_NO_PERIODO",
+    "erro": "Sem dados para esta estação (Código: 87955000) no período solicitado!"
+  },
+  {
+    "regiao": "Pelotas / Laranjal",
+    "codigo": "87955000",
+    "periodo": "maio 2026",
+    "status": "SEM_DADOS_NO_PERIODO",
+    "erro": "Sem dados para esta estação (Código: 87955000) no período solicitado!"
+  },
+  {
+    "regiao": "Arambaré",
+    "codigo": "87540000",
+    "periodo": "3 dias",
+    "status": "SEM_DADOS_NO_PERIODO",
+    "erro": "Sem dados para esta estação (Código: 87540000) no período solicitado!"
+  },
+  {
+    "regiao": "Arambaré",
+    "codigo": "87540000",
+    "periodo": "maio 2026",
+    "status": "SEM_DADOS_NO_PERIODO",
+    "erro": "Sem dados para esta estação (Código: 87540000) no período solicitado!"
+  },
+  {
+    "regiao": "São Lourenço do Sul",
+    "codigo": "87921000",
+    "periodo": "3 dias",
+    "status": "SEM_DADOS_NO_PERIODO",
+    "erro": "Sem dados para esta estação (Código: 87921000) no período solicitado!"
+  },
+  {
+    "regiao": "São Lourenço do Sul",
+    "codigo": "87921000",
+    "periodo": "maio 2026",
+    "status": "SEM_DADOS_NO_PERIODO",
+    "erro": "Sem dados para esta estação (Código: 87921000) no período solicitado!"
+  },
+  {
+    "regiao": "Sul POA / Guaíba",
+    "codigo": "87450004",
+    "periodo": "3 dias",
+    "status": "VALIDA_COM_NIVEL",
+    "quantidade": 41,
+    "ultimo": {
+      "codEstacao": "87450004",
+      "dataHora": "2026-05-26 19:00:00",
+      "nivel_cm": 115,
+      "nivel_m": 1.15,
+      "chuva": null
+    }
+  },
+  {
+    "regiao": "Sul POA / Guaíba",
+    "codigo": "87450004",
+    "periodo": "maio 2026",
+    "status": "VALIDA_COM_NIVEL",
+    "quantidade": 437,
+    "ultimo": {
+      "codEstacao": "87450004",
+      "dataHora": "2026-05-26 19:00:00",
+      "nivel_cm": 115,
+      "nivel_m": 1.15,
+      "chuva": null
+    }
+  }
+]
