@@ -47,7 +47,6 @@ const dayNames = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
 
 const DEFESA_CIVIL_RS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/defesa-civil-rs";
 const INMET_FORECAST_BASE_URL = "https://apiprevmet3.inmet.gov.br/previsao";
-const CEMADEN_RS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/cemaden-rs";
 
 // ENSO — dados reais NOAA/IRI mai 2026
 // ⚠ Estes valores são ESTÁTICOS — publicados pelo NOAA/IRI em mai/2026.
@@ -156,38 +155,6 @@ async function fetchQueimadas() {
   } catch { return null; }
 }
 
-
-
-// CEMADEN — chuva observada por acumulados recentes.
-// O token fica no Supabase Secret CEMADEN_PED_TOKEN, nunca no App.jsx.
-async function fetchCemadenAccumulations() {
-  try {
-    const res = await fetch(CEMADEN_RS_FUNCTION_URL, { signal: AbortSignal.timeout(15000) });
-    if (!res.ok) return {};
-
-    const data = await res.json();
-    if (!data?.ok || !Array.isArray(data.cities)) return {};
-
-    return Object.fromEntries(
-      data.cities
-        .filter((city) => city?.ok && city?.city_id)
-        .map((city) => [city.city_id, city])
-    );
-  } catch {
-    return {};
-  }
-}
-
-function formatCemadenRain(cemaden) {
-  if (!cemaden) return "";
-  const acc24 = typeof cemaden.max_acc24hr === "number" ? cemaden.max_acc24hr : null;
-  const acc6 = typeof cemaden.max_acc6hr === "number" ? cemaden.max_acc6hr : null;
-
-  if (acc24 !== null) return `chuva observada 24h ${acc24.toFixed(1)}mm`;
-  if (acc6 !== null) return `chuva observada 6h ${acc6.toFixed(1)}mm`;
-
-  return "chuva observada disponível";
-}
 
 // INMET — previsão oficial por município.
 // Endpoint validado no navegador: apiprevmet3.inmet.gov.br/previsao/{codigo_ibge}
@@ -384,15 +351,12 @@ export default function SentinelaRS() {
     setLoading(true);
     const results = {};
     const newAlerts = [];
-    const cemadenByCityId = await fetchCemadenAccumulations();
-
     for (const st of STATIONS) {
       try {
         const weather = await fetchWeather14Days(st.lat, st.lon);
         let realLevel = null;
         if (st.anaCode) realLevel = await fetchAnaLevel(st.anaCode);
         const inmet = st.ibgeCode ? await fetchInmetForecast(st.ibgeCode) : null;
-        const cemaden = cemadenByCityId[st.id] || null;
         const precip  = weather.daily?.precipitation_sum?.reduce((a,b)=>a+b,0)||0;
         const tempMin  = Math.min(...(weather.daily?.temperature_2m_min||[20]));
         const windMax  = Math.max(...(weather.daily?.windspeed_10m_max||[0]));
@@ -404,7 +368,7 @@ export default function SentinelaRS() {
         } : null;
         // Risco da lagoa só entra no score quando há dado real
         const risk = getRiskLevel(precip, tempMin, windMax, lagoa?.isReal ? lagoa.atual : null);
-        results[st.id] = { weather, inmet, cemaden, lagoa, precip, tempMin, windMax, risk, realLevel };
+        results[st.id] = { weather, inmet, lagoa, precip, tempMin, windMax, risk, realLevel };
         // Só ALERTA, EMERGÊNCIA e CRÍTICO entram na aba Alertas.
         // ATENÇÃO permanece visível no card, mas não infla o contador de alertas ativos.
         if (["ALERTA", "EMERGENCIA", "CRITICO"].includes(risk)) {
@@ -630,11 +594,6 @@ export default function SentinelaRS() {
                       {d.inmet && (
                         <div style={{ fontSize:8, color:t.accent, marginTop:3 }}>
                           ● INMET: {d.inmet.resumo}
-                        </div>
-                      )}
-                      {d.cemaden && (
-                        <div style={{ fontSize:8, color:"#22c55e", marginTop:3 }}>
-                          ● CEMADEN: {formatCemadenRain(d.cemaden)}
                         </div>
                       )}
                     </div>
@@ -1176,7 +1135,7 @@ export default function SentinelaRS() {
               { n:"INMET",                     st:"ATIVO",     c:"#22c55e", d:"Previsão oficial por município via apiprevmet3.inmet.gov.br/previsao/{codigo_ibge}. Conectado diretamente no navegador.", a:"API pública, sem chave", h:"Endpoint validado: https://apiprevmet3.inmet.gov.br/previsao/4315602" },
               { n:"CPTEC/INPE",                st:"PLANEJADO", c:"#eab308", d:"Previsão climática sazonal, boletins ENSO oficiais BR.",           a:"API pública", h:"1. servicos.cptec.inpe.br/XML/cidade/{id}/previsao.xml\n2. Proxy via Supabase Edge Function (CORS)" },
               { n:"Defesa Civil RS",           st:"ATIVO",     c:"#22c55e", d:"Avisos oficiais via RSS da Defesa Civil do Rio Grande do Sul, consumidos por Supabase Edge Function para evitar bloqueio CORS.", a:"RSS oficial via proxy", h:"Endpoint ativo: https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/defesa-civil-rs" },
-              { n:"CEMADEN",                   st:"ATIVO",     c:"#22c55e", d:"Chuva observada por acumulados recentes das PCDs CEMADEN, via Supabase Edge Function com token protegido.", a:"Token PED via Supabase Secret", h:"Endpoint ativo: https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/cemaden-rs" },
+              { n:"CEMADEN",                   st:"PLANEJADO", c:"#eab308", d:"Municípios em risco: deslizamentos, enchentes, estiagem.",          a:"API pública", h:"1. cemaden.gov.br → API\n2. Filtrar estado RS (cod 43)" },
               { n:"Copernicus Emergency (EU)", st:"FUTURO",    c:"#8b5cf6", d:"Sentinel-1 SAR para detecção de alagamentos.",                     a:"Registro gratuito", h:"1. dataspace.copernicus.eu → cadastro\n2. API STAC Sentinel-1" },
             ].map(api=>(
               <div key={api.n} style={{ background:t.cardBg, border:`1px solid ${t.border}`, borderRadius:5, overflow:"hidden", boxShadow:t.shadowCard }}>
@@ -1198,7 +1157,7 @@ export default function SentinelaRS() {
         )}
 
         <div style={{ marginTop:28, borderTop:`1px solid ${t.border}`, paddingTop:12, display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:6 }}>
-          <div style={{ fontSize:9, color:t.textFaint }}>SENTINELA·RS v2.2 · Open-Meteo + INMET + CEMADEN + ANA HidroWeb + NOAA ENSO + INPE + Copernicus</div>
+          <div style={{ fontSize:9, color:t.textFaint }}>SENTINELA·RS v2.2 · Open-Meteo + ANA HidroWeb + NOAA ENSO + INPE + Copernicus</div>
           <div style={{ fontSize:9, color:t.textFaint }}>Atualização: 30 min · PWA · github.com/cobradeca/sentinela-rs</div>
         </div>
       </div>

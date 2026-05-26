@@ -11,6 +11,22 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, OPTIONS",
 };
 
+const MONTHS_PT: Record<string, number> = {
+  janeiro: 1,
+  fevereiro: 2,
+  marco: 3,
+  março: 3,
+  abril: 4,
+  maio: 5,
+  junho: 6,
+  julho: 7,
+  agosto: 8,
+  setembro: 9,
+  outubro: 10,
+  novembro: 11,
+  dezembro: 12,
+};
+
 function decodeEntities(value: string): string {
   return value
     .replace(/<!\[CDATA\[/g, "")
@@ -40,49 +56,91 @@ function extractEnclosure(xml: string): string | null {
 function classifyAlert(title: string, description: string): "CRITICO" | "EMERGENCIA" | "ALERTA" | "ATENCAO" {
   const text = `${title} ${description}`.toUpperCase();
 
-  if (
-    text.includes("EMERGÊNCIA") ||
-    text.includes("EMERGENCIA") ||
-    text.includes("RISCO EXTREMO")
-  ) {
+  if (text.includes("RISCO EXTREMO") || text.includes("EMERGÊNCIA METEOROLÓGICA") || text.includes("EMERGENCIA METEOROLOGICA")) {
     return "EMERGENCIA";
   }
 
-  if (text.includes("CRÍTICO") || text.includes("CRITICO")) {
+  if (text.includes("RISCO MUITO ALTO") || text.includes("CRÍTICO") || text.includes("CRITICO")) {
     return "CRITICO";
   }
 
-  if (text.includes("ALERTA") || text.includes("RISCO ALTO")) {
+  if (text.includes("CONDIÇÃO DE ALERTA") || text.includes("CONDICAO DE ALERTA") || text.includes("RISCO ALTO") || text.includes("ALERTA")) {
     return "ALERTA";
   }
 
   return "ATENCAO";
 }
 
+function parseValidUntil(description: string, referenceDate: Date): string | null {
+  const text = description.normalize("NFC");
+
+  const match = text.match(/v[aá]lido\s+at[eé]\s*(?:as|às)?\s*(\d{1,2})h(?:(\d{2}))?\s+do\s+dia\s+(\d{1,2})\s+de\s+([a-zçãé]+)(?:\s+de\s+(\d{4}))?/i);
+
+  if (!match) return null;
+
+  const hour = Number(match[1]);
+  const minute = match[2] ? Number(match[2]) : 0;
+  const day = Number(match[3]);
+  const monthName = match[4].toLowerCase();
+  const month = MONTHS_PT[monthName];
+
+  if (!month) return null;
+
+  const year = match[5] ? Number(match[5]) : referenceDate.getUTCFullYear();
+  const iso = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00-03:00`;
+
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+
+  return date.toISOString();
+}
+
+function isEssentialActiveAlert(title: string, description: string, validUntil: string | null, now: Date): boolean {
+  const text = `${title} ${description}`.toUpperCase();
+
+  const isAlert =
+    text.includes("CONDIÇÃO DE ALERTA") ||
+    text.includes("CONDICAO DE ALERTA") ||
+    text.includes("RISCO ALTO") ||
+    text.includes("RISCO MUITO ALTO") ||
+    text.includes("RISCO EXTREMO");
+
+  if (!isAlert) return false;
+  if (!validUntil) return false;
+
+  return new Date(validUntil).getTime() > now.getTime();
+}
+
 function parseRss(xml: string) {
+  const now = new Date();
   const items = xml.match(/<item>[\s\S]*?<\/item>/gi) || [];
 
-  return items.slice(0, 20).map((item, index) => {
-    const title = extractTag(item, "title") || "Alerta Defesa Civil RS";
-    const link = extractTag(item, "link") || "https://www.defesacivil.rs.gov.br/";
-    const description = extractTag(item, "description") || "";
-    const date = extractTag(item, "dc:date") || extractTag(item, "pubDate") || null;
-    const image = extractEnclosure(item);
-    const risk_level = classifyAlert(title, description);
+  return items
+    .map((item, index) => {
+      const title = extractTag(item, "title") || "Alerta Defesa Civil RS";
+      const link = extractTag(item, "link") || "https://www.defesacivil.rs.gov.br/";
+      const description = extractTag(item, "description") || "";
+      const date = extractTag(item, "dc:date") || extractTag(item, "pubDate") || null;
+      const image = extractEnclosure(item);
+      const validUntil = parseValidUntil(description, date ? new Date(date) : now);
+      const risk_level = classifyAlert(title, description);
 
-    return {
-      id: `defesa_civil_rs_${date || index}`,
-      source: "Defesa Civil RS",
-      official: true,
-      risk_level,
-      title,
-      station: "Defesa Civil RS",
-      message: description,
-      link,
-      image,
-      at: date || new Date().toISOString(),
-    };
-  });
+      return {
+        id: `defesa_civil_rs_${date || index}`,
+        source: "Defesa Civil RS",
+        official: true,
+        risk_level,
+        title,
+        station: "Defesa Civil RS",
+        message: description,
+        link,
+        image,
+        at: date || now.toISOString(),
+        valid_until: validUntil,
+      };
+    })
+    .filter((alert) => isEssentialActiveAlert(alert.title, alert.message, alert.valid_until, now))
+    .slice(0, 20);
 }
 
 async function fetchRssWithFallbacks() {
@@ -156,6 +214,7 @@ Deno.serve(async (req) => {
       source: "Defesa Civil RS",
       source_url: usedUrl,
       fetched_at: new Date().toISOString(),
+      mode: "essential_active_only",
       count: alerts.length,
       alerts,
     }), {
