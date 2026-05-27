@@ -69,7 +69,6 @@ const endpoints = [
   ["CPTEC/INPE", `https://${PROJECT_REF}.supabase.co/functions/v1/cptec-inpe-produtos`, (d) => d.ok && (Array.isArray(d.products) || typeof d.available === "number"), "Contexto oficial: produtos gráficos"],
   ["Copernicus Health", `https://${PROJECT_REF}.supabase.co/functions/v1/copernicus-health`, (d) => d.status === "AUTH_OK" || d.status === "NOT_CONFIGURED" || d.status === "AUTH_FAILED", "Infraestrutura: auth, não SITREP ainda"],
   ["Copernicus Water", `https://${PROJECT_REF}.supabase.co/functions/v1/copernicus-water?aoi=lagoa_patos&days=30`, (d) => d.ok === true && typeof d.water_percent === "number", "Contexto real: indicador de água por Sentinel-2/NDWI"],
-  ["Copernicus Sentinel-1", `https://${PROJECT_REF}.supabase.co/functions/v1/copernicus-sentinel1-water?aoi=lagoa_patos&days=18`, (d) => (d.ok === true || d.status === "BAIXA_COBERTURA") && typeof d.water_like_percent === "number", "Contexto real: indicador SAR de água/alagamento sob nuvens"],
   ["ANA HidroWeb", `https://${PROJECT_REF}.supabase.co/functions/v1/ana-rs`, (d) => typeof d === "object", "Complementar: pode estar sem leitura validada"],
 ];
 
