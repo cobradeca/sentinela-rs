@@ -1,0 +1,1707 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <meta name="keywords" content="SubSazonal, Sazonal, Modelo Numérico, INPE, CPTEC, Previsão, Forecast, SubSeasonal, Numeric Model, Seasonal">
+    <meta property="og:description" content="Produtos Numéricos gerados mensalmente pelo CPTEC-INPE  para a escala temporal Sazonal.">
+    <meta name="description" content="Produtos Numéricos gerados mensalmente pelo CPTEC-INPE  para a escala temporal Sazonal." />
+    <title>Previsão Sazonal</title>
+    <link rel="icon" href="img/faviconV2.png" type="image/x-icon">
+    <link href="/favicon.ico" rel="shortcut icon" type="image/vnd.microsoft.icon">
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.13.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.1/jquery-ui.js"></script>
+
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous">
+    </script>
+
+    <!-- Css da pagina Sazonal -->
+    <link rel="stylesheet" href="css/style.css" type="text/css" media="all">
+    <link rel="stylesheet" href="css/subsaz.css" type="text/css" media="all">
+     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+    <!-- Fonte Rawline-->
+    <link rel="stylesheet" href="https://cdngovbr-ds.estaleiro.serpro.gov.br/design-system/fonts/rawline/css/rawline.css" />
+    <!-- Fonte Raleway-->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway:300,400,500,600,700,800,900&amp;display=swap" />
+    <!-- Fontawesome-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.min.css" />
+    <script src="https://kit.fontawesome.com/31e35c59a8.js" crossorigin="anonymous"></script>
+    <!-- Design System de Governo-->
+    <link rel="stylesheet" href="css/core.css">
+    <link rel="stylesheet" href="css/master.css">
+    <link rel="stylesheet" href="css/index.css">
+
+
+    <!-- JS da pagina -->
+    <script type="text/javascript">
+      
+    varCampos = [{"sigla_cmp":"anomaly_total","campo_pt":"Combina\u00e7\u00e3o: Anomalia e Total","campo_en":"Combine Anomaly and Total","tipo":"P","selected":0},{"sigla_cmp":"corr","campo_pt":"Correla\u00e7\u00e3o","campo_en":"Correlation","tipo":"V","selected":1},{"sigla_cmp":"msss","campo_pt":"\u00cdndice de Destreza do Erro Quadr\u00e1tico M\u00e9dio","campo_en":"Mean Squared Skill Score","tipo":"V","selected":0},{"sigla_cmp":"pher","campo_pt":"\u00cdndice de Destreza do Erro Quadr\u00e1tico M\u00e9dio (fase)","campo_en":"Mean Squared Skill Score (phase error)","tipo":"V","selected":0},{"sigla_cmp":"aper","campo_pt":"\u00cdndice de Destreza do Erro Quadr\u00e1tico M\u00e9dio (amplitude)","campo_en":"Mean Squared Skill Score (amplitude error)","tipo":"V","selected":0},{"sigla_cmp":"bias","campo_pt":"Vi\u00e9s","campo_en":"Bias","tipo":"V","selected":0},{"sigla_cmp":"anom-tot","campo_pt":"Anomalia e Total","campo_en":"Anomaly and Total","tipo":"P","selected":0},{"sigla_cmp":"anomaly","campo_pt":"Anomalia","campo_en":"Anomaly","tipo":"P","selected":1},{"sigla_cmp":"anom-prob","campo_pt":"Anomalia e Probabilidade de Anomalia Positiva","campo_en":"Anomaly and Positive Anomaly Probability","tipo":"P","selected":0},{"sigla_cmp":"tercile","campo_pt":"Probabilidade do Tercil Mais Prov\u00e1vel","campo_en":"Probability Most Likely Tercile","tipo":"P","selected":0},{"sigla_cmp":"rocarea_uppertercile","campo_pt":"\u00c1rea Sob a Curva ROC (Tercil Superior)","campo_en":"ROC Area (Upper Tercile)","tipo":"V","selected":0},{"sigla_cmp":"rocarea_lowertercile","campo_pt":"\u00c1rea Sob a Curva ROC (Tercil Inferior)","campo_en":"ROC Area (Lower Tercile)","tipo":"V","selected":0},{"sigla_cmp":"rocarea_positiveanom","campo_pt":"\u00c1rea Sob a Curva ROC (Anomalia Positiva ou Negativa)","campo_en":"ROC Area (Positive or negative anomaly)","tipo":"V","selected":0},{"sigla_cmp":"rocdiagram_positiveanom","campo_pt":"Curva ROC (Anomalia Positiva ou Negativa)","campo_en":"ROC Plot (Positive or negative anomaly)","tipo":"V","selected":0},{"sigla_cmp":"rocdiagram_uppertercile","campo_pt":"Curva ROC (Tercil Superior)","campo_en":"ROC Plot (Upper Tercile)","tipo":"V","selected":0},{"sigla_cmp":"rocdiagram_lowertercile","campo_pt":"Curva ROC (Tercil Inferior)","campo_en":"ROC Plot (Lower Tercile)","tipo":"V","selected":0},{"sigla_cmp":"reliabilitydiagram_uppertercile","campo_pt":"Diagrama de Confiabilidade (Tercil Superior)","campo_en":"Reliability Diagram (Upper Tercile)","tipo":"V","selected":0},{"sigla_cmp":"reliabilitydiagram_lowertercile","campo_pt":"Diagrama de Confiabilidade (Tercil Inferior)","campo_en":"Reliability Diagram (Lower Tercile)","tipo":"V","selected":0},{"sigla_cmp":"reliabilitydiagram_positiveanom","campo_pt":"Diagrama de Confiabilidade (Anomalia Positiva ou Negativa)","campo_en":"Reliability Diagram (Positive or negative anomaly)","tipo":"V","selected":0},{"sigla_cmp":"anomalyAval","campo_pt":"Anomalia","campo_en":"Anomaly","tipo":"A","selected":1},{"sigla_cmp":"ensembleAval","campo_pt":"Total","campo_en":"Total","tipo":"A","selected":0},{"sigla_cmp":"categoryAval","campo_pt":"Probabilidade do Tercil Mais Prov\u00e1vel","campo_en":"Probability Most Likely Tercile","tipo":"A","selected":0},{"sigla_cmp":"positiveAval","campo_pt":"Probabilidade de Anomalia Positiva","campo_en":"Positive Anomaly Probability","tipo":"A","selected":0}]
+    varCamposPython = [{"sigla_py":"anomalies","campo_pt":"Anomalia","campo_en":"Anomaly and Total","tipo":"P","selected":1},{"sigla_py":"prob_positve_anomaly","campo_pt":"Probabilidade de Anomalia Positiva","campo_en":"Positive Anomaly Probability","tipo":"P","selected":0},{"sigla_py":"prob_terciles","campo_pt":"Probabilidade do Tercil Mais Prov\u00e1vel","campo_en":"Probability Most Likely Tercile","tipo":"P","selected":0},{"sigla_py":"totals","campo_pt":"Total","campo_en":"Total","tipo":"P","selected":0}]
+    varPagina = {"hd_title_pt":"Previs\u00e3o Sazonal","hd_title_en":"Seasonal Forecast","previsao_pt":"Previs\u00e3o","previsao_en":"Forecasts","avaliacao_pt":"Avalia\u00e7\u00e3o","avaliacao_en":"Comparison","verificacao_pt":"Verifica\u00e7\u00e3o","verificacao_en":"Verification","documentacao_pt":"Documenta\u00e7\u00e3o","documentacao_en":"Documentation","regiao_pt":"Regi\u00f5es","regiao_en":"Regions","variavel_pt":"Vari\u00e1veis","variavel_en":"Variables","campo_pt":"Campos","campo_en":"Map Type","produto_pt":"Produtos","produto_en":"Time range","data_ini_pt":"Data Inicializa\u00e7\u00e3o","data_ini_en":"Date Issued","campo_ver_pt":"Campos","campo_ver_en":"Verification product","data_ver_pt":"M\u00eas verifica\u00e7\u00e3o","data_ver_en":"Verifying month","filtro_mes_pt":"M\u00eas","filtro_mes_en":"Month","filtro_ano_pt":"Ano","filtro_ano_en":"Year","python_api_pt":"Instru\u00e7\u00f5es API","python_api_en":"API Instructions","python_info_pt":"Informa\u00e7\u00f5es adicionais sobre a instala\u00e7\u00e3o, como utilizar e exemplos","python_info_en":"Additional information about the installation, how to use it, and examples","python_code_pt":"C\u00f3digo Python","python_code_en":"Python code","python_var_tipo_pt":"Tipo da Vari\u00e1vel","python_var_tipo_en":"Variable Type"}
+    varRegioes = [{"sigla":"gl","regiao_pt":"Global","regiao_en":"Global","selected":0},{"sigla":"se","regiao_pt":"Hemisf\u00e9rio Sul","regiao_en":"Southern Extratropics","selected":0},{"sigla":"ne","regiao_pt":"Hemisf\u00e9rio Norte","regiao_en":"Northern  Extratropics","selected":0},{"sigla":"tr","regiao_pt":"Regi\u00e3o Tropical","regiao_en":"Tropics","selected":0},{"sigla":"as","regiao_pt":"Am\u00e9rica do Sul","regiao_en":"South America","selected":1},{"sigla":"an","regiao_pt":"Am\u00e9rica do Norte","regiao_en":"North America","selected":0},{"sigla":"af","regiao_pt":"\u00c1frica","regiao_en":"Africa","selected":0},{"sigla":"aa","regiao_pt":"Asia","regiao_en":"Asia","selected":0},{"sigla":"au","regiao_pt":"Austr\u00e1lia","regiao_en":"Oceania","selected":0},{"sigla":"pa","regiao_pt":"Oceano Pac\u00edfico ","regiao_en":"Pacific Ocean","selected":0},{"sigla":"am","regiao_pt":"Amaz\u00f4nia","regiao_en":"Amazon","selected":0},{"sigla":"eu","regiao_pt":"Europa","regiao_en":"Europe","selected":0}]
+    varProdutos = [{"sigla":"mnth","produto_pt":"Mensal","produto_en":"Monthly","selected":0},{"sigla":"seas","produto_pt":"Trimestral","produto_en":"Seasonal","selected":1}]   
+
+    var pathIMG = 'http://s0.cptec.inpe.br/clima/modelos/BAM-1.2_products/figures/';
+
+    var mes = "APR"   
+
+    var selectedAval = "20260101"  
+
+    function getRegiaoIni() {
+                                                                                             regiaoIni=String("as");
+                                                                                                                                  
+      return(regiaoIni);
+    }
+
+    function getProdutoIni() {
+                                             produtoIni=String("seas");
+                  
+      return(produtoIni);
+    }
+
+    function getVariavelPrevisaoIni() {
+                    
+                                     variavelIni=String("prec");
+                        
+                                      
+                                      
+                                      
+                                      
+                                      
+                                      
+                                      
+                                      
+                                      
+                                      
+                                      
+                                      
+                                      
+                                      
+                                      
+                                      
+                                      
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+        
+      return(variavelIni);
+    }
+
+    function getVariavelVerificacaoIni() {
+                                     varVerificacaoIni=String("prec");
+                          
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                                        
+                                        
+                      
+                      
+                                        
+        
+      return(varVerificacaoIni);
+    }
+
+    function getVariavelAvaliacaoIni() {
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                                     varAvaliacaoIni=String("prec");
+                          
+                                        
+                      
+                      
+                                        
+                                        
+                      
+        
+      return(varAvaliacaoIni);
+    }
+
+    function getCampoPrevisaoIni() {
+                                      
+                    
+                    
+                    
+                    
+                    
+                                      
+                                     campoIni=String("anomaly");
+                        
+                                      
+                                      
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+        
+      return(campoIni);
+    }
+
+    function getCampoVerificacaoIni() {
+                      
+                                     campoVerificacaoIni=String("corr");
+                          
+                                        
+                                        
+                                        
+                                        
+                      
+                      
+                      
+                      
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                      
+                      
+                      
+                      
+        
+      return(campoVerificacaoIni);
+    }
+
+    function getCampoAvaliacaoIni() {
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                                     campoAvaliacaoIni=String("anomalyAval");
+                          
+                                        
+                                        
+                                        
+        
+      return(campoAvaliacaoIni);
+    }
+
+    ultima_rodada = "20260501"
+    ultima_observada = "20260401"
+    function getDataIni() {
+      
+   // var dataIni = anoSys+mesSys+diaSys+"00";
+      //var dataIni = "2022060800";
+      return(ultima_rodada+"00");
+
+    } 
+
+
+    function getDataObsIni() {
+
+      return(ultima_observada+"00");
+
+    }
+
+
+arrVariaveisCampos = [{"sigla_variavel":"cr20","sigla_campo":"anomaly_total","qt_figuras":2,"sigla_fig1":"anomaly","sigla_fig2":"ensemble"},{"sigla_variavel":"cr85","sigla_campo":"anomaly_total","qt_figuras":2,"sigla_fig1":"anomaly","sigla_fig2":"ensemble"},{"sigla_variavel":"prec","sigla_campo":"anomaly","qt_figuras":1,"sigla_fig1":"anomaly","sigla_fig2":"ensemble"},{"sigla_variavel":"prec","sigla_campo":"anomalyAval","qt_figuras":2,"sigla_fig1":"anomaly","sigla_fig2":"anomaly"},{"sigla_variavel":"prec","sigla_campo":"aper","qt_figuras":1,"sigla_fig1":"anomaly_prec","sigla_fig2":""},{"sigla_variavel":"prec","sigla_campo":"bias","qt_figuras":1,"sigla_fig1":"total_prec","sigla_fig2":""},{"sigla_variavel":"prec","sigla_campo":"cnbs","qt_figuras":1,"sigla_fig1":"anomaly_prec","sigla_fig2":""},{"sigla_variavel":"prec","sigla_campo":"corr","qt_figuras":1,"sigla_fig1":"anomaly_prec","sigla_fig2":""},{"sigla_variavel":"prec","sigla_campo":"msss","qt_figuras":1,"sigla_fig1":"anomaly_prec","sigla_fig2":""},{"sigla_variavel":"prec","sigla_campo":"pher","qt_figuras":1,"sigla_fig1":"anomaly_prec","sigla_fig2":""},{"sigla_variavel":"prec","sigla_campo":"reliabilitydiagram_lowertercile","qt_figuras":1,"sigla_fig1":"prec","sigla_fig2":""},{"sigla_variavel":"prec","sigla_campo":"reliabilitydiagram_positiveanom","qt_figuras":1,"sigla_fig1":"prec","sigla_fig2":""},{"sigla_variavel":"prec","sigla_campo":"reliabilitydiagram_uppertercile","qt_figuras":1,"sigla_fig1":"prec","sigla_fig2":""},{"sigla_variavel":"prec","sigla_campo":"rmse","qt_figuras":1,"sigla_fig1":"anomaly_prec","sigla_fig2":""},{"sigla_variavel":"prec","sigla_campo":"rocarea_lowertercile","qt_figuras":1,"sigla_fig1":"prec","sigla_fig2":""},{"sigla_variavel":"prec","sigla_campo":"rocarea_positiveanom","qt_figuras":1,"sigla_fig1":"prec","sigla_fig2":""},{"sigla_variavel":"prec","sigla_campo":"rocarea_uppertercile","qt_figuras":1,"sigla_fig1":"prec","sigla_fig2":""},{"sigla_variavel":"prec","sigla_campo":"rocdiagram_lowertercile","qt_figuras":1,"sigla_fig1":"prec","sigla_fig2":""},{"sigla_variavel":"prec","sigla_campo":"rocdiagram_positiveanom","qt_figuras":1,"sigla_fig1":"prec","sigla_fig2":""},{"sigla_variavel":"prec","sigla_campo":"rocdiagram_uppertercile","qt_figuras":1,"sigla_fig1":"prec","sigla_fig2":""},{"sigla_variavel":"prec","sigla_campo":"unbs","qt_figuras":1,"sigla_fig1":"anomaly_prec","sigla_fig2":""},{"sigla_variavel":"prec_ca","sigla_campo":"anomalyAval","qt_figuras":2,"sigla_fig1":"anomaly","sigla_fig2":"anomaly"},{"sigla_variavel":"prec_ca","sigla_campo":"anom-prob","qt_figuras":2,"sigla_fig1":"anomaly","sigla_fig2":"probability_positive"},{"sigla_variavel":"prec_ca","sigla_campo":"anom-tot","qt_figuras":2,"sigla_fig1":"anomaly","sigla_fig2":"ensemble"},{"sigla_variavel":"prec_ca","sigla_campo":"aper","qt_figuras":1,"sigla_fig1":"anomaly_prec_ca","sigla_fig2":""},{"sigla_variavel":"prec_ca","sigla_campo":"bias","qt_figuras":1,"sigla_fig1":"total_prec_ca","sigla_fig2":""},{"sigla_variavel":"prec_ca","sigla_campo":"categoryAval","qt_figuras":2,"sigla_fig1":"category","sigla_fig2":"probability_tercile"},{"sigla_variavel":"prec_ca","sigla_campo":"cnbs","qt_figuras":1,"sigla_fig1":"anomaly_prec_ca","sigla_fig2":""},{"sigla_variavel":"prec_ca","sigla_campo":"corr","qt_figuras":1,"sigla_fig1":"anomaly_prec_ca","sigla_fig2":""},{"sigla_variavel":"prec_ca","sigla_campo":"ensembleAval","qt_figuras":2,"sigla_fig1":"totals","sigla_fig2":"ensemble"},{"sigla_variavel":"prec_ca","sigla_campo":"msss","qt_figuras":1,"sigla_fig1":"anomaly_prec_ca","sigla_fig2":""},{"sigla_variavel":"prec_ca","sigla_campo":"pher","qt_figuras":1,"sigla_fig1":"anomaly_prec_ca","sigla_fig2":""},{"sigla_variavel":"prec_ca","sigla_campo":"positiveAval","qt_figuras":2,"sigla_fig1":"bin","sigla_fig2":"probability_positive"},{"sigla_variavel":"prec_ca","sigla_campo":"reliabilitydiagram_lowertercile","qt_figuras":1,"sigla_fig1":"prec_ca","sigla_fig2":""},{"sigla_variavel":"prec_ca","sigla_campo":"reliabilitydiagram_positiveanom","qt_figuras":1,"sigla_fig1":"prec_ca","sigla_fig2":""},{"sigla_variavel":"prec_ca","sigla_campo":"reliabilitydiagram_uppertercile","qt_figuras":1,"sigla_fig1":"prec_ca","sigla_fig2":""},{"sigla_variavel":"prec_ca","sigla_campo":"rmse","qt_figuras":1,"sigla_fig1":"anomaly_prec_ca","sigla_fig2":""},{"sigla_variavel":"prec_ca","sigla_campo":"rocarea_lowertercile","qt_figuras":1,"sigla_fig1":"prec_ca","sigla_fig2":""},{"sigla_variavel":"prec_ca","sigla_campo":"rocarea_positiveanom","qt_figuras":1,"sigla_fig1":"prec_ca","sigla_fig2":""},{"sigla_variavel":"prec_ca","sigla_campo":"rocarea_uppertercile","qt_figuras":1,"sigla_fig1":"prec_ca","sigla_fig2":""},{"sigla_variavel":"prec_ca","sigla_campo":"rocdiagram_lowertercile","qt_figuras":1,"sigla_fig1":"prec_ca","sigla_fig2":""},{"sigla_variavel":"prec_ca","sigla_campo":"rocdiagram_positiveanom","qt_figuras":1,"sigla_fig1":"prec_ca","sigla_fig2":""},{"sigla_variavel":"prec_ca","sigla_campo":"rocdiagram_uppertercile","qt_figuras":1,"sigla_fig1":"prec_ca","sigla_fig2":""},{"sigla_variavel":"prec_ca","sigla_campo":"tercile","qt_figuras":1,"sigla_fig1":"probability_tercile","sigla_fig2":"ensemble"},{"sigla_variavel":"prec_ca","sigla_campo":"unbs","qt_figuras":1,"sigla_fig1":"anomaly_prec_ca","sigla_fig2":""},{"sigla_variavel":"psnm","sigla_campo":"anomaly_total","qt_figuras":1,"sigla_fig1":"anomaly_total","sigla_fig2":"ensemble"},{"sigla_variavel":"role","sigla_campo":"anomaly","qt_figuras":1,"sigla_fig1":"anomaly","sigla_fig2":"ensemble"},{"sigla_variavel":"t2mt","sigla_campo":"anomaly","qt_figuras":1,"sigla_fig1":"anomaly","sigla_fig2":"ensemble"},{"sigla_variavel":"t2mt","sigla_campo":"anomalyAval","qt_figuras":2,"sigla_fig1":"anomaly","sigla_fig2":"anomaly"},{"sigla_variavel":"t2mt","sigla_campo":"aper","qt_figuras":1,"sigla_fig1":"anomaly_t2mt","sigla_fig2":""},{"sigla_variavel":"t2mt","sigla_campo":"bias","qt_figuras":1,"sigla_fig1":"total_t2mt","sigla_fig2":""},{"sigla_variavel":"t2mt","sigla_campo":"cnbs","qt_figuras":1,"sigla_fig1":"anomaly_t2mt","sigla_fig2":""},{"sigla_variavel":"t2mt","sigla_campo":"corr","qt_figuras":1,"sigla_fig1":"anomaly_t2mt","sigla_fig2":""},{"sigla_variavel":"t2mt","sigla_campo":"msss","qt_figuras":1,"sigla_fig1":"anomaly_t2mt","sigla_fig2":""},{"sigla_variavel":"t2mt","sigla_campo":"pher","qt_figuras":1,"sigla_fig1":"anomaly_t2mt","sigla_fig2":""},{"sigla_variavel":"t2mt","sigla_campo":"reliabilitydiagram_lowertercile","qt_figuras":1,"sigla_fig1":"t2mt","sigla_fig2":""},{"sigla_variavel":"t2mt","sigla_campo":"reliabilitydiagram_positiveanom","qt_figuras":1,"sigla_fig1":"t2mt","sigla_fig2":""},{"sigla_variavel":"t2mt","sigla_campo":"reliabilitydiagram_uppertercile","qt_figuras":1,"sigla_fig1":"t2mt","sigla_fig2":""},{"sigla_variavel":"t2mt","sigla_campo":"rmse","qt_figuras":1,"sigla_fig1":"anomaly_t2mt","sigla_fig2":""},{"sigla_variavel":"t2mt","sigla_campo":"rocarea_lowertercile","qt_figuras":1,"sigla_fig1":"t2mt","sigla_fig2":""},{"sigla_variavel":"t2mt","sigla_campo":"rocarea_positiveanom","qt_figuras":1,"sigla_fig1":"t2mt","sigla_fig2":""},{"sigla_variavel":"t2mt","sigla_campo":"rocarea_uppertercile","qt_figuras":1,"sigla_fig1":"t2mt","sigla_fig2":""},{"sigla_variavel":"t2mt","sigla_campo":"rocdiagram_lowertercile","qt_figuras":1,"sigla_fig1":"t2mt","sigla_fig2":""},{"sigla_variavel":"t2mt","sigla_campo":"rocdiagram_positiveanom","qt_figuras":1,"sigla_fig1":"t2mt","sigla_fig2":""},{"sigla_variavel":"t2mt","sigla_campo":"rocdiagram_uppertercile","qt_figuras":1,"sigla_fig1":"t2mt","sigla_fig2":""},{"sigla_variavel":"t2mt","sigla_campo":"unbs","qt_figuras":1,"sigla_fig1":"anomaly_t2mt","sigla_fig2":""},{"sigla_variavel":"t2mt_ca","sigla_campo":"anomalyAval","qt_figuras":2,"sigla_fig1":"anomaly","sigla_fig2":"anomaly"},{"sigla_variavel":"t2mt_ca","sigla_campo":"anom-prob","qt_figuras":2,"sigla_fig1":"anomaly","sigla_fig2":"probability_positive"},{"sigla_variavel":"t2mt_ca","sigla_campo":"anom-tot","qt_figuras":2,"sigla_fig1":"anomaly","sigla_fig2":"ensemble"},{"sigla_variavel":"t2mt_ca","sigla_campo":"aper","qt_figuras":1,"sigla_fig1":"anomaly_t2mt_ca","sigla_fig2":""},{"sigla_variavel":"t2mt_ca","sigla_campo":"bias","qt_figuras":1,"sigla_fig1":"total_t2mt_ca","sigla_fig2":""},{"sigla_variavel":"t2mt_ca","sigla_campo":"categoryAval","qt_figuras":2,"sigla_fig1":"category","sigla_fig2":"probability_tercile"},{"sigla_variavel":"t2mt_ca","sigla_campo":"cnbs","qt_figuras":1,"sigla_fig1":"anomaly_t2mt_ca","sigla_fig2":""},{"sigla_variavel":"t2mt_ca","sigla_campo":"corr","qt_figuras":1,"sigla_fig1":"anomaly_t2mt_ca","sigla_fig2":""},{"sigla_variavel":"t2mt_ca","sigla_campo":"ensembleAval","qt_figuras":2,"sigla_fig1":"totals","sigla_fig2":"ensemble"},{"sigla_variavel":"t2mt_ca","sigla_campo":"msss","qt_figuras":1,"sigla_fig1":"anomaly_t2mt_ca","sigla_fig2":""},{"sigla_variavel":"t2mt_ca","sigla_campo":"pher","qt_figuras":1,"sigla_fig1":"anomaly_t2mt_ca","sigla_fig2":""},{"sigla_variavel":"t2mt_ca","sigla_campo":"positiveAval","qt_figuras":2,"sigla_fig1":"bin","sigla_fig2":"probability_positive"},{"sigla_variavel":"t2mt_ca","sigla_campo":"reliabilitydiagram_lowertercile","qt_figuras":1,"sigla_fig1":"t2mt_ca","sigla_fig2":""},{"sigla_variavel":"t2mt_ca","sigla_campo":"reliabilitydiagram_positiveanom","qt_figuras":1,"sigla_fig1":"t2mt_ca","sigla_fig2":""},{"sigla_variavel":"t2mt_ca","sigla_campo":"reliabilitydiagram_uppertercile","qt_figuras":1,"sigla_fig1":"t2mt_ca","sigla_fig2":""},{"sigla_variavel":"t2mt_ca","sigla_campo":"rmse","qt_figuras":1,"sigla_fig1":"anomaly_t2mt_ca","sigla_fig2":""},{"sigla_variavel":"t2mt_ca","sigla_campo":"rocarea_lowertercile","qt_figuras":1,"sigla_fig1":"t2mt_ca","sigla_fig2":""},{"sigla_variavel":"t2mt_ca","sigla_campo":"rocarea_positiveanom","qt_figuras":1,"sigla_fig1":"t2mt_ca","sigla_fig2":""},{"sigla_variavel":"t2mt_ca","sigla_campo":"rocarea_uppertercile","qt_figuras":1,"sigla_fig1":"t2mt_ca","sigla_fig2":""},{"sigla_variavel":"t2mt_ca","sigla_campo":"rocdiagram_lowertercile","qt_figuras":1,"sigla_fig1":"t2mt_ca","sigla_fig2":""},{"sigla_variavel":"t2mt_ca","sigla_campo":"rocdiagram_positiveanom","qt_figuras":1,"sigla_fig1":"t2mt_ca","sigla_fig2":""},{"sigla_variavel":"t2mt_ca","sigla_campo":"rocdiagram_uppertercile","qt_figuras":1,"sigla_fig1":"t2mt_ca","sigla_fig2":""},{"sigla_variavel":"t2mt_ca","sigla_campo":"tercile","qt_figuras":1,"sigla_fig1":"probability_tercile","sigla_fig2":"ensemble"},{"sigla_variavel":"t2mt_ca","sigla_campo":"unbs","qt_figuras":1,"sigla_fig1":"anomaly_t2mt_ca","sigla_fig2":""},{"sigla_variavel":"tp85","sigla_campo":"anomaly","qt_figuras":1,"sigla_fig1":"anomaly","sigla_fig2":"ensemble"},{"sigla_variavel":"uv20","sigla_campo":"anomaly","qt_figuras":1,"sigla_fig1":"anomaly","sigla_fig2":"ensemble"},{"sigla_variavel":"uv85","sigla_campo":"anomaly","qt_figuras":1,"sigla_fig1":"anomaly","sigla_fig2":"ensemble"},{"sigla_variavel":"vv20","sigla_campo":"anomaly","qt_figuras":1,"sigla_fig1":"anomaly","sigla_fig2":"ensemble"},{"sigla_variavel":"vv85","sigla_campo":"anomaly","qt_figuras":1,"sigla_fig1":"anomaly","sigla_fig2":"ensemble"},{"sigla_variavel":"zg50","sigla_campo":"anomaly_total","qt_figuras":1,"sigla_fig1":"anomaly_total","sigla_fig2":"ensemble"},{"sigla_variavel":"st20_rw20","sigla_campo":"anomaly_total","qt_figuras":2,"sigla_fig1":"anomaly","sigla_fig2":"total"},{"sigla_variavel":"st85_rw85","sigla_campo":"anomaly_total","qt_figuras":2,"sigla_fig1":"anomaly","sigla_fig2":"total"},{"sigla_variavel":"ch20_dw20","sigla_campo":"anomaly_total","qt_figuras":2,"sigla_fig1":"anomaly","sigla_fig2":"total"},{"sigla_variavel":"ch85_dw85","sigla_campo":"anomaly_total","qt_figuras":2,"sigla_fig1":"anomaly","sigla_fig2":"total"}]
+arrVariaveis = [{"sigla":"prec","variavel_pt":"Precipita\u00e7\u00e3o","variavel_en":"Precipitation","tipo":"V","python":"disable","selected":1},{"sigla":"prec","variavel_pt":"Precipita\u00e7\u00e3o","variavel_en":"Precipitation","tipo":"P","python":"previsao","selected":1},{"sigla":"prec_ca","variavel_pt":"Precipita\u00e7\u00e3o Calibrada","variavel_en":"Calibrated Precipitation","tipo":"P","python":"calibrada","selected":0},{"sigla":"t2mt","variavel_pt":"Temperatura em 2 Metros","variavel_en":"2 Metre Temperature","tipo":"P","python":"previsao","selected":0},{"sigla":"t2mt_ca","variavel_pt":"Temperatura em 2 Metros Calibrada","variavel_en":"Calibrated 2 Metre Temperature","tipo":"P","python":"calibrada","selected":0},{"sigla":"psnm","variavel_pt":"Press\u00e3o ao N\u00edvel do Mar","variavel_en":"Sea Level Pressure","tipo":"P","python":"previsao","selected":0},{"sigla":"role","variavel_pt":"Radia\u00e7\u00e3o de Onda Longa Emergente","variavel_en":"Outgoing Longwave Radiation","tipo":"P","python":"previsao","selected":0},{"sigla":"tp85","variavel_pt":"Temperatura em 850 hPa","variavel_en":"Temperature at 850 hPa","tipo":"P","python":"previsao","selected":0},{"sigla":"zg50","variavel_pt":"Altura Geopotencial em 500 hPa","variavel_en":"Geopotential Height at 500 hPa","tipo":"P","python":"previsao","selected":0},{"sigla":"uv85","variavel_pt":"Vento Zonal em 850 hPa","variavel_en":"Zonal Wind at 850 hPa","tipo":"P","python":"previsao","selected":0},{"sigla":"uv20","variavel_pt":"Vento Zonal em 200 hPa","variavel_en":"Zonal Wind at 200 hPa","tipo":"P","python":"previsao","selected":0},{"sigla":"vv85","variavel_pt":"Vento Meridional em 850 hPa","variavel_en":"Meridional Wind at 850 hPa","tipo":"P","python":"previsao","selected":0},{"sigla":"vv20","variavel_pt":"Vento Meridional em 200 hPa","variavel_en":"Meridional Wind at 200 hPa","tipo":"P","python":"previsao","selected":0},{"sigla":"cr85","variavel_pt":"Circula\u00e7\u00e3o em 850 hPa","variavel_en":"Circulation at 850 hPa","tipo":"P","python":"previsao","selected":0},{"sigla":"cr20","variavel_pt":"Circula\u00e7\u00e3o em 200 hPa","variavel_en":"Circulation at 200 hPa","tipo":"P","python":"previsao","selected":0},{"sigla":"st85_rw85","variavel_pt":"Circula\u00e7\u00e3o Rotacional em 850 hPa","variavel_en":"Rotational Circulation at 850 hPa","tipo":"P","python":"disable","selected":0},{"sigla":"st20_rw20","variavel_pt":"Circula\u00e7\u00e3o Rotacional em 200 hPa","variavel_en":"Rotational Circulation at 200 hPa","tipo":"P","python":"disable","selected":0},{"sigla":"ch85_dw85","variavel_pt":"Circula\u00e7\u00e3o Divergente em 850 hPa","variavel_en":"Divergent Circulation at 850 hPa","tipo":"P","python":"disable","selected":0},{"sigla":"ch20_dw20","variavel_pt":"Circula\u00e7\u00e3o Divergente em 200 hPa","variavel_en":"Divergent Circulation at 200 hPa","tipo":"P","python":"disable","selected":0},{"sigla":"prec","variavel_pt":"Precipita\u00e7\u00e3o","variavel_en":"Precipitation","tipo":"A","python":"disable","selected":1},{"sigla":"prec_ca","variavel_pt":"Precipita\u00e7\u00e3o Calibrada","variavel_en":"Calibrated Precipitation","tipo":"A","python":"disable","selected":0},{"sigla":"prec_ca","variavel_pt":"Precipita\u00e7\u00e3o Calibrada","variavel_en":"Calibrated Precipitation","tipo":"V","python":"disable","selected":0},{"sigla":"t2mt","variavel_pt":"Temperatura em 2 Metros","variavel_en":"2 Metre Temperature","tipo":"V","python":"disable","selected":0},{"sigla":"t2mt","variavel_pt":"Temperatura em 2 Metros","variavel_en":"2 Metre Temperature","tipo":"A","python":"disable","selected":0},{"sigla":"t2mt_ca","variavel_pt":"Temperatura em 2 Metros Calibrada","variavel_en":"Calibrated 2 Metre Temperature","tipo":"A","python":"disable","selected":0},{"sigla":"t2mt_ca","variavel_pt":"Temperatura em 2 Metros Calibrada","variavel_en":"Calibrated 2 Metre Temperature","tipo":"V","python":"disable","selected":0}]//console.log(getArrayVariavelCampo("prec"));
+
+arrRodadas = [{"valor":"20240101","rodada":"2024-01","selected":"1"},{"valor":"20240201","rodada":"2024-02","selected":"1"},{"valor":"20240301","rodada":"2024-03","selected":"1"},{"valor":"20240401","rodada":"2024-04","selected":"1"},{"valor":"20240501","rodada":"2024-05","selected":"1"},{"valor":"20240601","rodada":"2024-06","selected":"1"},{"valor":"20240701","rodada":"2024-07","selected":"1"},{"valor":"20240801","rodada":"2024-08","selected":"1"},{"valor":"20240901","rodada":"2024-09","selected":"1"},{"valor":"20241001","rodada":"2024-10","selected":"1"},{"valor":"20241101","rodada":"2024-11","selected":"1"},{"valor":"20241201","rodada":"2024-12","selected":"1"},{"valor":"20250101","rodada":"2025-01","selected":"1"},{"valor":"20250201","rodada":"2025-02","selected":"1"},{"valor":"20250301","rodada":"2025-03","selected":"1"},{"valor":"20250401","rodada":"2025-04","selected":"1"},{"valor":"20250501","rodada":"2025-05","selected":"1"},{"valor":"20250601","rodada":"2025-06","selected":"1"},{"valor":"20250701","rodada":"2025-07","selected":"1"},{"valor":"20250801","rodada":"2025-08","selected":"1"},{"valor":"20250901","rodada":"2025-09","selected":"1"},{"valor":"20251001","rodada":"2025-10","selected":"1"},{"valor":"20251101","rodada":"2025-11","selected":"1"},{"valor":"20251201","rodada":"2025-12","selected":"1"},{"valor":"20260101","rodada":"2026-01","selected":"1"},{"valor":"20260201","rodada":"2026-02","selected":"1"},{"valor":"20260301","rodada":"2026-03","selected":"1"},{"valor":"20260401","rodada":"2026-04","selected":"1"},{"valor":"20260501","rodada":"2026-05","selected":"1"}]
+arrObservadas = [{"valor":"20231201","rodada":"2023-12","selected":"1"},{"valor":"20240101","rodada":"2024-01","selected":"1"},{"valor":"20240201","rodada":"2024-02","selected":"1"},{"valor":"20240301","rodada":"2024-03","selected":"1"},{"valor":"20240401","rodada":"2024-04","selected":"1"},{"valor":"20240501","rodada":"2024-05","selected":"1"},{"valor":"20240601","rodada":"2024-06","selected":"1"},{"valor":"20240701","rodada":"2024-07","selected":"1"},{"valor":"20240801","rodada":"2024-08","selected":"1"},{"valor":"20240901","rodada":"2024-09","selected":"1"},{"valor":"20241001","rodada":"2024-10","selected":"1"},{"valor":"20241101","rodada":"2024-11","selected":"1"},{"valor":"20241201","rodada":"2024-12","selected":"1"},{"valor":"20250101","rodada":"2025-01","selected":"1"},{"valor":"20250201","rodada":"2025-02","selected":"1"},{"valor":"20250301","rodada":"2025-03","selected":"1"},{"valor":"20250401","rodada":"2025-04","selected":"1"},{"valor":"20250501","rodada":"2025-05","selected":"1"},{"valor":"20250601","rodada":"2025-06","selected":"1"},{"valor":"20250701","rodada":"2025-07","selected":"1"},{"valor":"20250801","rodada":"2025-08","selected":"1"},{"valor":"20250901","rodada":"2025-09","selected":"1"},{"valor":"20251001","rodada":"2025-10","selected":"1"},{"valor":"20251101","rodada":"2025-11","selected":"1"},{"valor":"20251201","rodada":"2025-12","selected":"1"},{"valor":"20260101","rodada":"2026-01","selected":"1"},{"valor":"20260201","rodada":"2026-02","selected":"1"},{"valor":"20260301","rodada":"2026-03","selected":"1"},{"valor":"20260401","rodada":"2026-04","selected":"1"}]
+function getArrayVariavelCampo(sigla_variavel) {
+  tst = $.grep(arrVariaveisCampos, function (vc) {return vc.sigla_variavel == sigla_variavel });
+  
+  var dataArray = [];
+
+  $.each(tst, function (index, value) {
+    dataArray.push([value["sigla_variavel"].toString(), value["sigla_campo"] ]);
+  });
+
+  return (dataArray);
+}
+
+function getArrayVariavelCampoPrevisao(sigla_variavel) {
+  tst = $.grep(arrVariaveisCampos, function (vc) {return vc.sigla_variavel == sigla_variavel });
+  var dataArray = [];
+  //console.log(varCampos);
+  $.each(tst, function (index, value) {
+    //console.log(index+" - "+value["sigla_variavel"].toString()+" - "+value["sigla_campo"] );
+    tst2 = $.grep(varCampos, function (vcp) {if (vcp.sigla_cmp == value["sigla_campo"] && vcp.tipo=='P')  return value["sigla_campo"]})
+    console.log(tst2.length);
+    if (tst2.length != 0) { 
+      dataArray.push([value["sigla_variavel"].toString(), value["sigla_campo"] ]);
+      console.log(value["sigla_campo"]);
+    }
+  });
+
+  return (dataArray);
+}
+
+function getArrayVariavelCampoAvaliacao(sigla_variavel) {
+  tst = $.grep(arrVariaveisCampos, function (vc) {return vc.sigla_variavel == sigla_variavel });
+  var dataArray = [];
+  //console.log(varCampos);
+  $.each(tst, function (index, value) {
+    //console.log(index+" - "+value["sigla_variavel"].toString()+" - "+value["sigla_campo"] );
+    tst2 = $.grep(varCampos, function (vcp) {if (vcp.sigla_cmp == value["sigla_campo"] && vcp.tipo=='A')  return value["sigla_campo"]})
+    console.log(tst2.length);
+    if (tst2.length != 0) { 
+      dataArray.push([value["sigla_variavel"].toString(), value["sigla_campo"] ]);
+      console.log(value["sigla_campo"]);
+    }
+  });
+
+  return (dataArray);
+}
+    </script>
+    <script type="text/javascript" src="js/controles_saz_novo.js"></script>
+
+  </head>
+  <body>
+
+  <body class="antialiased">
+
+<header class="br-header">
+<div class="container-lg">
+    <div class="header-top">
+        <div class="header-logo">
+            <a href="https://www.gov.br/pt-br">
+                <img src="img/govbr-logo.png" alt="Logo GovBR" />
+            </a>
+            <span class="br-divider vertical mx-half mx-sm-1"></span>
+            <div class="header-sign">Ministério da Ciência, Tecnologia e Inovação</div>
+        </div>
+
+        <div class="header-actions">
+            <div class="header-links dropdown">
+                <button class="br-button circle small" type="button" data-toggle="dropdown"
+                    aria-label="Abrir Acesso Rápido"><i class="fas fa-ellipsis-v" aria-hidden="true"></i>
+                </button>
+                <div class="br-list">
+                    <div class="header">
+                        <div class="title">Acesso Rápido</div>
+                    </div><a class="br-item" href="https://www.gov.br/pt-br/orgaos-do-governo">Órgãos do
+                        Governo</a><a class="br-item" href="https://www.gov.br/acessoainformacao/pt-br">Acesso à
+                        Informação</a><a class="br-item"
+                        href="http://www4.planalto.gov.br/legislacao">Legislação</a><a class="br-item"
+                        href="https://www.gov.br/governodigital/pt-br/acessibilidade-digital">Acessibilidade</a>
+                </div>
+            </div>
+
+            <div class="invisivel-pequeno desaparece-medio desaparece-grande">
+                <div class="header-sign-in">
+                    <button class="br-sign-in small" type="button" data-trigger="login"><i class="fas fa-user"
+                            aria-hidden="true"></i>
+                    </button>
+                </div>
+                <div class="header-avatar"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="header-bottom">
+        <div class="header-menu">
+            <div class="header-info">
+                    <div class="header-title" id="hd_title">Previsão Sazonal</div>
+                    <div class="header-subtitle">BAM-1.2 - CPTEC/INPE</div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+</header>
+
+
+
+
+<nav class="navbar navbar-expand-lg bg-branco" aria-label="Tenth navbar example">
+<div class="container-fluid">
+<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarsExample01" aria-controls="navbarsExample01" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+    <div class="collapse navbar-collapse justify-content-between" id="navbarsExample01">
+        <ul class="navbar-nav container-lg">
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="http://previsaonumerica.cptec.inpe.br/" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Previsão Numérica
+                </a>
+                <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                    <a class="dropdown-item" href="http://previsaonumerica.cptec.inpe.br/">Previsão Numérica de Tempo</a>
+                    <a class="dropdown-item" href="https://subsazonal.cptec.inpe.br/">Previsão Numérica Subsazonal</a>
+                    <a class="dropdown-item" href="https://sazonal.cptec.inpe.br/">Previsão Numérica Sazonal </a>
+                </div>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="http://previsaonumerica.cptec.inpe.br/" target="_blank"  style="
+                padding-left: 0px;"></a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="http://clima.cptec.inpe.br/" target="_blank">Clima</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="https://nowcasting.cptec.inpe.br/" target="_blank">Nowcasting</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="http://satelite.cptec.inpe.br/home/novoSite/index.jsp" target="_blank">Satélite</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="http://ondas.cptec.inpe.br/" target="_blank">Ondas</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="https://bacias.cptec.inpe.br/" target="_blank">Bacias</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="http://meioambiente.cptec.inpe.br/" target="_blank">Qualidade do Ar</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="https://www.gov.br/inpe/pt-br/area-conhecimento/posgraduacao/" target="_blank">Pós Graduação</a>
+            </li>
+        </ul>
+    </div>
+</div>
+</nav>
+
+<div id="tabs">
+
+  <ul>
+    <li><a href="#tabs-1"> <span id="txt_previsao">Previsão</span></a></li>
+    <li><a href="#tabs-2"> <span id="txt_avaliacao">Avaliação</span></a></li>
+    <li><a href="#tabs-3"> <span id="txt_verificacao">Verificação</span></a></li>   
+    <li><a href="#tabs-5">Downloads</a></li>  
+    <li><a href="#tabs-6">Python</a></li>      
+    <li><a href="#tabs-4"> <span id="txt_documentacao">Documentação</span></a></li>    
+    <div style="text-align: right;">
+                <a id="portugues" href="#"> <img src="img/pt.png"  height="17" width="17" alt="Portugues" /> Português</a>
+                <a id="ingles" href="#"> <img src="img/usa.png"  height="17" width="17" alt="Ingles" /> English</a>
+    </div>
+
+  </ul>
+
+    <div id="tabs-1">   <!-- TAB Previsao -->
+
+<div class="container2">
+  <div class="item">
+     <h6><span id="txt_regiao">Regiões</span>:</h6>
+     <select name="regiao" class="regiao" id="regiaoPrevisao" style="width:90%;">    
+              <option value='gl' 
+                   >Global</option>
+              <option value='se' 
+                   >Hemisfério Sul</option>
+              <option value='ne' 
+                   >Hemisfério Norte</option>
+              <option value='tr' 
+                   >Região Tropical</option>
+              <option value='as' 
+                        selected 
+                   >América do Sul</option>
+              <option value='an' 
+                   >América do Norte</option>
+              <option value='af' 
+                   >África</option>
+              <option value='aa' 
+                   >Asia</option>
+              <option value='au' 
+                   >Austrália</option>
+              <option value='pa' 
+                   >Oceano Pacífico </option>
+              <option value='am' 
+                   >Amazônia</option>
+              <option value='eu' 
+                   >Europa</option>
+            
+     </select>
+    </div>
+
+   <div class="item color-2">
+    <h6><span id="txt_variavel">Variáveis</span>:</h6>
+    <select  name="variavel" class="variavel" id="variavelPrevisao" style="width:90%;">
+                                    <option value='prec' 
+                          selected 
+                        >Precipitação</option>
+                              <option value='prec_ca' 
+                        >Precipitação Calibrada</option>
+                              <option value='t2mt' 
+                        >Temperatura em 2 Metros</option>
+                              <option value='t2mt_ca' 
+                        >Temperatura em 2 Metros Calibrada</option>
+                              <option value='psnm' 
+                        >Pressão ao Nível do Mar</option>
+                              <option value='role' 
+                        >Radiação de Onda Longa Emergente</option>
+                              <option value='tp85' 
+                        >Temperatura em 850 hPa</option>
+                              <option value='zg50' 
+                        >Altura Geopotencial em 500 hPa</option>
+                              <option value='uv85' 
+                        >Vento Zonal em 850 hPa</option>
+                              <option value='uv20' 
+                        >Vento Zonal em 200 hPa</option>
+                              <option value='vv85' 
+                        >Vento Meridional em 850 hPa</option>
+                              <option value='vv20' 
+                        >Vento Meridional em 200 hPa</option>
+                              <option value='cr85' 
+                        >Circulação em 850 hPa</option>
+                              <option value='cr20' 
+                        >Circulação em 200 hPa</option>
+                              <option value='st85_rw85' 
+                        >Circulação Rotacional em 850 hPa</option>
+                              <option value='st20_rw20' 
+                        >Circulação Rotacional em 200 hPa</option>
+                              <option value='ch85_dw85' 
+                        >Circulação Divergente em 850 hPa</option>
+                              <option value='ch20_dw20' 
+                        >Circulação Divergente em 200 hPa</option>
+                                                                                                                     
+    </select>
+  </div>
+
+  <div class="item color-3">
+    <h6><span id="txt_campo">Campos</span>:</h6>
+    <select name="campo" class="campo" id="campoPrevisao" style="width:90%;">
+                        <option value='anomaly_total' 
+            id='anomaly_total' 
+                      >Combinação: Anomalia e Total</option>
+         
+               
+               
+               
+               
+               
+                        <option value='anom-tot' 
+            id='anom-tot' 
+                      >Anomalia e Total</option>
+         
+                        <option value='anomaly' 
+            id='anomaly' 
+                        selected 
+                      >Anomalia</option>
+         
+                        <option value='anom-prob' 
+            id='anom-prob' 
+                      >Anomalia e Probabilidade de Anomalia Positiva</option>
+         
+                        <option value='tercile' 
+            id='tercile' 
+                      >Probabilidade do Tercil Mais Provável</option>
+         
+               
+               
+               
+               
+               
+               
+               
+               
+               
+               
+               
+               
+               
+           
+    </select>
+  </div>
+
+  <div class="item color-4">
+    <h6><span id="txt_produto">Produtos</span>:</h6>
+    <select name="produto" class="produto" id="produtoPrevisao" style="width:90%;">
+            <option value='mnth' 
+                  >Mensal</option>
+            <option value='seas' 
+                      selected 
+                  >Trimestral</option>
+           
+    </select>
+  </div>
+
+  <div class="item color-5">
+    <h6><span id="txt_data_ini">Data Inicialização</span>:</h6>
+    <select name="rodadaAno" class="rodadaAno" id="rodadaPrevisaoAno" style="width:20%;"  onchange='this.size=1; this.blur();'>
+    <option value="0" disabled selected>Ano</option>
+          <option value='2026' 
+        >2026</option>
+            <option value='2025' 
+        >2025</option>
+            <option value='2024' 
+        >2024</option>
+           
+    </select>
+    <select name="rodada" class="rodada" id="rodadaPrevisao" style="width:50%;"  onchange='this.size=1; this.blur();'>
+            <option value='20260101' 
+                    selected 
+                >2026-01</option>
+            <option value='20260201' 
+                    selected 
+                >2026-02</option>
+            <option value='20260301' 
+                    selected 
+                >2026-03</option>
+            <option value='20260401' 
+                    selected 
+                >2026-04</option>
+            <option value='20260501' 
+                    selected 
+                >2026-05</option>
+           
+    </select>
+  </div>
+
+ </div>
+
+<div class="container5">
+
+<div class="row2">
+  <div class="column2" id="col1" style="background-color: rgb(255, 255, 255);border: 1px solid #88888885;box-shadow: 5px 5px 9px 5px #0000000e;border-radius: 5px;">
+    <img src=""  id="img1" style="width:100%">
+  </div>
+  <div class="column2" id="col2" style="background-color: rgb(255, 255, 255);border: 1px solid #88888885;box-shadow: 5px 5px 9px 5px #0000000e;border-radius: 5px;">
+    <img src=""  id="img2" style="width:100%">
+  </div>
+</div>
+
+
+<div class="row2">
+  <div class="column2" id="col3">
+    <img src=""  id="img3" style="width:100%">
+  </div>
+  <div class="column2" id="col4">
+    <img src=""  id="img4" style="width:100%">
+  </div>
+</div>
+
+<div class="row2">
+  <div class="column2" id="col5">
+    <img src=""  id="img5" style="width:100%">
+  </div>
+  <div class="column2" id="col6">
+    <img src=""  id="img6" style="width:100%">
+  </div>
+</div>
+
+<div class="row2">
+  <div class="column2" id="col7">
+    <img src=""  id="img7" style="width:100%">
+  </div>
+  <div class="column2" id="col8">
+    <img src=""  id="img8" style="width:100%">
+  </div>
+</div>
+</div> <!-- Fim DIV Container5 -->
+  </div> <!-- Fim TAB Previsao -->
+
+    <div id="tabs-2">   <!-- TAB Avaliacao -->
+
+
+
+<div class="container2">
+  <div class="item">
+     <h6><span id="txt_regiao_avaliacao">Regiões</span>:</h6>
+     <select name="regiao" class="regiao" id="regiaoAvaliacao" style="width:90%;">    
+              <option value='gl' 
+                   >Global</option>
+              <option value='se' 
+                   >Hemisfério Sul</option>
+              <option value='ne' 
+                   >Hemisfério Norte</option>
+              <option value='tr' 
+                   >Região Tropical</option>
+              <option value='as' 
+                        selected 
+                   >América do Sul</option>
+              <option value='an' 
+                   >América do Norte</option>
+              <option value='af' 
+                   >África</option>
+              <option value='aa' 
+                   >Asia</option>
+              <option value='au' 
+                   >Austrália</option>
+              <option value='pa' 
+                   >Oceano Pacífico </option>
+              <option value='am' 
+                   >Amazônia</option>
+              <option value='eu' 
+                   >Europa</option>
+            
+     </select>
+    </div>
+
+   <div class="item color-2">
+    <h6><span id="txt_variavel_avaliacao">Variáveis</span>:</h6>
+    <select name="variavel" class="variavel" id="variavelAvaliacao" style="width:90%;">
+                                                                                                                                                                                                                                                                                                <option value='prec' 
+                          selected 
+                        >Precipitação</option>
+                              <option value='prec_ca' 
+                        >Precipitação Calibrada</option>
+                                                          <option value='t2mt' 
+                        >Temperatura em 2 Metros</option>
+                              <option value='t2mt_ca' 
+                        >Temperatura em 2 Metros Calibrada</option>
+                                 
+    </select>
+  </div>
+
+    <div class="item color-3">
+    <h6><span id="txt_campo_avaliacao">Campos</span>:</h6>
+    <select name="campo" class="campoAvaliacao" id="campoAvaliacao" style="width:90%;">
+               
+               
+               
+               
+               
+               
+               
+               
+               
+               
+               
+               
+               
+               
+               
+               
+               
+               
+               
+                        <option value='anomalyAval' 
+            id='anomalyAval' 
+                        selected 
+                      >Anomalia</option>
+         
+                        <option value='ensembleAval' 
+            id='ensembleAval' 
+                      >Total</option>
+         
+                        <option value='categoryAval' 
+            id='categoryAval' 
+                      >Probabilidade do Tercil Mais Provável</option>
+         
+                        <option value='positiveAval' 
+            id='positiveAval' 
+                      >Probabilidade de Anomalia Positiva</option>
+         
+           
+    </select>
+  </div>
+
+  <div class="item color-4">
+    <h6><span id="txt_produto_avaliacao">Produtos</span>:</h6>
+    <select name="produto" class="produto" id="produtoAvaliacao" style="width:90%;">
+            <option value='mnth' 
+                  >Mensal</option>
+            <option value='seas' 
+                      selected 
+                  >Trimestral</option>
+           
+    </select>
+  </div>
+
+  <div class="item color-5">
+    <h6><span id="txt_data_ini_avaliacao">Data Inicialização</span>:</h6>
+    <select name="rodadaAvalAno" class="rodadaAvalAno" id="rodadaAvalAno" style="width:20%;"  onchange='this.size=1; this.blur();'>
+    <option value="0" disabled selected>Ano</option>
+          <option value='2026' 
+        >2026</option>
+            <option value='2025' 
+        >2025</option>
+            <option value='2024' 
+        >2024</option>
+            <option value='2023' 
+        >2023</option>
+           
+    </select>
+
+    <select name="rodadaAval" class="rodadaAval" id="rodadaAval" style="width:50%;"  onchange='this.size=1; this.blur();'>
+          <option value='20260101' 
+                    selected 
+                >2026-01</option>
+            <option value='20260201' 
+                >2026-02</option>
+            <option value='20260301' 
+                >2026-03</option>
+            <option value='20260401' 
+                >2026-04</option>
+           
+    </select>
+
+  </div>
+ </div>
+
+
+<div class="container6">
+    <div class="row2">
+      <div class="column2" id="col25">
+        <img src="" alt="Avaliacao"  id="img25" style="width:100%">
+      </div>
+      <div class="column2" id="col21">
+        <img src="" alt="Avaliacao"  id="img21" style="width:100%">
+      </div>
+    </div>
+    
+    <div class="row2">
+      <div class="column2" id="col26">
+        <img src="" alt="Avaliacao"  id="img26" style="width:100%">
+      </div>
+      <div class="column2" id="col22">
+        <img src="" alt="Avaliacao"  id="img22" style="width:100%">
+      </div>
+    </div>
+    
+    <div class="row2">
+      <div class="column2" id="col27">
+        <img src="" alt="Avaliacao"  id="img27" style="width:100%">
+      </div>
+      <div class="column2" id="col23">
+        <img src=""  alt="Avaliacao" id="img23" style="width:100%">
+      </div>
+    </div>
+
+    <div class="row2">
+      <div class="column2" id="col28">
+        <img src="" alt="Avaliacao"  id="img28" style="width:100%">
+      </div>
+      <div class="column2" id="col24">
+        <img src="" alt="Avaliacao"  id="img24" style="width:100%">
+      </div>
+    </div>
+
+
+</div> <!-- Fim DIV Containe6 -->
+
+
+
+
+  </div> <!-- Fim TAB Avaliacao -->
+
+
+    <div id="tabs-3">   <!-- TAB Verificacao -->
+
+
+
+<div class="container2">
+
+  <div class="item">
+     <h6><span id="txt_regiao_verificacao">Regiões</span>:</h6>
+     <select name="regiao" class="regiao" id="regiaoVerificacao" style="width:90%;">    
+              <option value='gl' 
+                   >Global</option>
+              <option value='se' 
+                   >Hemisfério Sul</option>
+              <option value='ne' 
+                   >Hemisfério Norte</option>
+              <option value='tr' 
+                   >Região Tropical</option>
+              <option value='as' 
+                        selected 
+                   >América do Sul</option>
+              <option value='an' 
+                   >América do Norte</option>
+              <option value='af' 
+                   >África</option>
+              <option value='aa' 
+                   >Asia</option>
+              <option value='au' 
+                   >Austrália</option>
+              <option value='pa' 
+                   >Oceano Pacífico </option>
+              <option value='am' 
+                   >Amazônia</option>
+              <option value='eu' 
+                   >Europa</option>
+            
+     </select>
+    </div>
+
+   <div class="item color-2">
+    <h6><span id="txt_variavel_verificacao">Variáveis</span>:</h6>
+    <select name="variavel" class="variavel" id="variavelVerificacao"style="width:90%;">
+                      <option value='prec' 
+                          selected 
+                        >Precipitação</option>
+                                                                                                                                                                                                                                                                                                                      <option value='prec_ca' 
+                        >Precipitação Calibrada</option>
+                              <option value='t2mt' 
+                        >Temperatura em 2 Metros</option>
+                                                          <option value='t2mt_ca' 
+                        >Temperatura em 2 Metros Calibrada</option>
+                   
+    </select>
+  </div>
+
+  <div class="item color-3">
+    <h6><span id="txt_campo_verificacao">Campos</span>:</h6>
+    <select name="campoVerificacao" class="campoVerificacao" id="campoVerificacao" style="width:90%;">
+               
+                        <option value='corr' 
+            id='corr' 
+                        selected 
+                      >Correlação</option>
+         
+                        <option value='msss' 
+            id='msss' 
+                      >Índice de Destreza do Erro Quadrático Médio</option>
+         
+                        <option value='pher' 
+            id='pher' 
+                      >Índice de Destreza do Erro Quadrático Médio (fase)</option>
+         
+                        <option value='aper' 
+            id='aper' 
+                      >Índice de Destreza do Erro Quadrático Médio (amplitude)</option>
+         
+                        <option value='bias' 
+            id='bias' 
+                      >Viés</option>
+         
+               
+               
+               
+               
+                        <option value='rocarea_uppertercile' 
+            id='rocarea_uppertercile' 
+                      >Área Sob a Curva ROC (Tercil Superior)</option>
+         
+                        <option value='rocarea_lowertercile' 
+            id='rocarea_lowertercile' 
+                      >Área Sob a Curva ROC (Tercil Inferior)</option>
+         
+                        <option value='rocarea_positiveanom' 
+            id='rocarea_positiveanom' 
+                      >Área Sob a Curva ROC (Anomalia Positiva ou Negativa)</option>
+         
+                        <option value='rocdiagram_positiveanom' 
+            id='rocdiagram_positiveanom' 
+                      >Curva ROC (Anomalia Positiva ou Negativa)</option>
+         
+                        <option value='rocdiagram_uppertercile' 
+            id='rocdiagram_uppertercile' 
+                      >Curva ROC (Tercil Superior)</option>
+         
+                        <option value='rocdiagram_lowertercile' 
+            id='rocdiagram_lowertercile' 
+                      >Curva ROC (Tercil Inferior)</option>
+         
+                        <option value='reliabilitydiagram_uppertercile' 
+            id='reliabilitydiagram_uppertercile' 
+                      >Diagrama de Confiabilidade (Tercil Superior)</option>
+         
+                        <option value='reliabilitydiagram_lowertercile' 
+            id='reliabilitydiagram_lowertercile' 
+                      >Diagrama de Confiabilidade (Tercil Inferior)</option>
+         
+                        <option value='reliabilitydiagram_positiveanom' 
+            id='reliabilitydiagram_positiveanom' 
+                      >Diagrama de Confiabilidade (Anomalia Positiva ou Negativa)</option>
+         
+               
+               
+               
+               
+           
+    </select>
+  </div>
+
+  <div class="item color-4">
+    <h6><span id="txt_produto_verificacao">Produtos</span>:</h6>
+    <select name="produto" class="produto" id="produtoVerificacao" style="width:90%;">
+            <option value='mnth' 
+                  >Mensal</option>
+            <option value='seas' 
+                      selected 
+                  >Trimestral</option>
+           
+    </select>
+  </div>
+
+  <div class="item color-5"> 
+    <h6><span id="txt_data_ini_verificacao">Mês verificação</span>:</h6>
+    <select name="mesVer" class="mesVer" id="mesVer" style="width:90%;" onfocus='this.size=4;' onblur='this.size=1;' onchange='this.size=1; this.blur();'>
+          <option value='DEC' 
+                  >Janeiro</option>
+            <option value='JAN' 
+                  >Fevereiro</option>
+            <option value='FEB' 
+                  >Março</option>
+            <option value='MAR' 
+                  >Abril</option>
+            <option value='APR' 
+                      selected 
+                  >Maio</option>
+            <option value='MAY' 
+                  >Junho</option>
+            <option value='JUN' 
+                  >Julho</option>
+            <option value='JUL' 
+                  >Agosto</option>
+            <option value='AUG' 
+                  >Setembro</option>
+            <option value='SEP' 
+                  >Outubro</option>
+            <option value='OCT' 
+                  >Novembro</option>
+            <option value='NOV' 
+                  >Dezembro</option>
+          
+    </select>
+  </div>
+ </div>
+
+
+<div class="container4">
+    <div class="row2">
+      <div class="column2" id="col17">
+        <img src="" alt="Verification"  id="img17" style="width:90%">
+      </div>
+    </div>
+    
+    
+    <div class="row2">
+      <div class="column2" id="col18">
+        <img src="" alt="Verification"  id="img18" style="width:90%">
+      </div>
+    </div>
+    
+    <div class="row2">
+      <div class="column2" id="col19">
+        <img src="" alt="Verification"  id="img19" style="width:90%">
+      </div>
+    </div>
+
+    <div class="row2">
+      <div class="column2" id="col20">
+        <img src="" alt="Verificacao"  id="img20" style="width:90%">
+      </div>
+    </div>
+
+</div> <!-- Fim DIV Container 4 -->
+
+  </div> <!-- Fim TAB Verificacao -->
+
+    <!-- TAB Downloads -->
+    <div id="tabs-5">   
+        <iframe id="iframeId" src="https://dataserver.cptec.inpe.br/dataserver_subsaz/" width="100%" height="600px" scrolling="yes" frameborder="0"></iframe>
+    </div>   <!--  Fim TAB Downloads -->
+
+    <!-- TAB Documentacao -->
+    <div id="tabs-4">   
+        <embed src="https://s0.cptec.inpe.br/clima/modelos/documentation/CPTEC-descricao-previsao-sazonal.pdf" id='doc_file' width="100%" height="700" type="application/pdf">
+    </div> <!-- Fim TAB Documentacao -->
+
+    <!-- TAB Python -->
+    <div id="tabs-6">   
+
+    <div class="containerP">
+
+    <fieldset>
+  <div class="item">
+     <h6><span id="txt_regiao_python">Regiões</span>:</h6>
+     <select name="regiaoPython" class="regiaoPython" id="regiaoPython" style="width:60%;">    
+              <option value='gl' 
+                   >Global</option>
+              <option value='se' 
+                   >Hemisfério Sul</option>
+              <option value='ne' 
+                   >Hemisfério Norte</option>
+              <option value='tr' 
+                   >Região Tropical</option>
+              <option value='as' 
+                        selected 
+                   >América do Sul</option>
+              <option value='an' 
+                   >América do Norte</option>
+              <option value='af' 
+                   >África</option>
+              <option value='aa' 
+                   >Asia</option>
+              <option value='au' 
+                   >Austrália</option>
+              <option value='pa' 
+                   >Oceano Pacífico </option>
+              <option value='am' 
+                   >Amazônia</option>
+              <option value='eu' 
+                   >Europa</option>
+            
+     </select>
+    </div>
+
+    <div class="item">
+        <h6><span id="txt_tipoVar_python">Tipo da Variável</span>:</h6>
+        <select name="tipoVariavelPython" class="variavelPython" id="variavelTipoPython" style="width:80%;">
+                    <option value="tipoNormal" id="Py_tipoNormal" selected="">Previsão</option>
+                    <option value="tipoCalibrada" id="Py_tipoCalibrada" >Previsão Calibrada</option>
+        </select>
+    </div>
+    <div class="item color-5">
+    <h6><span id="txt_data_ini_python">Data Inicialização</span>:</h6>
+    <select name="rodadaAnoPython" class="rodadaPythonAno" id="rodadaPythonAno" style="width:20%;"  onchange='this.size=1; this.blur();'>
+    <option value="0" disabled selected>Ano</option>
+          <option value='2026' 
+        >2026</option>
+            <option value='2025' 
+        >2025</option>
+            <option value='2024' 
+        >2024</option>
+           
+    </select>
+    <select name="rodadaPython" class="rodadaPython" id="rodadaPython" style="width:50%;"  onchange='this.size=1; this.blur();'>
+            <option value='20260101' 
+                    selected 
+                >2026-01</option>
+            <option value='20260201' 
+                    selected 
+                >2026-02</option>
+            <option value='20260301' 
+                    selected 
+                >2026-03</option>
+            <option value='20260401' 
+                    selected 
+                >2026-04</option>
+            <option value='20260501' 
+                    selected 
+                >2026-05</option>
+           
+    </select>
+  </div>
+      </fieldset>
+   <div class="item color-2" id="checkboxVar">
+    <h6><span id="txt_variavel_python">Variáveis</span>:</h6>
+                                  <div class="prev_py" style="width:100%;">
+            <input type="checkbox" id="box_prec" name="checkboxVariavel" value="prec"
+                            checked
+            >
+            <label id="label_prec" for="prec">Precipitação</label>
+        </div>
+                              <div class="prev_py" style="width:100%;">
+            <input type="checkbox" id="box_prec_ca" name="checkboxVariavel" value="prec_ca"
+            >
+            <label id="label_prec_ca" for="prec_ca">Precipitação Calibrada</label>
+        </div>
+                              <div class="prev_py" style="width:100%;">
+            <input type="checkbox" id="box_t2mt" name="checkboxVariavel" value="t2mt"
+            >
+            <label id="label_t2mt" for="t2mt">Temperatura em 2 Metros</label>
+        </div>
+                              <div class="prev_py" style="width:100%;">
+            <input type="checkbox" id="box_t2mt_ca" name="checkboxVariavel" value="t2mt_ca"
+            >
+            <label id="label_t2mt_ca" for="t2mt_ca">Temperatura em 2 Metros Calibrada</label>
+        </div>
+                              <div class="prev_py" style="width:100%;">
+            <input type="checkbox" id="box_psnm" name="checkboxVariavel" value="psnm"
+            >
+            <label id="label_psnm" for="psnm">Pressão ao Nível do Mar</label>
+        </div>
+                              <div class="prev_py" style="width:100%;">
+            <input type="checkbox" id="box_role" name="checkboxVariavel" value="role"
+            >
+            <label id="label_role" for="role">Radiação de Onda Longa Emergente</label>
+        </div>
+                              <div class="prev_py" style="width:100%;">
+            <input type="checkbox" id="box_tp85" name="checkboxVariavel" value="tp85"
+            >
+            <label id="label_tp85" for="tp85">Temperatura em 850 hPa</label>
+        </div>
+                              <div class="prev_py" style="width:100%;">
+            <input type="checkbox" id="box_zg50" name="checkboxVariavel" value="zg50"
+            >
+            <label id="label_zg50" for="zg50">Altura Geopotencial em 500 hPa</label>
+        </div>
+                              <div class="prev_py" style="width:100%;">
+            <input type="checkbox" id="box_uv85" name="checkboxVariavel" value="uv85"
+            >
+            <label id="label_uv85" for="uv85">Vento Zonal em 850 hPa</label>
+        </div>
+                              <div class="prev_py" style="width:100%;">
+            <input type="checkbox" id="box_uv20" name="checkboxVariavel" value="uv20"
+            >
+            <label id="label_uv20" for="uv20">Vento Zonal em 200 hPa</label>
+        </div>
+                              <div class="prev_py" style="width:100%;">
+            <input type="checkbox" id="box_vv85" name="checkboxVariavel" value="vv85"
+            >
+            <label id="label_vv85" for="vv85">Vento Meridional em 850 hPa</label>
+        </div>
+                              <div class="prev_py" style="width:100%;">
+            <input type="checkbox" id="box_vv20" name="checkboxVariavel" value="vv20"
+            >
+            <label id="label_vv20" for="vv20">Vento Meridional em 200 hPa</label>
+        </div>
+                              <div class="prev_py" style="width:100%;">
+            <input type="checkbox" id="box_cr85" name="checkboxVariavel" value="cr85"
+            >
+            <label id="label_cr85" for="cr85">Circulação em 850 hPa</label>
+        </div>
+                              <div class="prev_py" style="width:100%;">
+            <input type="checkbox" id="box_cr20" name="checkboxVariavel" value="cr20"
+            >
+            <label id="label_cr20" for="cr20">Circulação em 200 hPa</label>
+        </div>
+                                                                                                                                                                           
+    </select>
+  </div>
+
+  <fieldset>
+
+  <div class="item color-3">
+    <h6><span id="txt_campo_python">Campos</span>:</h6>
+    <select name="campoPy" class="campoPy" id="campoPy" style="width:90%;">
+                        <option value='anomalies' 
+            id='Py_anomalies' 
+                        selected 
+                      >Anomalia</option>
+         
+                        <option value='prob_positve_anomaly' 
+            id='Py_prob_positve_anomaly' 
+                      >Probabilidade de Anomalia Positiva</option>
+         
+                        <option value='prob_terciles' 
+            id='Py_prob_terciles' 
+                      >Probabilidade do Tercil Mais Provável</option>
+         
+                        <option value='totals' 
+            id='Py_totals' 
+                      >Total</option>
+         
+           
+    </select>
+  </div>
+
+
+
+  <div class="item color-4">
+    <h6><span id="txt_produto_python">Produtos</span>:</h6>
+    <select name="produtoPy" class="produtoPy" id="produtoPy" style="width:50%; maxwidth: 300%;">
+            <option value='mnth' 
+                  >Mensal</option>
+            <option value='seas' 
+                      selected 
+                  >Trimestral</option>
+           
+    </select>
+  </div>
+
+      </fieldset>
+
+
+
+ </div>
+
+<div class="admonition note">
+<p id="Py_api_titulo" class="admonition-title">Instruções API</p>
+<p><span id="Py_api_info">Informações adicionais sobre a instalação, como utilizar e exemplos </span> - 
+ <a class="reference internal" href="https://sazonal.readthedocs.io/en/latest/index.html"><span class="std std-ref">Python Seasonal API</span></a>.</p>
+</div>
+
+<div class="admonition warning">
+<p id="Py_code" class="admonition-title">Código Python</p>
+<pre>
+      <p id="copy-pre" style="font-size: 13px !important;"></p>
+      <button id="copy-btn" class="copy-button">Copy</button>
+</pre>
+</div>
+
+
+
+
+    </div> <!-- Fim Tab Python -->
+
+</div><!-- Fim Div TABS -->
+
+
+<footer class="br-footer desaparece-medio desaparece-pequeno">
+    <div class="container-lg">
+        <div class="logo"><img
+                src="data:image/svg+xml,<svg id='Camada_1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' x='0px' y='0px' viewBox='0 0 374.8 135' style='enable-background:new 0 0 374.8 135;' xml:space='preserve'><style type='text/css'> .st0%7Bfill:%23FFFFFF;%7D%0A  </style><path class='st0' d='M40.2,84.8c8.9,0,16-7.5,16-18.7c0-8.1-4.8-17.2-16-17.2C30.9,48.9,26,57.1,26,67 C25.9,78.4,32.6,84.8,40.2,84.8z M80.5,95.5c0,29.8-14.5,39.5-43.8,39.5c-12,0-21.9-2.5-27.7-4.6l1.2-19.8c7.7,3.8,14.1,6,24.5,6 c14.5,0,22.3-6.8,22.3-21.1v-3.9h-0.3c-6,8.5-14.4,12.4-24.4,12.4C12.4,104,0,88.9,0,67.5c0-21.6,10.2-37.8,32.8-37.8 c10.7,0,19.4,5.9,24.7,14.8h0.2V31.4h22.7L80.5,95.5L80.5,95.5z'/><polygon class='st0' points='181.6,103.9 209.6,103.9 235.8,31.7 211.4,31.7 196.6,83.2 196.3,83.2 181.6,31.7 155.3,31.7 '/><path class='st0' d='M139,67.9c0-10.8-4.7-20.4-16.2-20.4s-16.2,9.6-16.2,20.4c0,10.7,4.7,20.2,16.2,20.2S139,78.5,139,67.9z M80.9,67.9c0-24,18.1-37.8,42-37.8s42,13.9,42,37.8c0,23.8-18.1,37.7-42,37.7C99,105.5,80.9,91.7,80.9,67.9z'/><path class='st0' d='M238.6,93.7c0,6.5-5.3,11.8-11.8,11.8S215,100.2,215,93.7s5.3-11.8,11.8-11.8C233.3,81.9,238.6,87.2,238.6,93.7 z'/><path class='st0' d='M281.1,49.2c-9.1,0-15.2,8-15.2,18.8c0,10.5,6.9,18.4,15.2,18.4c9.4,0,15.1-7.9,15.1-19.4 C296.2,57.5,290.8,49.2,281.1,49.2z M240.9,0H266v41h0.3c6.4-8,14.8-10.9,24.8-10.9c20,0,30.9,19,30.9,36.4 c0,21.3-11.5,39.1-33,39.1c-11.5,0-21.6-6.5-24.8-14.6h-0.3v12.9h-23L240.9,0L240.9,0z'/><path class='st0' d='M373.5,51.7c-2.8-0.8-5.5-0.8-8.5-0.8c-11.6,0-18.1,8.4-18.1,22.6V104H322V31.8h22.7v13.3h0.3 c4.3-9.1,10.5-15,21.3-15c2.9,0,6,0.4,8.5,0.8L373.5,51.7z'/></svg>"
+                alt="Imagem" /></div>
+        <div class="br-list horizontal" data-toggle="data-toggle" data-sub="data-sub">
+            <div class="col-2"><a class="br-item header" href="http://www.gov.br/inpe/pt-br/acesso-a-informacao/institucional/visita/">
+             <div class="content text-down-01 text-bold text-uppercase">Acesso à Informação</div> 
+                    <div class="support"><i class="fas fa-angle-down" aria-hidden="true"></i>
+                    </div>
+                </a>
+                <div class="br-list"><span class="br-divider d-md-none"></span>
+                    <a class="br-item" href="https://www.gov.br/inpe/pt-br/acesso-a-informacao/institucional">
+                        <div class="content">institucional</div>
+                    </a><a class="br-item" href="https://www.gov.br/inpe/pt-br/acesso-a-informacao/acoes-e-programas">
+                        <div class="content">Ações e Programas</div>
+                    </a><a class="br-item" href="https://www.gov.br/inpe/pt-br/acesso-a-informacao/participacao-social">
+                        <div class="content">Participação Social</div>
+                    </a><span class="br-divider d-md-none"></span>
+                    <a class="br-item" href="https://www.gov.br/inpe/pt-br/acesso-a-informacao/auditorias">
+                        <div class="content">Auditorias</div>
+                    </a><span class="br-divider d-md-none"></span>
+                    <a class="br-item"
+                        href="https://www.gov.br/inpe/pt-br/acesso-a-informacao/convenios-e-transferencias">
+                        <div class="content">Convênios e Transferências</div>
+                    </a><span class="br-divider d-md-none"></span>
+                    <a class="br-item" href="https://www.gov.br/inpe/pt-br/acesso-a-informacao/receitas-e-despesas">
+                        <div class="content">Receitas e Despesas</div>
+                    </a><span class="br-divider d-md-none"></span>
+                    <a class="br-item" href="https://www.gov.br/inpe/pt-br/acesso-a-informacao/licitacoes-e-contratos">
+                        <div class="content">Licitações e Contratos</div>
+                    </a><span class="br-divider d-md-none"></span>
+                    <a class="br-item" href="https://www.gov.br/inpe/pt-br/acesso-a-informacao/servidores">
+                        <div class="content">Servidores</div>
+                    </a><span class="br-divider d-md-none"></span>
+                    <a class="br-item"
+                        href="https://www.gov.br/inpe/pt-br/acesso-a-informacao/informacoes-classificadas">
+                        <div class="content">Informações Classificadas</div>
+                    </a><span class="br-divider d-md-none"></span>
+                    <a class="br-item"
+                        href="https://www.gov.br/inpe/pt-br/acesso-a-informacao/servico-de-informacao-ao-cidadao-sic">
+                        <div class="content">Serviço de Informação ao Cidadão - SIC</div>
+                    </a><span class="br-divider d-md-none"></span>
+                    <a class="br-item" href="https://www.gov.br/inpe/pt-br/acesso-a-informacao/perguntas-frequentes">
+                        <div class="content">Perguntas Frequentes</div>
+                    </a><span class="br-divider d-md-none"></span>
+                    <a class="br-item" href="https://www.gov.br/inpe/pt-br/acesso-a-informacao/dados-abertos">
+                        <div class="content">Dados Abertos</div>
+                    </a><span class="br-divider d-md-none"></span>
+                    <a class="br-item"
+                        href="https://www.gov.br/inpe/pt-br/acesso-a-informacao/cooperacoes-nacionais-e-internacionais">
+                        <div class="content">Cooperações Nacionais e Internacionais</div>
+                    </a><span class="br-divider d-md-none"></span>
+
+
+                </div>
+            </div>
+            <div class="col-2"><a class="br-item header" href="https://www.gov.br/inpe/pt-br/assuntos">
+                    <div class="content text-down-01 text-bold text-uppercase">Assuntos</div>
+                    <div class="support"><i class="fas fa-angle-down" aria-hidden="true"></i>
+                    </div>
+                </a>
+                <div class="br-list"><span class="br-divider d-md-none"></span><a class="br-item"
+                        href="https://www.gov.br/inpe/pt-br/assuntos/ultimas-noticias">
+                        <div class="content">Últimas Notícias</div>
+                    </a><a class="br-item" href="https://www.gov.br/inpe/pt-br/assuntos/produtos">
+                        <div class="content">Produtos</div>
+                    </a><a class="br-item" href="https://www.gov.br/inpe/pt-br/assuntos/eventos">
+                        <div class="content">Eventos</div>
+                    </a><a class="br-item" href="http://antigo.inpe.br/posgraduacao/">
+                        <div class="content">Capacitação Pós-Graduação</div>
+                    </a><span class="br-divider d-md-none"></span>
+                    <a class="br-item" href="https://www.gov.br/inpe/pt-br/assuntos/anuncio-de-oportunidades">
+                        <div class="content">Anúncio de Oportunidades</div>
+                    </a><span class="br-divider d-md-none"></span>
+
+
+                </div>
+            </div>
+            <div class="col-2"><a class="br-item header" href="https://www.gov.br/inpe/pt-br/central-de-conteudo">
+                <div class="content text-down-01 text-bold text-uppercase">Central de Conteúdo</div>
+                <div class="support"><i class="fas fa-angle-down" aria-hidden="true"></i>
+                </div>
+            </a>
+            <div class="br-list"><span class="br-divider d-md-none"></span><a class="br-item"
+                    href="https://www.gov.br/inpe/pt-br/central-de-conteudo/cartilhas-educacionais">
+                    <div class="content">Cartilhas Educacionais</div>
+                </a><a class="br-item" href="https://www.gov.br/inpe/pt-br/central-de-conteudo/publicacoes">
+                    <div class="content">Publicações</div>
+                </a><a class="br-item" href="https://www.gov.br/inpe/pt-br/area-conhecimento/biblioteca">
+                    <div class="content">Biblioteca On-Line</div>
+                </a><a class="br-item" href="http://www.youtube.com/inpemct">
+                    <div class="content">Vídeos</div>
+                </a>                
+
+            </div>
+        </div>
+        <div class="col-2"><a class="br-item header" href="https://www.gov.br/inpe/pt-br/canais_atendimento">
+            <div class="content text-down-01 text-bold text-uppercase">Canais de Atendimento</div>
+            <div class="support"><i class="fas fa-angle-down" aria-hidden="true"></i>
+            </div>
+        </a>
+        <div class="br-list"><span class="br-divider d-md-none"></span><a class="br-item"
+                href="https://www.gov.br/inpe/pt-br/canais_atendimento/ouvidoria">
+                <div class="content">Ouvidoria</div>
+            </a><a class="br-item" href="https://www.gov.br/inpe/pt-br/canais_atendimento/imprensa">
+                <div class="content">Imprensa</div>
+            </a><a class="br-item" href="http://www.gov.br/inpe/pt-br/acesso-a-informacao/institucional/visita/">
+                <div class="content">Visitas ao INPE</div>
+            </a>
+
+        </div>
+    </div>
+            <div class="col-2"><a class="br-item header" href="https://www.gov.br/inpe/pt-br/composicao">
+                    <div class="content text-down-01 text-bold text-uppercase">Composição </div>
+                    <div class="support"><i class="fas fa-angle-down" aria-hidden="true"></i>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-2"><a class="br-item header" href="https://www.gov.br/inpe/pt-br/servicos">
+                <div class="content text-down-01 text-bold text-uppercase">Serviços </div>
+                <div class="support"><i class="fas fa-angle-down" aria-hidden="true"></i>
+                </div>
+            </a>
+        </div>
+            
+        </div>
+        <div class="d-none d-sm-block">
+            <div class="row align-items-end justify-content-between py-5">
+                <div class="col social-network">
+                    <p class="text-up-01 text-extra-bold text-uppercase">Redes Sociais</p>
+                    
+                    <a class="mr-3" href="https://www.twitter.com/inpe_mct">
+                        <i class="fa-lg fa-brands fa-twitter"></i>
+                    </a>
+                    <a class="mr-3" href="https://www.youtube.com/inpemct">
+                        <i class="fa-lg fa-brands fa-youtube"></i>
+                    </a>
+                    <a class="mr-3" href="https://www.facebook.com/inpe.oficial">
+                        <i class="fa-lg fa-brands fa-facebook-f"></i>
+                    </a>
+                    <a class="mr-3" href="https://www.instagram.com/cptecinpe/">
+                        <i class="fa-lg fa-brands fa-instagram"></i>
+                    </a>                                                            
+
+                </div>
+                <div class="col assigns text-right">
+                    
+                    <a  href="http://www.acessoainformacao.gov.br/" alt="Acesso à informação" title="Acesso à informação">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 117 49" height="49" width="117" shape-rendering="geometricPrecision" text-rendering="geometricPrecision"><defs><style type="text/css">.a {font: normal bold 11px Open Sans, sans-serif;}</style></defs><circle cx="22" cy="23" r="22" fill="#fff"></circle><path style="stroke:#071d41;stroke-width:9;stroke-linecap:round;" d="m 22,23 v 13"></path><path style="stroke:#fff;stroke-width:4;stroke-linejoin:round;" d="m 4,43 3,-6 4,3 z"></path><circle r="4.5" cy="11" cx="22" fill="#071d41"></circle><g fill="#fff"><text x="47" y="22"><tspan class="a" y="18">Acesso à</tspan><tspan class="a" x="47" y="31">Informação</tspan></text></g></svg>
+                    </a>
+                    
+                </div>
+            </div>
+        </div>
+    </div><span class="br-divider my-3"></span>
+    <div class="container-lg">
+        <div class="info">
+            <div class="text-down-01 text-medium pb-3">Desenvolvido por
+                <strong>CPTEC.</strong></div>
+        </div>
+    </div>
+</footer> 
+
+
+
+<footer class="br-footer desaparece-grande">
+    <div class="container-lg">
+        <div class="logo"><img
+                src="data:image/svg+xml,<svg id='Camada_1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' x='0px' y='0px' viewBox='0 0 374.8 135' style='enable-background:new 0 0 374.8 135;' xml:space='preserve'><style type='text/css'> .st0%7Bfill:%23FFFFFF;%7D%0A  </style><path class='st0' d='M40.2,84.8c8.9,0,16-7.5,16-18.7c0-8.1-4.8-17.2-16-17.2C30.9,48.9,26,57.1,26,67 C25.9,78.4,32.6,84.8,40.2,84.8z M80.5,95.5c0,29.8-14.5,39.5-43.8,39.5c-12,0-21.9-2.5-27.7-4.6l1.2-19.8c7.7,3.8,14.1,6,24.5,6 c14.5,0,22.3-6.8,22.3-21.1v-3.9h-0.3c-6,8.5-14.4,12.4-24.4,12.4C12.4,104,0,88.9,0,67.5c0-21.6,10.2-37.8,32.8-37.8 c10.7,0,19.4,5.9,24.7,14.8h0.2V31.4h22.7L80.5,95.5L80.5,95.5z'/><polygon class='st0' points='181.6,103.9 209.6,103.9 235.8,31.7 211.4,31.7 196.6,83.2 196.3,83.2 181.6,31.7 155.3,31.7 '/><path class='st0' d='M139,67.9c0-10.8-4.7-20.4-16.2-20.4s-16.2,9.6-16.2,20.4c0,10.7,4.7,20.2,16.2,20.2S139,78.5,139,67.9z M80.9,67.9c0-24,18.1-37.8,42-37.8s42,13.9,42,37.8c0,23.8-18.1,37.7-42,37.7C99,105.5,80.9,91.7,80.9,67.9z'/><path class='st0' d='M238.6,93.7c0,6.5-5.3,11.8-11.8,11.8S215,100.2,215,93.7s5.3-11.8,11.8-11.8C233.3,81.9,238.6,87.2,238.6,93.7 z'/><path class='st0' d='M281.1,49.2c-9.1,0-15.2,8-15.2,18.8c0,10.5,6.9,18.4,15.2,18.4c9.4,0,15.1-7.9,15.1-19.4 C296.2,57.5,290.8,49.2,281.1,49.2z M240.9,0H266v41h0.3c6.4-8,14.8-10.9,24.8-10.9c20,0,30.9,19,30.9,36.4 c0,21.3-11.5,39.1-33,39.1c-11.5,0-21.6-6.5-24.8-14.6h-0.3v12.9h-23L240.9,0L240.9,0z'/><path class='st0' d='M373.5,51.7c-2.8-0.8-5.5-0.8-8.5-0.8c-11.6,0-18.1,8.4-18.1,22.6V104H322V31.8h22.7v13.3h0.3 c4.3-9.1,10.5-15,21.3-15c2.9,0,6,0.4,8.5,0.8L373.5,51.7z'/></svg>"
+                alt="Imagem" /></div>
+        <div class="br-list horizontal" data-toggle="data-toggle" data-sub="data-sub">
+            <div class="col-2"><a class="br-item header">
+             <div class="content text-down-01 text-bold text-uppercase">Acesso à Informação</div> 
+                    <div class="support"><i class="fas fa-angle-down" aria-hidden="true"></i>
+                    </div>
+                </a>
+                <div class="br-list"><span class="br-divider d-md-none"></span>
+                    <a class="br-item" href="https://www.gov.br/inpe/pt-br/acesso-a-informacao/institucional">
+                        <div class="content">institucional</div>
+                    </a><a class="br-item" href="https://www.gov.br/inpe/pt-br/acesso-a-informacao/acoes-e-programas">
+                        <div class="content">Ações e Programas</div>
+                    </a><a class="br-item" href="https://www.gov.br/inpe/pt-br/acesso-a-informacao/participacao-social">
+                        <div class="content">Participação Social</div>
+                    </a><span class="br-divider d-md-none"></span>
+                    <a class="br-item" href="https://www.gov.br/inpe/pt-br/acesso-a-informacao/auditorias">
+                        <div class="content">Auditorias</div>
+                    </a><span class="br-divider d-md-none"></span>
+                    <a class="br-item"
+                        href="https://www.gov.br/inpe/pt-br/acesso-a-informacao/convenios-e-transferencias">
+                        <div class="content">Convênios e Transferências</div>
+                    </a><span class="br-divider d-md-none"></span>
+                    <a class="br-item" href="https://www.gov.br/inpe/pt-br/acesso-a-informacao/receitas-e-despesas">
+                        <div class="content">Receitas e Despesas</div>
+                    </a><span class="br-divider d-md-none"></span>
+                    <a class="br-item" href="https://www.gov.br/inpe/pt-br/acesso-a-informacao/licitacoes-e-contratos">
+                        <div class="content">Licitações e Contratos</div>
+                    </a><span class="br-divider d-md-none"></span>
+                    <a class="br-item" href="https://www.gov.br/inpe/pt-br/acesso-a-informacao/servidores">
+                        <div class="content">Servidores</div>
+                    </a><span class="br-divider d-md-none"></span>
+                    <a class="br-item"
+                        href="https://www.gov.br/inpe/pt-br/acesso-a-informacao/informacoes-classificadas">
+                        <div class="content">Informações Classificadas</div>
+                    </a><span class="br-divider d-md-none"></span>
+                    <a class="br-item"
+                        href="https://www.gov.br/inpe/pt-br/acesso-a-informacao/servico-de-informacao-ao-cidadao-sic">
+                        <div class="content">Serviço de Informação ao Cidadão - SIC</div>
+                    </a><span class="br-divider d-md-none"></span>
+                    <a class="br-item" href="https://www.gov.br/inpe/pt-br/acesso-a-informacao/perguntas-frequentes">
+                        <div class="content">Perguntas Frequentes</div>
+                    </a><span class="br-divider d-md-none"></span>
+                    <a class="br-item" href="https://www.gov.br/inpe/pt-br/acesso-a-informacao/dados-abertos">
+                        <div class="content">Dados Abertos</div>
+                    </a><span class="br-divider d-md-none"></span>
+                    <a class="br-item"
+                        href="https://www.gov.br/inpe/pt-br/acesso-a-informacao/cooperacoes-nacionais-e-internacionais">
+                        <div class="content">Cooperações Nacionais e Internacionais</div>
+                    </a><span class="br-divider d-md-none"></span>
+
+
+                </div>
+            </div>
+            <div class="col-2"><a class="br-item header">
+                    <div class="content text-down-01 text-bold text-uppercase">Assuntos</div>
+                    <div class="support"><i class="fas fa-angle-down" aria-hidden="true"></i>
+                    </div>
+                </a>
+                <div class="br-list"><span class="br-divider d-md-none"></span><a class="br-item"
+                        href="https://www.gov.br/inpe/pt-br/assuntos/ultimas-noticias">
+                        <div class="content">Últimas Notícias</div>
+                    </a><a class="br-item" href="https://www.gov.br/inpe/pt-br/assuntos/produtos">
+                        <div class="content">Produtos</div>
+                    </a><a class="br-item" href="https://www.gov.br/inpe/pt-br/assuntos/eventos">
+                        <div class="content">Eventos</div>
+                    </a><a class="br-item" href="http://antigo.inpe.br/posgraduacao/">
+                        <div class="content">Capacitação Pós-Graduação</div>
+                    </a><span class="br-divider d-md-none"></span>
+                    <a class="br-item" href="https://www.gov.br/inpe/pt-br/assuntos/anuncio-de-oportunidades">
+                        <div class="content">Anúncio de Oportunidades</div>
+                    </a><span class="br-divider d-md-none"></span>
+
+
+                </div>
+            </div>
+            <div class="col-2"><a class="br-item header">
+                <div class="content text-down-01 text-bold text-uppercase">Central de Conteúdo</div>
+                <div class="support"><i class="fas fa-angle-down" aria-hidden="true"></i>
+                </div>
+            </a>
+            <div class="br-list"><span class="br-divider d-md-none"></span><a class="br-item"
+                    href="https://www.gov.br/inpe/pt-br/central-de-conteudo/cartilhas-educacionais">
+                    <div class="content">Cartilhas Educacionais</div>
+                </a><a class="br-item" href="https://www.gov.br/inpe/pt-br/central-de-conteudo/publicacoes">
+                    <div class="content">Publicações</div>
+                </a><a class="br-item" href="https://www.gov.br/inpe/pt-br/area-conhecimento/biblioteca">
+                    <div class="content">Biblioteca On-Line</div>
+                </a><a class="br-item" href="http://www.youtube.com/inpemct">
+                    <div class="content">Vídeos</div>
+                </a>                
+
+            </div>
+        </div>
+        <div class="col-2"><a class="br-item header">
+            <div class="content text-down-01 text-bold text-uppercase">Canais de Atendimento</div>
+            <div class="support"><i class="fas fa-angle-down" aria-hidden="true"></i>
+            </div>
+        </a>
+        <div class="br-list"><span class="br-divider d-md-none"></span><a class="br-item"
+                href="https://www.gov.br/inpe/pt-br/canais_atendimento/ouvidoria">
+                <div class="content">Ouvidoria</div>
+            </a><a class="br-item" href="https://www.gov.br/inpe/pt-br/canais_atendimento/imprensa">
+                <div class="content">Imprensa</div>
+            </a><a class="br-item" href="http://www.gov.br/inpe/pt-br/acesso-a-informacao/institucional/visita/">
+                <div class="content">Visitas ao INPE</div>
+            </a>
+
+        </div>
+    </div>
+            <div class="col-2"><a class="br-item header" href="https://www.gov.br/inpe/pt-br/composicao">
+                    <div class="content text-down-01 text-bold text-uppercase">Composição </div>
+                    <div class="support">
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-2"><a class="br-item header" href="https://www.gov.br/inpe/pt-br/servicos">
+                <div class="content text-down-01 text-bold text-uppercase">Serviços </div>
+                <div class="support">
+                </div>
+            </a>
+        </div>
+            
+        </div>
+        <div class="d-none d-sm-block">
+            <div class="row align-items-end justify-content-between py-5">
+                <div class="col social-network">
+                    <p class="text-up-01 text-extra-bold text-uppercase">Redes Sociais</p>
+                    
+                    <a class="mr-3" href="https://www.twitter.com/inpe_mct">
+                        <i class="fa-lg fa-brands fa-twitter"></i>
+                    </a>
+                    <a class="mr-3" href="https://www.youtube.com/inpemct">
+                        <i class="fa-lg fa-brands fa-youtube"></i>
+                    </a>
+                    <a class="mr-3" href="https://www.facebook.com/inpe.oficial">
+                        <i class="fa-lg fa-brands fa-facebook-f"></i>
+                    </a>
+                    <a class="mr-3" href="https://www.instagram.com/cptecinpe/">
+                        <i class="fa-lg fa-brands fa-instagram"></i>
+                    </a>                                                            
+
+                </div>
+                
+                <div class="col assigns text-right">
+                    
+                    <a  href="http://www.acessoainformacao.gov.br/" alt="Acesso à informação" title="Acesso à informação">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 117 49" height="49" width="117" shape-rendering="geometricPrecision" text-rendering="geometricPrecision"><defs><style type="text/css">.a {font: normal bold 11px Open Sans, sans-serif;}</style></defs><circle cx="22" cy="23" r="22" fill="#fff"></circle><path style="stroke:#071d41;stroke-width:9;stroke-linecap:round;" d="m 22,23 v 13"></path><path style="stroke:#fff;stroke-width:4;stroke-linejoin:round;" d="m 4,43 3,-6 4,3 z"></path><circle r="4.5" cy="11" cx="22" fill="#071d41"></circle><g fill="#fff"><text x="47" y="22"><tspan class="a" y="18">Acesso à</tspan><tspan class="a" x="47" y="31">Informação</tspan></text></g></svg>
+                    </a>
+                    
+                </div>
+            </div>
+        </div>
+    </div><span class="br-divider my-3"></span>
+    <div class="container-lg">
+        <div class="info">
+            <div class="text-down-01 text-medium pb-3">Desenvolvido por
+                <strong>CPTEC.</strong></div>
+        </div>
+    </div>
+</footer>
+
+
+    <script type="text/javascript">
+
+
+    dataPrimeiraPagina = getDataIni();
+    anoSys=dataPrimeiraPagina.substring(0, 4);
+    mesSys=dataPrimeiraPagina.substring(4, 6);
+    diaSys=dataPrimeiraPagina.substring(6, 8); 
+
+    dataObsPrimeiraPagina = getDataObsIni();
+
+    //document.getElementById('iframeId').src = "http://ftp.cptec.inpe.br/modelos/tempo/WRF/ams_07km/brutos/"+anoSys+"/"+mesSys+"/"+diaSys+"/00/";
+//http://s0.cptec.inpe.br/subsaz/BAM-1.2_products/figures/2022/08/10/bam12_prec_anomaly_2022081000_week01_as.png
+//http://s0.cptec.inpe.br/subsaz/BAM-1.2_products/figures/2022/08/03/bam12_prec_anomaly_2022081000_week01_as.png
+    // Setar Imagens Iniciais Previsao
+    //img1 = "http://s0.cptec.inpe.br/subsaz/BAM-1.2_products/figures/"+anoSys+"/"+mesSys+"/"+diaSys+"/bam12_"+variavelIni+"_anomaly_"+dataPrimeiraPagina+"_"+produtoIni+"01_"+regiaoIni+".png";
+    //img2 = "http://s0.cptec.inpe.br/subsaz/BAM-1.2_products/figures/"+anoSys+"/"+mesSys+"/"+diaSys+"/bam12_"+variavelIni+"_ensemble_"+dataPrimeiraPagina+"_"+produtoIni+"01_"+regiaoIni+".png";
+    //img3 = "http://s0.cptec.inpe.br/subsaz/BAM-1.2_products/figures/"+anoSys+"/"+mesSys+"/"+diaSys+"/bam12_"+variavelIni+"_anomaly_"+dataPrimeiraPagina+"_"+produtoIni+"02_"+regiaoIni+".png";
+   // img4 = "http://s0.cptec.inpe.br/subsaz/BAM-1.2_products/figures/"+anoSys+"/"+mesSys+"/"+diaSys+"/bam12_"+variavelIni+"_ensemble_"+dataPrimeiraPagina+"_"+produtoIni+"02_"+regiaoIni+".png";
+   // img5 = "http://s0.cptec.inpe.br/subsaz/BAM-1.2_products/figures/"+anoSys+"/"+mesSys+"/"+diaSys+"/bam12_"+variavelIni+"_anomaly_"+dataPrimeiraPagina+"_"+produtoIni+"03_"+regiaoIni+".png";
+   // img6 = "http://s0.cptec.inpe.br/subsaz/BAM-1.2_products/figures/"+anoSys+"/"+mesSys+"/"+diaSys+"/bam12_"+variavelIni+"_ensemble_"+dataPrimeiraPagina+"_"+produtoIni+"03_"+regiaoIni+".png";
+   // img7 = "http://s0.cptec.inpe.br/subsaz/BAM-1.2_products/figures/"+anoSys+"/"+mesSys+"/"+diaSys+"/bam12_"+variavelIni+"_anomaly_"+dataPrimeiraPagina+"_"+produtoIni+"04_"+regiaoIni+".png";
+   // img8 = "http://s0.cptec.inpe.br/subsaz/BAM-1.2_products/figures/"+anoSys+"/"+mesSys+"/"+diaSys+"/bam12_"+variavelIni+"_ensemble_"+dataPrimeiraPagina+"_"+produtoIni+"04_"+regiaoIni+".png";
+
+  //  document.getElementById("img1").src = img1; 
+  //  document.getElementById("img2").src = img2;
+  //  document.getElementById("img3").src = img3;  
+  //  document.getElementById("img4").src = img4; 
+  //  document.getElementById("img5").src = img5;  
+ //   document.getElementById("img6").src = img6; 
+ //   document.getElementById("img7").src = img7;  
+ //   document.getElementById("img8").src = img8;   
+
+    console.log(img1);
+//
+
+  // Setar Imagens Iniciais Avaliacao
+//https://s0.cptec.inpe.br/subsaz/BAM-1.2_products/figures/prec-week/cpc_prec_anomaly_2022080300_week01_as.png
+
+    console.log(dataObsPrimeiraPagina);  
+    anoSysAval=dataObsPrimeiraPagina.substring(0, 4);
+    mesSysAval=dataObsPrimeiraPagina.substring(4, 6);
+    diaSysAval=dataObsPrimeiraPagina.substring(6, 8); 
+
+
+   // img21 = "http://s0.cptec.inpe.br/subsaz/BAM-1.2_products/figures/"+anoSysAval+"/"+mesSysAval+"/"+diaSysAval+"/cpc_"+varAvaliacaoIni+"_anomaly_"+dataObsPrimeiraPagina+"_week01_"+regiaoIni+".png";
+   // img22 = "http://s0.cptec.inpe.br/subsaz/BAM-1.2_products/figures/"+anoSysAval+"/"+mesSysAval+"/"+diaSysAval+"/cpc_"+varAvaliacaoIni+"_anomaly_"+dataObsPrimeiraPagina+"_week02_"+regiaoIni+".png";
+   // img23 = "http://s0.cptec.inpe.br/subsaz/BAM-1.2_products/figures/"+anoSysAval+"/"+mesSysAval+"/"+diaSysAval+"/cpc_"+varAvaliacaoIni+"_anomaly_"+dataObsPrimeiraPagina+"_week03_"+regiaoIni+".png";
+   // img24 = "http://s0.cptec.inpe.br/subsaz/BAM-1.2_products/figures/"+anoSysAval+"/"+mesSysAval+"/"+diaSysAval+"/cpc_"+varAvaliacaoIni+"_anomaly_"+dataObsPrimeiraPagina+"_week04_"+regiaoIni+".png";
+
+ //   document.getElementById("img21").src = img21; 
+ //   document.getElementById("img22").src = img22;
+  //  document.getElementById("img23").src = img23;  
+  //  document.getElementById("img24").src = img24; 
+
+   // img25 = "http://s0.cptec.inpe.br/subsaz/BAM-1.2_products/figures/"+anoSysAval+"/"+mesSysAval+"/"+diaSysAval+"/bam12_"+varAvaliacaoIni+"_anomaly_"+dataObsPrimeiraPagina+"_"+produtoIni+"01_"+regiaoIni+".png";
+   // img26 = "http://s0.cptec.inpe.br/subsaz/BAM-1.2_products/figures/"+anoSysAval+"/"+mesSysAval+"/"+diaSysAval+"/bam12_"+varAvaliacaoIni+"_anomaly_"+dataObsPrimeiraPagina+"_"+produtoIni+"02_"+regiaoIni+".png";
+   // img27 = "http://s0.cptec.inpe.br/subsaz/BAM-1.2_products/figures/"+anoSysAval+"/"+mesSysAval+"/"+diaSysAval+"/bam12_"+varAvaliacaoIni+"_anomaly_"+dataObsPrimeiraPagina+"_"+produtoIni+"03_"+regiaoIni+".png";
+  //  img28 = "http://s0.cptec.inpe.br/subsaz/BAM-1.2_products/figures/"+anoSysAval+"/"+mesSysAval+"/"+diaSysAval+"/bam12_"+varAvaliacaoIni+"_anomaly_"+dataObsPrimeiraPagina+"_"+produtoIni+"04_"+regiaoIni+".png";
+
+   // document.getElementById("img25").src = img25; 
+   // document.getElementById("img26").src = img26;
+   // document.getElementById("img27").src = img27;  
+  //  document.getElementById("img28").src = img28; 
+
+    // Setar Imagens Iniciais Verificacao
+    //<img src="https://s0.cptec.inpe.br/subsaz/BAM-1.2_products/figures/verification/bam12_corr_anomaly_prec_week01_JAN_as.png" alt="Verification"  id="img17" style="width:100%">
+    //           http://s0.cptec.inpe.br/subsaz/BAM-1.2_products/figures/verification/bam12_corr_anomaly_prec_week01_gl.png
+  //  img17 = "http://s0.cptec.inpe.br/subsaz/BAM-1.2_products/figures/verification/bam12_"+campoVerificacaoIni+"_anomaly_"+varVerificacaoIni+"_"+produtoIni+"01_"+mes+"_"+regiaoIni+".png";
+  //  img18 = "http://s0.cptec.inpe.br/subsaz/BAM-1.2_products/figures/verification/bam12_"+campoVerificacaoIni+"_anomaly_"+varVerificacaoIni+"_"+produtoIni+"02_"+mes+"_"+regiaoIni+".png";
+  //  img19 = "http://s0.cptec.inpe.br/subsaz/BAM-1.2_products/figures/verification/bam12_"+campoVerificacaoIni+"_anomaly_"+varVerificacaoIni+"_"+produtoIni+"03_"+mes+"_"+regiaoIni+".png";
+  //  img20 = "http://s0.cptec.inpe.br/subsaz/BAM-1.2_products/figures/verification/bam12_"+campoVerificacaoIni+"_anomaly_"+varVerificacaoIni+"_"+produtoIni+"04_"+mes+"_"+regiaoIni+".png";
+
+    console.log(img17);
+ //   document.getElementById("img17").src = img17; 
+ //   document.getElementById("img18").src = img18;
+ //   document.getElementById("img19").src = img19;  
+ //   document.getElementById("img20").src = img20; 
+
+//
+
+
+    </script>
+
+<script src="js/botaoCopy.js"></script>
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-HL0EKHM3HZ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-HL0EKHM3HZ');
+  gtag('config', 'UA-XXXXXXXXX–X', { 'anonymize_ip': true });
+</script>
+  </body>
+</html>

@@ -57,7 +57,6 @@ const LAGOA_RADAR_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/funct
 const HIDROSENS_LARANJAL_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/hidrosens-laranjal";
 const NOAA_ENSO_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/noaa-enso";
 const IRI_ENSO_PROB_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/iri-enso-probabilidades";
-const CPTEC_INPE_PRODUCTS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/cptec-inpe-produtos";
 
 // ENSO — dados reais NOAA/IRI mai 2026
 // ⚠ Estes valores são ATIVO PARCIALS — publicados pelo NOAA/IRI em mai/2026.
@@ -153,23 +152,6 @@ async function fetchNoaaEnso() {
   }
 }
 
-
-
-// CPTEC/INPE — produtos oficiais sazonais/subsazonais por imagem.
-// São dados reais oficiais publicados como PNG, não série numérica JSON.
-async function fetchCptecInpeProducts() {
-  try {
-    const res = await fetch(CPTEC_INPE_PRODUCTS_FUNCTION_URL, { signal: AbortSignal.timeout(20000) });
-    if (!res.ok) return null;
-
-    const data = await res.json();
-    if (!data?.ok || !Array.isArray(data?.products)) return null;
-
-    return data;
-  } catch {
-    return null;
-  }
-}
 
 // IRI/CCSR — Probabilidades ENSO reais via Edge Function.
 // Substitui as probabilidades estáticas quando disponível.
@@ -618,7 +600,6 @@ export default function SentinelaRS() {
   const [dark, setDark]                 = useState(true);
   const [ensoLive, setEnsoLive]         = useState(null);
   const [ensoProbLive, setEnsoProbLive]     = useState(null);
-  const [cptecProducts, setCptecProducts]   = useState(null);
   const [expandedCard, setExpandedCard] = useState(null); // para detalhe do card
 
   // Cores dinâmicas por tema
@@ -751,25 +732,6 @@ export default function SentinelaRS() {
 
 
 
-
-  useEffect(() => {
-    let alive = true;
-
-    async function loadCptecProducts() {
-      const data = await fetchCptecInpeProducts();
-      if (!alive || !data) return;
-      setCptecProducts(data);
-    }
-
-    loadCptecProducts();
-    const iv = setInterval(loadCptecProducts, 6 * 60 * 60 * 1000);
-
-    return () => {
-      alive = false;
-      clearInterval(iv);
-    };
-  }, []);
-
   useEffect(() => {
     let alive = true;
 
@@ -838,7 +800,6 @@ export default function SentinelaRS() {
     { key:"previsao",   label:"📅 Previsão 14 Dias" },
     { key:"lagoa",      label:"🌊 Lagoa dos Patos" },
     { key:"enso",       label:"🌡️ El Niño / La Niña" },
-    { key:"cptec",      label:"🌦️ CPTEC/INPE" },
     { key:"copernicus", label:"🛰️ Copernicus" },
     { key:"queimadas",  label:"🔥 Queimadas / APAs" },
     { key:"alertas",    label:`🔔 Alertas${alerts.length?` (${alerts.length})`:""}`},
@@ -1410,57 +1371,6 @@ export default function SentinelaRS() {
           </div>
         )}
 
-
-        {/* ══ CPTEC / INPE ══ */}
-        {!loading && activeTab==="cptec" && (
-          <div>
-            <div style={{ ...s.card, marginBottom:12, border:`1px solid ${t.borderActive}` }}>
-              <div style={{ fontSize:9, color:t.textMuted, letterSpacing:2 }}>CPTEC/INPE</div>
-              <div style={{ fontSize:20, fontWeight:900, color:t.text, marginTop:2 }}>Produtos sazonais e subsazonais oficiais</div>
-              <div style={{ fontSize:10, color:t.textMuted, marginTop:5 }}>
-                Produtos gráficos reais do CPTEC/INPE. Atualização verificada via Edge Function. Uso operacional: contexto climático, não alerta local imediato.
-              </div>
-              <div style={{ marginTop:8, display:"flex", gap:8, flexWrap:"wrap", fontSize:9 }}>
-                <span style={{ padding:"4px 8px", border:`1px solid ${cptecProducts?.ok ? "#22c55e" : "#64748b"}`, color:cptecProducts?.ok ? "#22c55e" : t.textMuted, borderRadius:4 }}>
-                  {cptecProducts?.ok ? "ATIVO" : "CARREGANDO"}
-                </span>
-                <span style={{ padding:"4px 8px", border:`1px solid ${t.border}`, color:t.textMuted, borderRadius:4 }}>
-                  Produtos válidos: {cptecProducts?.available ?? 0}/{cptecProducts?.total ?? 0}
-                </span>
-                <span style={{ padding:"4px 8px", border:`1px solid ${t.border}`, color:t.textMuted, borderRadius:4 }}>
-                  Última consulta: {cptecProducts?.fetched_at ? formatDateTimeBR(cptecProducts.fetched_at) : "—"}
-                </span>
-              </div>
-            </div>
-
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(360px,1fr))", gap:12 }}>
-              {(cptecProducts?.products || []).filter((p) => p.ok).map((p) => (
-                <div key={p.id} style={{ ...s.card, overflow:"hidden" }}>
-                  <div style={{ display:"flex", justifyContent:"space-between", gap:8, alignItems:"flex-start", marginBottom:8 }}>
-                    <div>
-                      <div style={{ fontSize:8, color:t.textMuted, letterSpacing:2 }}>{p.group?.toUpperCase()} · {p.period}</div>
-                      <div style={{ fontSize:14, fontWeight:800, color:t.text }}>{p.title}</div>
-                    </div>
-                    <div style={{ fontSize:8, color:"#22c55e", border:"1px solid #22c55e55", borderRadius:4, padding:"3px 6px" }}>OK</div>
-                  </div>
-                  <a href={p.url} target="_blank" rel="noreferrer">
-                    <img src={p.url} alt={p.title} style={{ width:"100%", borderRadius:6, border:`1px solid ${t.border}`, background:"#fff" }} />
-                  </a>
-                  <div style={{ marginTop:7, fontSize:8, color:t.textMuted }}>
-                    Fonte: CPTEC/INPE · produto gráfico oficial · {p.contentLength ? `${Math.round(p.contentLength/1024)} KB` : "tamanho não informado"}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {cptecProducts && !cptecProducts.ok && (
-              <div style={{ ...s.card, color:t.textMuted, fontSize:11 }}>
-                Nenhum produto CPTEC/INPE validado no momento.
-              </div>
-            )}
-          </div>
-        )}
-
         {/* ══ COPERNICUS ══ */}
         {activeTab==="copernicus" && (
           <div style={{ display:"grid", gap:11 }}>
@@ -1680,7 +1590,7 @@ export default function SentinelaRS() {
               { n:"INPE BDQueimadas",          st:"ATIVO",     c:"#22c55e", d:"Focos de queimada últimas 48h no RS — API pública. Exibe histórico de referência quando API indisponível.", a:"Sem chave", h:null },
               { n:"Copernicus — Indicadores de referência",  st:"ATIVO PARCIAL",  c:"#eab308", d:"NDVI, SPI-3, IQA e nível do mar permanecem como referência estática; APIs reais exigem cadastro/token.", a:"Registro gratuito para APIs reais", h:"Para tempo real:\n- NDVI: Sentinel-2 via dataspace.copernicus.eu\n- SPI-3: CHIRPS + cálculo local\n- IQA: QUALAR/IBAMA\n- Nível mar: CMEMS altimetry API" },
               { n:"INMET",                     st:"ATIVO",     c:"#22c55e", d:"Previsão oficial por município via apiprevmet3.inmet.gov.br/previsao/{codigo_ibge}. Conectado diretamente no navegador.", a:"API pública, sem chave", h:"Endpoint validado: https://apiprevmet3.inmet.gov.br/previsao/4315602" },
-              { n:"CPTEC/INPE",                st:"PLANEJADO", c:"#eab308", d:"Produtos sazonais/subsazonais oficiais por imagem via Edge Function.",           a:"API pública", h:"1. servicos.cptec.inpe.br/XML/cidade/{id}/previsao.xml\n2. Proxy via Supabase Edge Function (CORS)" },
+              { n:"CPTEC/INPE",                st:"PLANEJADO", c:"#eab308", d:"Previsão climática sazonal e boletins oficiais BR; aguardando endpoint público estável.",           a:"API pública", h:"1. servicos.cptec.inpe.br/XML/cidade/{id}/previsao.xml\n2. Proxy via Supabase Edge Function (CORS)" },
               { n:"Defesa Civil RS",           st:"ATIVO",     c:"#22c55e", d:"Avisos oficiais via RSS da Defesa Civil do Rio Grande do Sul, consumidos por Supabase Edge Function para evitar bloqueio CORS.", a:"RSS oficial via proxy", h:"Endpoint ativo: https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/defesa-civil-rs" },
               { n:"CEMADEN",                   st:"ATIVO",     c:"#22c55e", d:"Chuva observada por acumulados recentes das PCDs CEMADEN. Fonte obrigatória: DADOS DA REDE OBSERVACIONAL DO CEMADEN/MCTIC.", a:"Token PED via Supabase Secret", h:"Endpoint: cemaden-rs. Cache: 10 min. Limite PED para usuário externo: até 12 requisições/minuto." },
               { n:"Copernicus Emergency (EU)", st:"FUTURO",    c:"#8b5cf6", d:"Sentinel-1 SAR para detecção de alagamentos.",                     a:"Registro gratuito", h:"1. dataspace.copernicus.eu → cadastro\n2. API STAC Sentinel-1" },
