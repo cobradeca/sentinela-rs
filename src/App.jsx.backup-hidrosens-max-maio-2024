@@ -170,8 +170,6 @@ async function fetchHidroSensLaranjalLevel() {
       threshold_cm: data.threshold_cm ?? 120,
       critical_threshold_m: data.critical_threshold_m ?? 1.40,
       critical_threshold_cm: data.critical_threshold_cm ?? 140,
-      max_may_2024_m: data.max_may_2024_m ?? 2.40,
-      max_may_2024_cm: data.max_may_2024_cm ?? 240,
       status: data.status || (data.level_m >= 1.40 ? "ALERTA" : data.level_m >= 1.20 ? "ATENCAO" : "NORMAL"),
       note: data.note,
     };
@@ -250,7 +248,7 @@ function getLagoaMeasuredAt(lagoa) {
 }
 
 function getLagoaMaxMay2024(lagoa) {
-  return lagoa?.hidrosens?.max_may_2024_m ?? lagoa?.radar?.max_may_2024_m ?? null;
+  return lagoa?.radar?.max_may_2024_m ?? null;
 }
 
 function getLagoaSummary(stationData) {
@@ -1040,7 +1038,7 @@ export default function SentinelaRS() {
                             <div style={{ fontSize:8, color:t.textMuted }}>{measuredAt ? formatDateTimeBR(measuredAt) : "horário não informado"}</div>
                             {point.id === "lagoa_patos_pelotas" && (
                               <div style={{ fontSize:8, color:t.textMuted, marginTop:3 }}>
-                                Sensor HidroSens UFPel · alerta 1,20 m · crítica 1,40 m · máx. maio/2024 2,40 m
+                                Sensor HidroSens UFPel · alerta 1,20 m · inundação crítica 1,40 m
                               </div>
                             )}
                           </div>
