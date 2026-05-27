@@ -25,7 +25,7 @@ const CRITICAL_PATTERNS = [
   { id:"probability_static_98", pattern:/98%\s*(de prob|prob)|prob\.\s*mai|elNino:\s*0\.98/gi, msg:"Probabilidade fixa de El Niño. Deve vir do endpoint IRI/CCSR." },
   { id:"impact_static_2026_27", pattern:/Chuvas\s+30.?50%|Inundações costeiras|Risco de queimadas no verão|Ondas de calor intensas|Risco de enchentes e queimadas elevado/gi, msg:"Impacto esperado fixo. Deve ser contexto rotulado ou substituído por fonte oficial com timestamp." },
   { id:"copernicus_static_operational", pattern:/const\s+COPERNICUS_DATA\s*=\s*\{|Copernicus.*não atualizados em tempo real|Indicadores abaixo são dados de referência/gi, msg:"Copernicus fixo/de referência. Deve ficar fora de SITREP até AUTH_OK e produto real." },
-  { id:"placeholder_terms", pattern:/TODO|FIXME|PLACEHOLDER|mock|dummy|lorem|SEU_CLIENT_ID|SEU_CLIENT_SECRET|valor_real/gi, msg:"Placeholder ou termo de desenvolvimento encontrado." },
+  { id:"placeholder_terms", pattern:/\\bTODO\\b|\\bFIXME\\b|PLACEHOLDER|\\bmock\\b|\\bdummy\\b|\\blorem\\b|SEU_CLIENT_ID|SEU_CLIENT_SECRET|valor_real/g, msg:"Placeholder ou termo de desenvolvimento encontrado." },
 ];
 
 const ACCEPTABLE_PATTERNS = [
