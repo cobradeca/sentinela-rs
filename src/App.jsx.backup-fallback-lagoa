@@ -148,16 +148,14 @@ async function fetchWeather14Days(lat, lon) {
 // HidroSens/UFPel — Estação Laranjal / Pelotas.
 // Fonte específica para o ponto Pelotas/Laranjal, via ThingsBoard público.
 async function fetchHidroSensLaranjalLevel() {
-  const cached = readFallbackCache(HIDROSENS_LARANJAL_CACHE_KEY);
-
   try {
     const res = await fetch(HIDROSENS_LARANJAL_FUNCTION_URL, { signal: AbortSignal.timeout(15000) });
-    if (!res.ok) return cached || null;
+    if (!res.ok) return null;
 
     const data = await res.json();
-    if (!data?.ok || typeof data.level_m !== "number") return cached || null;
+    if (!data?.ok || typeof data.level_m !== "number") return null;
 
-    const live = {
+    return {
       ok: true,
       station_id: data.station_id,
       name: data.name,
@@ -177,40 +175,26 @@ async function fetchHidroSensLaranjalLevel() {
       status: data.status || (data.level_m >= 1.40 ? "ALERTA" : data.level_m >= 1.20 ? "ATENCAO" : "NORMAL"),
       note: data.note,
     };
-
-    saveFallbackCache(HIDROSENS_LARANJAL_CACHE_KEY, live);
-    return live;
   } catch {
-    return cached || null;
+    return null;
   }
 }
 
 async function fetchLagoaRadarLevels() {
-  const cached = readFallbackCache(LAGOA_RADAR_CACHE_KEY);
-
   try {
     const res = await fetch(LAGOA_RADAR_FUNCTION_URL, { signal: AbortSignal.timeout(15000) });
-    if (!res.ok) return cached ? markRadarFallback(cached) : {};
+    if (!res.ok) return {};
 
     const data = await res.json();
-    if (!data?.ok || !Array.isArray(data.sensors)) {
-      return cached ? markRadarFallback(cached) : {};
-    }
+    if (!data?.ok || !Array.isArray(data.sensors)) return {};
 
-    const live = Object.fromEntries(
+    return Object.fromEntries(
       data.sensors
         .filter((sensor) => sensor?.ok && sensor?.station_id)
         .map((sensor) => [sensor.station_id, sensor])
     );
-
-    if (Object.keys(live).length > 0) {
-      saveFallbackCache(LAGOA_RADAR_CACHE_KEY, live);
-      return live;
-    }
-
-    return cached ? markRadarFallback(cached) : {};
   } catch {
-    return cached ? markRadarFallback(cached) : {};
+    return {};
   }
 }
 
@@ -219,57 +203,6 @@ function radarRiskToLevel(status) {
   if (status === "ATENCAO") return "ATENCAO";
   return "NORMAL";
 }
-
-const LAGOA_FALLBACK_MAX_AGE_MS = 6 * 60 * 60 * 1000;
-const LAGOA_RADAR_CACHE_KEY = "sentinela_rs_lagoa_radar_last_valid_v1";
-const HIDROSENS_LARANJAL_CACHE_KEY = "sentinela_rs_hidrosens_laranjal_last_valid_v1";
-
-function saveFallbackCache(key, data) {
-  try {
-    if (typeof window === "undefined" || !window.localStorage) return;
-    window.localStorage.setItem(key, JSON.stringify({
-      saved_at: new Date().toISOString(),
-      data,
-    }));
-  } catch {}
-}
-
-function readFallbackCache(key, maxAgeMs = LAGOA_FALLBACK_MAX_AGE_MS) {
-  try {
-    if (typeof window === "undefined" || !window.localStorage) return null;
-    const raw = window.localStorage.getItem(key);
-    if (!raw) return null;
-
-    const parsed = JSON.parse(raw);
-    const savedAtMs = new Date(parsed.saved_at || 0).getTime();
-    if (!savedAtMs || Date.now() - savedAtMs > maxAgeMs) return null;
-
-    return {
-      ...parsed.data,
-      fallback: true,
-      fallback_saved_at: parsed.saved_at,
-      fallback_age_minutes: Math.round((Date.now() - savedAtMs) / 60000),
-    };
-  } catch {
-    return null;
-  }
-}
-
-function markRadarFallback(map) {
-  if (!map || typeof map !== "object") return {};
-  return Object.fromEntries(
-    Object.entries(map).map(([id, sensor]) => [
-      id,
-      {
-        ...sensor,
-        fallback: true,
-        fallback_saved_at: map.fallback_saved_at || sensor?.fallback_saved_at || null,
-        fallback_age_minutes: map.fallback_age_minutes ?? sensor?.fallback_age_minutes ?? null,
-      },
-    ])
-  );
-}
-
 
 function formatDateTimeBR(value) {
   if (!value) return "sem horário";
@@ -306,11 +239,10 @@ function getLagoaPointData(point, stationData) {
 
 function getLagoaSourceText(lagoa) {
   if (!lagoa?.isReal) return "Sem leitura";
-  const suffix = lagoa?.isFallback ? " · última salva" : "";
-  if (lagoa?.hidrosens) return "HidroSens/UFPel" + suffix;
-  if (lagoa?.radar) return "RADAR Lagoa dos Patos" + suffix;
+  if (lagoa?.hidrosens) return "HidroSens/UFPel";
+  if (lagoa?.radar) return "RADAR Lagoa dos Patos";
   if (lagoa?.anaLevel !== null && lagoa?.anaLevel !== undefined) return "ANA HidroWeb";
-  return "Fonte validada" + suffix;
+  return "Fonte validada";
 }
 
 function getLagoaMeasuredAt(lagoa) {
@@ -634,9 +566,6 @@ export default function SentinelaRS() {
           atual: hidrosensLevel?.level_m ?? radarLevel?.level_m ?? realLevel,
           isReal: Boolean(hidrosensLevel?.level_m ?? radarLevel?.level_m ?? realLevel),
           source: hidrosensLevel ? "HIDROSENS" : (radarLevel ? "RADAR" : (realLevel !== null ? "ANA" : null)),
-          isFallback: Boolean(hidrosensLevel?.fallback || radarLevel?.fallback),
-          fallback_saved_at: hidrosensLevel?.fallback_saved_at || radarLevel?.fallback_saved_at || null,
-          fallback_age_minutes: hidrosensLevel?.fallback_age_minutes ?? radarLevel?.fallback_age_minutes ?? null,
           radar: radarLevel,
           hidrosens: hidrosensLevel,
           anaLevel: realLevel,
@@ -647,7 +576,7 @@ export default function SentinelaRS() {
 
         // Não usa limiar único de 0,8m. Risco de nível só entra quando a fonte traz limiar próprio validado.
         const baseRisk = getRiskLevel(precip, tempMin, windMax, null);
-        const levelRisk = ((lagoa?.radar || lagoa?.hidrosens) && lagoa?.threshold_m && !lagoa?.isFallback) ? radarRiskToLevel(lagoa.levelStatus) : "NORMAL";
+        const levelRisk = ((lagoa?.radar || lagoa?.hidrosens) && lagoa?.threshold_m) ? radarRiskToLevel(lagoa.levelStatus) : "NORMAL";
         const order = ["NORMAL","ATENCAO","ALERTA","EMERGENCIA","CRITICO"];
         const risk = order.indexOf(levelRisk) > order.indexOf(baseRisk) ? levelRisk : baseRisk;
         results[st.id] = { weather, inmet, cemaden, lagoa, precip, tempMin, windMax, risk, realLevel, radarLevel };
@@ -1109,11 +1038,6 @@ export default function SentinelaRS() {
                             <div style={{ fontSize:8, color:t.textMuted }}>Fonte</div>
                             <div style={{ fontSize:17, fontWeight:900, color:t.text }}>{sourceText}</div>
                             <div style={{ fontSize:8, color:t.textMuted }}>{measuredAt ? formatDateTimeBR(measuredAt) : "horário não informado"}</div>
-                            {lagoa?.isFallback && (
-                              <div style={{ fontSize:8, color:"#eab308", marginTop:3 }}>
-                                fallback local · última leitura salva{lagoa.fallback_age_minutes ? ` há ${lagoa.fallback_age_minutes} min` : ""}
-                              </div>
-                            )}
                             {point.id === "lagoa_patos_pelotas" && (
                               <div style={{ fontSize:8, color:t.textMuted, marginTop:3 }}>
                                 Sensor HidroSens UFPel · alerta 1,20 m · crítica 1,40 m · máx. maio/2024 2,40 m
