@@ -55,10 +55,9 @@ const CEMADEN_ATTRIBUTION = "DADOS DA REDE OBSERVACIONAL DO CEMADEN/MCTIC";
 const ANA_RS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/ana-rs";
 const LAGOA_RADAR_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/lagoa-patos-radar";
 const HIDROSENS_LARANJAL_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/hidrosens-laranjal";
-const NOAA_ENSO_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/noaa-enso";
 
 // ENSO — dados reais NOAA/IRI mai 2026
-// ⚠ Estes valores são ATIVO PARCIALS — publicados pelo NOAA/IRI em mai/2026.
+// ⚠ Estes valores são ESTÁTICOS — publicados pelo NOAA/IRI em mai/2026.
 // Para atualização automática, integrar: https://iri.columbia.edu/our-expertise/climate/forecasts/enso/current/
 const ENSO = {
   nino34: +0.9,
@@ -132,23 +131,6 @@ function classifyENSO(a) {
   if (a > -1.5)   return { label:"La Niña",         color:"#3b82f6", icon:"🔵" };
   if (a > -2.0)   return { label:"La Niña Forte",   color:"#1d4ed8", icon:"🟣" };
   return           { label:"Super La Niña",         color:"#1e3a8a", icon:"⚫" };
-}
-
-
-// NOAA/CPC — ENSO observado real via Edge Function.
-// Atualiza Niño 3.4 e ONI. Probabilidades IRI permanecem como camada separada até integração própria.
-async function fetchNoaaEnso() {
-  try {
-    const res = await fetch(NOAA_ENSO_FUNCTION_URL, { signal: AbortSignal.timeout(15000) });
-    if (!res.ok) return null;
-
-    const data = await res.json();
-    if (!data?.ok || !data?.enso) return null;
-
-    return data.enso;
-  } catch {
-    return null;
-  }
 }
 
 // Previsão 14 dias via Open-Meteo (forecast_days=14)
@@ -572,7 +554,6 @@ export default function SentinelaRS() {
   const [qLoading, setQLoading]         = useState(false);
   const [expanded, setExpanded]         = useState(null);
   const [dark, setDark]                 = useState(true);
-  const [ensoLive, setEnsoLive]         = useState(null);
   const [expandedCard, setExpandedCard] = useState(null); // para detalhe do card
 
   // Cores dinâmicas por tema
@@ -703,27 +684,6 @@ export default function SentinelaRS() {
     return () => clearInterval(iv);
   }, [loadAllData]);
 
-
-  useEffect(() => {
-    let alive = true;
-
-    async function loadEnsoLive() {
-      const live = await fetchNoaaEnso();
-      if (!alive || !live) return;
-
-      // Mantém forecast/probabilidade do objeto estático até a integração IRI específica.
-      setEnsoLive({ ...ENSO, ...live, prob: activeENSO.prob, forecast: activeENSO.forecast });
-    }
-
-    loadEnsoLive();
-    const iv = setInterval(loadEnsoLive, 6 * 60 * 60 * 1000);
-
-    return () => {
-      alive = false;
-      clearInterval(iv);
-    };
-  }, []);
-
   useEffect(() => {
     if (activeTab === "queimadas") loadQueimadas();
   }, [activeTab, loadQueimadas]);
@@ -733,8 +693,7 @@ export default function SentinelaRS() {
     return o.indexOf(d.risk)>o.indexOf(w)?d.risk:w;
   }, "NORMAL");
 
-  const activeENSO = ensoLive || ENSO;
-  const ensoClass = classifyENSO(activeENSO.nino34);
+  const ensoClass = classifyENSO(ENSO.nino34);
   const selData   = stationData[selStation.id];
   const lagoaSummary = getLagoaSummary(stationData);
 
@@ -778,7 +737,7 @@ export default function SentinelaRS() {
               { l:"Precip. 14d", v:`${d.precip?.toFixed(0)} mm`,    alert: d.precip>80 },
               { l:"Temp. mínima", v:`${d.tempMin?.toFixed(1)} °C`,   alert: d.tempMin<5 },
               { l:"Vento máx.",   v:`${d.windMax?.toFixed(0)} km/h`, alert: d.windMax>50 },
-              { l:"Contexto ENSO",v:`${(activeENSO.prob.elNino*100).toFixed(0)}%`, alert:false },
+              { l:"Contexto ENSO",v:`${(ENSO.prob.elNino*100).toFixed(0)}%`, alert:false },
               ...(d.lagoa ? [
                 { l:"Nível lagoa", v: d.lagoa.isReal && d.lagoa.atual !== null ? `${d.lagoa.atual.toFixed(2)} m (ANA)` : "– (ANA indisponível)", alert: false },
               ] : []),
@@ -852,7 +811,7 @@ export default function SentinelaRS() {
               </div>
               {/* ENSO badge — apenas evento mais próximo */}
               <div style={{ padding:"4px 10px", borderRadius:4, border:`1px solid ${ensoClass.color}55`, color:ensoClass.color, fontSize:10, fontWeight:700 }}>
-                {ensoClass.icon} El Niño em Desenvolvimento · +{activeENSO.nino34}°C · {(activeENSO.prob.elNino*100).toFixed(0)}% prob.
+                {ensoClass.icon} El Niño em Desenvolvimento · +{ENSO.nino34}°C · {(ENSO.prob.elNino*100).toFixed(0)}% prob.
               </div>
               <div style={{ display:"flex", gap:6, alignItems:"center" }}>
                 {/* Toggle modo claro/escuro */}
@@ -965,7 +924,7 @@ export default function SentinelaRS() {
                         { l:"Precip. 14d", v:`${d.precip?.toFixed(0)}mm` },
                         { l:"Temp. mín.",  v:`${d.tempMin?.toFixed(1)}°C` },
                         { l:"Vento",       v:`${d.windMax?.toFixed(0)}km/h` },
-                        { l:"Contexto ENSO", v:`${(activeENSO.prob.elNino*100).toFixed(0)}%`, highlight:true },
+                        { l:"Contexto ENSO", v:`${(ENSO.prob.elNino*100).toFixed(0)}%`, highlight:true },
                       ].map(item => (
                         <div key={item.l} style={{ background: dark?"rgba(0,0,0,0.3)":t.bg, padding:"5px 7px", borderRadius:3 }}>
                           <div style={{ fontSize:8, color:t.textMuted }}>{item.l}</div>
@@ -1067,7 +1026,7 @@ export default function SentinelaRS() {
                       { l:"Precipitação", v:`${selData.precip?.toFixed(0)} mm`, a:selData.precip>80 },
                       { l:"Temp. mínima", v:`${selData.tempMin?.toFixed(1)}°C`,  a:selData.tempMin<5 },
                       { l:"Vento máx.",   v:`${selData.windMax?.toFixed(0)} km/h`, a:selData.windMax>50 },
-                      { l:"Contexto ENSO",v:`${(activeENSO.prob.elNino*100).toFixed(0)}%`, a:false },
+                      { l:"Contexto ENSO",v:`${(ENSO.prob.elNino*100).toFixed(0)}%`, a:false },
                     ].map(item=>(
                       <div key={item.l} style={{ display:"flex", justifyContent:"space-between" }}>
                         <span style={{ fontSize:10, color:t.textMuted }}>{item.l}</span>
@@ -1212,18 +1171,18 @@ export default function SentinelaRS() {
             </div>
             {/* Aviso de dados estáticos */}
             <div style={{ padding:"8px 14px", background: dark?"rgba(234,179,8,0.07)":"rgba(234,179,8,0.06)", border:"1px solid rgba(234,179,8,0.25)", borderRadius:4, fontSize:9, color: dark?"#fef08a":"#854d0e", display:"flex", gap:8, alignItems:"center" }}>
-              🗓 <span><strong>Dados de referência: {activeENSO.referenceDate}</strong> — {activeENSO.referenceSource}. Estes valores são estáticos e refletem a publicação mais recente disponível. Para dados em tempo real, acesse <a href="https://iri.columbia.edu/our-expertise/climate/forecasts/enso/current/" target="_blank" rel="noreferrer" style={{ color:"#22d3ee" }}>IRI/CCSR</a> ou <a href="https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/" target="_blank" rel="noreferrer" style={{ color:"#22d3ee" }}>NOAA/CPC</a>.</span>
+              🗓 <span><strong>Dados de referência: {ENSO.referenceDate}</strong> — {ENSO.referenceSource}. Estes valores são estáticos e refletem a publicação mais recente disponível. Para dados em tempo real, acesse <a href="https://iri.columbia.edu/our-expertise/climate/forecasts/enso/current/" target="_blank" rel="noreferrer" style={{ color:"#22d3ee" }}>IRI/CCSR</a> ou <a href="https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/" target="_blank" rel="noreferrer" style={{ color:"#22d3ee" }}>NOAA/CPC</a>.</span>
             </div>
 
             {/* Cards status */}
             <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))", gap:11 }}>
               {[
-                { l:"Fase atual",             v:`${ensoClass.icon} ${ensoClass.label}`, s:`Niño 3.4: +${activeENSO.nino34}°C`, c:ensoClass.color },
-                { l:"ONI trimestral",         v:`+${activeENSO.oni3m}°C`,                    s:"Limiar El Niño: +0,5°C",        c:"#f97316" },
-                { l:"Prob. El Niño mai–jul",  v:`${(activeENSO.prob.elNino*100).toFixed(0)}%`, s:"IRI/CCSR mai 2026",           c:"#ef4444" },
-                { l:"Prob. La Niña",          v:`${(activeENSO.prob.laNina*100).toFixed(0)}%`, s:"Confirmado: NÃO é La Niña",   c:"#22c55e" },
+                { l:"Fase atual",             v:`${ensoClass.icon} ${ensoClass.label}`, s:`Niño 3.4: +${ENSO.nino34}°C`, c:ensoClass.color },
+                { l:"ONI trimestral",         v:`+${ENSO.oni3m}°C`,                    s:"Limiar El Niño: +0,5°C",        c:"#f97316" },
+                { l:"Prob. El Niño mai–jul",  v:`${(ENSO.prob.elNino*100).toFixed(0)}%`, s:"IRI/CCSR mai 2026",           c:"#ef4444" },
+                { l:"Prob. La Niña",          v:`${(ENSO.prob.laNina*100).toFixed(0)}%`, s:"Confirmado: NÃO é La Niña",   c:"#22c55e" },
                 { l:"Status NOAA",            v:"El Niño Watch",                         s:"96% até dez 2026–fev 2027",   c:"#f97316" },
-                { l:"Limiar Super El Niño",   v:`+${(activeENSO.superThreshold-activeENSO.nino34).toFixed(1)}°C restam`, s:`Limiar: +${activeENSO.superThreshold}°C`, c:"#eab308" },
+                { l:"Limiar Super El Niño",   v:`+${(ENSO.superThreshold-ENSO.nino34).toFixed(1)}°C restam`, s:`Limiar: +${ENSO.superThreshold}°C`, c:"#eab308" },
               ].map(item=>(
                 <div key={item.l} style={{ padding:"12px 14px", background:t.cardBg, border:`1px solid ${item.c}44`, borderTop:`3px solid ${item.c}`, borderRadius:5, boxShadow:t.shadowCard }}>
                   <div style={{ fontSize:8, color:t.textMuted, letterSpacing:2, marginBottom:5 }}>{item.l.toUpperCase()}</div>
@@ -1243,11 +1202,11 @@ export default function SentinelaRS() {
                 ].map(lb=>(
                   <div key={lb.l} style={{ position:"absolute", top:0, left:lb.pos, transform:"translateX(-50%)", fontSize:7, color:"rgba(255,255,255,0.8)", height:"100%", display:"flex", alignItems:"center" }}>{lb.l}</div>
                 ))}
-                <div style={{ position:"absolute", top:0, left:`${Math.min(97,Math.max(3,((activeENSO.nino34+3)/6)*100))}%`, transform:"translateX(-50%)", width:3, height:"100%", background:"#fff", boxShadow:"0 0 6px #fff" }} />
+                <div style={{ position:"absolute", top:0, left:`${Math.min(97,Math.max(3,((ENSO.nino34+3)/6)*100))}%`, transform:"translateX(-50%)", width:3, height:"100%", background:"#fff", boxShadow:"0 0 6px #fff" }} />
               </div>
               <div style={{ display:"flex", justifyContent:"space-between", marginTop:5, fontSize:8, color:t.textMuted }}>
                 <span>-3°C</span>
-                <span style={{ color:ensoClass.color, fontWeight:700 }}>▲ ATUAL: +{activeENSO.nino34}°C → {ensoClass.label}</span>
+                <span style={{ color:ensoClass.color, fontWeight:700 }}>▲ ATUAL: +{ENSO.nino34}°C → {ensoClass.label}</span>
                 <span>+3°C</span>
               </div>
             </div>
@@ -1256,7 +1215,7 @@ export default function SentinelaRS() {
             <div style={{ ...s.card }}>
               <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:12 }}>PREVISÃO PROBABILÍSTICA IRI/CCSR — 8 MESES</div>
               <div style={{ display:"grid", gap:7 }}>
-                {activeENSO.forecast.map((f,i)=>(
+                {ENSO.forecast.map((f,i)=>(
                   <div key={i} style={{ display:"grid", gridTemplateColumns:"100px 1fr 1fr 1fr", gap:6, alignItems:"center" }}>
                     <div style={{ fontSize:9, color:t.textMuted }}>{f.p}</div>
                     {[{l:"El Niño",v:f.en,c:"#f97316"},{l:"Neutro",v:f.nu,c:"#22c55e"},{l:"La Niña",v:f.ln,c:"#3b82f6"}].map(bar=>(
@@ -1270,14 +1229,14 @@ export default function SentinelaRS() {
                   </div>
                 ))}
               </div>
-              <div style={{ fontSize:8, color:t.textFaint, marginTop:8 }}>Fonte: IRI/CCSR Columbia University + NOAA/CPC · Referência: {activeENSO.referenceDate} · Dados estáticos — atualização manual necessária</div>
+              <div style={{ fontSize:8, color:t.textFaint, marginTop:8 }}>Fonte: IRI/CCSR Columbia University + NOAA/CPC · Referência: {ENSO.referenceDate} · Dados estáticos — atualização manual necessária</div>
             </div>
 
             {/* Histórico */}
             <div style={{ ...s.card }}>
               <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:12 }}>EVENTOS EL NIÑO — IMPACTO HISTÓRICO NO RS</div>
               <div style={{ display:"grid", gap:7 }}>
-                {activeENSO.historical.map((ev,i)=>{
+                {ENSO.historical.map((ev,i)=>{
                   const cls=classifyENSO(ev.peak);
                   const isCur=ev.peak===null;
                   return (
@@ -1530,9 +1489,9 @@ export default function SentinelaRS() {
             {[
               { n:"Open-Meteo",               st:"ATIVO",     c:"#22c55e", d:"Previsão meteorológica 14 dias — temperatura, precipitação, vento. Atualização automática.", a:"Gratuita, sem chave", h:null },
               { n:"ANA HidroWeb (Telemetria)", st:"ATIVO",     c:"#22c55e", d:"Nível real da Lagoa dos Patos em 4 pontos. Exibe '–' quando indisponível — sem simulação.",  a:"API pública, sem chave", h:null },
-              { n:"NOAA/CPC — ENSO observado",   st:"ATIVO PARCIAL",  c:"#eab308", d:"El Niño/La Niña: Niño 3.4, ONI, probabilidades 8 meses. Niño 3.4 e ONI atualizados via Edge Function; probabilidades IRI ainda usam referência estática.", a:"Dados públicos, atualização mensal", h:"1. iri.columbia.edu/our-expertise/climate/forecasts/enso/current/\n2. Atualizar valores activeENSO.nino34, oni3m, prob e forecast no código\n3. Publicação NOAA/IRI: primeira semana de cada mês" },
+              { n:"NOAA/IRI — Índice ENSO",   st:"ESTÁTICO",  c:"#eab308", d:"El Niño/La Niña: Niño 3.4, ONI, probabilidades 8 meses. Dados de referência mai/2026 — requer atualização manual mensal.", a:"Dados públicos, atualização mensal", h:"1. iri.columbia.edu/our-expertise/climate/forecasts/enso/current/\n2. Atualizar valores ENSO.nino34, oni3m, prob e forecast no código\n3. Publicação NOAA/IRI: primeira semana de cada mês" },
               { n:"INPE BDQueimadas",          st:"ATIVO",     c:"#22c55e", d:"Focos de queimada últimas 48h no RS — API pública. Exibe histórico de referência quando API indisponível.", a:"Sem chave", h:null },
-              { n:"Copernicus — Indicadores",  st:"ATIVO PARCIAL",  c:"#eab308", d:"NDVI, SPI-3, IQA, nível do mar: dados de referência de publicações Copernicus/MapBiomas. NÃO são consultados em tempo real.", a:"Registro gratuito para APIs reais", h:"Para tempo real:\n- NDVI: Sentinel-2 via dataspace.copernicus.eu\n- SPI-3: CHIRPS + cálculo local\n- IQA: QUALAR/IBAMA\n- Nível mar: CMEMS altimetry API" },
+              { n:"Copernicus — Indicadores",  st:"ESTÁTICO",  c:"#eab308", d:"NDVI, SPI-3, IQA, nível do mar: dados de referência de publicações Copernicus/MapBiomas. NÃO são consultados em tempo real.", a:"Registro gratuito para APIs reais", h:"Para tempo real:\n- NDVI: Sentinel-2 via dataspace.copernicus.eu\n- SPI-3: CHIRPS + cálculo local\n- IQA: QUALAR/IBAMA\n- Nível mar: CMEMS altimetry API" },
               { n:"INMET",                     st:"ATIVO",     c:"#22c55e", d:"Previsão oficial por município via apiprevmet3.inmet.gov.br/previsao/{codigo_ibge}. Conectado diretamente no navegador.", a:"API pública, sem chave", h:"Endpoint validado: https://apiprevmet3.inmet.gov.br/previsao/4315602" },
               { n:"CPTEC/INPE",                st:"PLANEJADO", c:"#eab308", d:"Previsão climática sazonal, boletins ENSO oficiais BR.",           a:"API pública", h:"1. servicos.cptec.inpe.br/XML/cidade/{id}/previsao.xml\n2. Proxy via Supabase Edge Function (CORS)" },
               { n:"Defesa Civil RS",           st:"ATIVO",     c:"#22c55e", d:"Avisos oficiais via RSS da Defesa Civil do Rio Grande do Sul, consumidos por Supabase Edge Function para evitar bloqueio CORS.", a:"RSS oficial via proxy", h:"Endpoint ativo: https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/defesa-civil-rs" },
