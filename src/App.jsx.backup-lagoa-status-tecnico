@@ -217,7 +217,7 @@ function lagoaStatusLabel(status) {
   if (status === "ALERTA") return "Acima da cota";
   if (status === "ATENCAO") return "Atenção";
   if (status === "NORMAL") return "Normal";
-  if (status === "SEM_LIMIAR") return "Dado real";
+  if (status === "SEM_LIMIAR") return "Sem limiar";
   return "Sem leitura";
 }
 
@@ -264,16 +264,11 @@ function getLagoaSummary(stationData) {
       .filter((value) => Number.isFinite(value))
   );
 
-  const thresholdValidated = points.filter(({ data }) => typeof data.lagoa?.threshold_m === "number").length;
-  const withoutThreshold = points.filter(({ data }) => data.lagoa?.isReal && typeof data.lagoa?.threshold_m !== "number").length;
-
   return {
     monitored: points.length,
     total: STATIONS_LAGOA.length,
     above,
     attention,
-    thresholdValidated,
-    withoutThreshold,
     latest: latestMs ? new Date(latestMs).toISOString() : null,
   };
 }
@@ -571,7 +566,7 @@ export default function SentinelaRS() {
 
         // Não usa limiar único de 0,8m. Risco de nível só entra quando a fonte traz limiar próprio validado.
         const baseRisk = getRiskLevel(precip, tempMin, windMax, null);
-        const levelRisk = (lagoa?.radar && lagoa?.threshold_m) ? radarRiskToLevel(lagoa.levelStatus) : "NORMAL";
+        const levelRisk = lagoa?.radar ? radarRiskToLevel(lagoa.levelStatus) : "NORMAL";
         const order = ["NORMAL","ATENCAO","ALERTA","EMERGENCIA","CRITICO"];
         const risk = order.indexOf(levelRisk) > order.indexOf(baseRisk) ? levelRisk : baseRisk;
         results[st.id] = { weather, inmet, cemaden, lagoa, precip, tempMin, windMax, risk, realLevel, radarLevel };
@@ -974,9 +969,6 @@ export default function SentinelaRS() {
                   <div style={{ fontSize:10, color:t.textMuted, marginTop:5 }}>
                     Organização visual: Itapuã → Arambaré → São Lourenço do Sul → Pelotas / Laranjal → São José do Norte → Rio Grande.
                   </div>
-                  <div style={{ fontSize:9, color:t.textMuted, marginTop:4 }}>
-                    Limiares validados: {lagoaSummary.thresholdValidated ?? 0}/{lagoaSummary.monitored} · sem limiar: {lagoaSummary.withoutThreshold ?? 0}
-                  </div>
                 </div>
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(3, minmax(90px, 1fr))", gap:8 }}>
                   <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
@@ -1033,18 +1025,13 @@ export default function SentinelaRS() {
                             <div style={{ fontSize:8, color:t.textMuted }}>Fonte</div>
                             <div style={{ fontSize:17, fontWeight:900, color:t.text }}>{sourceText}</div>
                             <div style={{ fontSize:8, color:t.textMuted }}>{measuredAt ? formatDateTimeBR(measuredAt) : "horário não informado"}</div>
-                            {point.id === "lagoa_patos_pelotas" && (
-                              <div style={{ fontSize:8, color:t.textMuted, marginTop:3 }}>
-                                nível real calculado por Distance; limiar de inundação ainda não validado
-                              </div>
-                            )}
                           </div>
                           <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
                             <div style={{ fontSize:8, color:t.textMuted }}>Cota de inundação</div>
                             <div style={{ fontSize:20, fontWeight:900, color:threshold ? "#f97316" : t.textFaint }}>
-                              {threshold ? `${(threshold*100).toFixed(0)} cm` : "não validada"}
+                              {threshold ? `${(threshold*100).toFixed(0)} cm` : "sem limiar"}
                             </div>
-                            <div style={{ fontSize:8, color:t.textMuted }}>{threshold ? `${threshold.toFixed(2)} m` : "alerta automático desligado"}</div>
+                            <div style={{ fontSize:8, color:t.textMuted }}>{threshold ? `${threshold.toFixed(2)} m` : "não gera alerta por nível"}</div>
                           </div>
                           <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
                             <div style={{ fontSize:8, color:t.textMuted }}>Máx. maio/2024</div>
@@ -1060,7 +1047,7 @@ export default function SentinelaRS() {
                         </div>
                         <div style={{ display:"flex", justifyContent:"space-between", marginTop:4, fontSize:8, color:t.textMuted }}>
                           <span>{sourceText}</span>
-                          <span>{threshold ? `limiar ${threshold.toFixed(2)} m` : "limiar não validado"}</span>
+                          <span>{threshold ? `limiar ${threshold.toFixed(2)} m` : "sem limiar validado"}</span>
                         </div>
                       </>
                     ) : (
