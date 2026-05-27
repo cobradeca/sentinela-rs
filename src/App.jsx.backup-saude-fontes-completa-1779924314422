@@ -925,20 +925,6 @@ export default function SentinelaRS() {
     return dark ? r.bg : r.bgLight;
   };
 
-  function markSourceHealth(name, ok, startedAt, error = null) {
-    const next = {
-      ...sourceHealthRef.current,
-      [name]: {
-        ok: Boolean(ok),
-        lastOk: ok ? new Date().toISOString() : sourceHealthRef.current[name]?.lastOk || null,
-        latencyMs: Date.now() - startedAt,
-        error,
-      },
-    };
-    sourceHealthRef.current = next;
-    setSourceHealth({ ...next });
-  }
-
   const loadAllData = useCallback(async () => {
     setLoading(true);
     const results = {};
@@ -1068,11 +1054,8 @@ export default function SentinelaRS() {
     let alive = true;
 
     async function loadCptecProducts() {
-      const startedAt = Date.now();
       const data = await fetchCptecInpeProducts();
-      if (!alive) return;
-      markSourceHealth("CPTEC/INPE", Boolean(data), startedAt, data ? null : "sem produto oficial validado");
-      if (!data) return;
+      if (!alive || !data) return;
       setCptecProducts(data);
     }
 
@@ -1089,10 +1072,8 @@ export default function SentinelaRS() {
     let alive = true;
 
     async function loadCopernicusWater() {
-      const startedAt = Date.now();
       const data = await fetchCopernicusWater("lagoa_patos", 30);
       if (!alive) return;
-      markSourceHealth("Copernicus Water", Boolean(data?.ok && typeof data?.water_percent === "number"), startedAt, data?.error || (data ? data.status : "sem resposta"));
       setCopernicusWater(data);
     }
 
@@ -1109,10 +1090,8 @@ export default function SentinelaRS() {
     let alive = true;
 
     async function loadCopernicusSentinel1() {
-      const startedAt = Date.now();
       const data = await fetchCopernicusSentinel1("lagoa_patos", 18);
       if (!alive) return;
-      markSourceHealth("Copernicus Sentinel-1", Boolean(data?.water_like_percent !== undefined), startedAt, data?.error || (data ? data.status : "sem resposta"));
       setCopernicusS1(data);
     }
 
@@ -1129,10 +1108,8 @@ export default function SentinelaRS() {
     let alive = true;
 
     async function loadCopernicusNdvi() {
-      const startedAt = Date.now();
       const data = await fetchCopernicusNdvi("entorno_lagoa_patos", 30);
       if (!alive) return;
-      markSourceHealth("Copernicus NDVI", Boolean(data?.ok && typeof data?.ndvi_mean === "number"), startedAt, data?.error || (data ? data.status : "sem resposta"));
       setCopernicusNdvi(data);
     }
 
@@ -1149,11 +1126,8 @@ export default function SentinelaRS() {
     let alive = true;
 
     async function loadIriProbabilities() {
-      const startedAt = Date.now();
       const live = await fetchIriEnsoProbabilities();
-      if (!alive) return;
-      markSourceHealth("IRI/CCSR ENSO", Boolean(live), startedAt, live ? null : "sem probabilidade validada");
-      if (!live) return;
+      if (!alive || !live) return;
       setEnsoProbLive(live);
     }
 
@@ -1170,11 +1144,8 @@ export default function SentinelaRS() {
     let alive = true;
 
     async function loadEnsoLive() {
-      const startedAt = Date.now();
       const live = await fetchNoaaEnso();
-      if (!alive) return;
-      markSourceHealth("NOAA/CPC ENSO", Boolean(live), startedAt, live ? null : "sem índice observado validado");
-      if (!live) return;
+      if (!alive || !live) return;
 
       setEnsoLive(live);
     }
@@ -2230,15 +2201,14 @@ export default function SentinelaRS() {
               <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:10 }}>SAÚDE DAS FONTES — ÚLTIMA VERIFICAÇÃO</div>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))", gap:8 }}>
                 {[
-                  "Open-Meteo","INMET","CEMADEN","RADAR Lagoa","HidroSens","Defesa Civil RS",
-                  "NOAA/CPC ENSO","IRI/CCSR ENSO","CPTEC/INPE","Copernicus Water","Copernicus Sentinel-1","Copernicus NDVI","ANA HidroWeb",
+                  "Open-Meteo","ANA HidroWeb","INMET","CEMADEN","RADAR Lagoa","HidroSens","Defesa Civil RS",
                 ].map(name => {
                   const h = sourceHealth[name];
                   const ok   = h?.ok;
                   const never = !h;
-                  const anaComplementar = name === "ANA HidroWeb" && (!h || !ok);
-                  const color = never ? (anaComplementar ? "#eab308" : "#64748b") : anaComplementar ? "#eab308" : ok ? "#22c55e" : "#ef4444";
-                  const label = anaComplementar ? "Aguardando API" : never ? "Aguardando" : ok ? "OK" : "Falhou";
+                  const anaComplementar = name === "ANA HidroWeb" && h && !ok;
+                  const color = never ? "#64748b" : anaComplementar ? "#eab308" : ok ? "#22c55e" : "#ef4444";
+                  const label = never ? "Aguardando" : anaComplementar ? "Complementar" : ok ? "OK" : "Falhou";
                   return (
                     <div key={name} style={{ padding:"9px 12px", background:dark?"rgba(0,0,0,0.25)":t.bg, borderRadius:5, border:`1px solid ${color}33`, borderLeft:`3px solid ${color}` }}>
                       <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
@@ -2251,7 +2221,7 @@ export default function SentinelaRS() {
                           {h.lastOk && <div style={{ fontSize:8, color:t.textFaint }}>Último OK: {formatDateTimeBR(h.lastOk)}</div>}
                           {h.error && !ok && (
                             <div style={{ fontSize:8, color:anaComplementar ? "#eab308" : "#ef4444", marginTop:2 }}>
-                              {anaComplementar ? "aguardando credencial oficial da ANA" : h.error}
+                              {anaComplementar ? "sem leitura operacional validada" : h.error}
                             </div>
                           )}
                         </>
@@ -2261,7 +2231,7 @@ export default function SentinelaRS() {
                 })}
               </div>
               <div style={{ marginTop:8, fontSize:8, color:t.textFaint }}>
-                Atualizado junto com os dados de cada fonte. Latência medida no navegador. Fontes complementares/aguardando credencial não reprovam o SITREP operacional.
+                Atualizado a cada 30min junto com os dados. Latência medida no navegador.
               </div>
             </div>
 
