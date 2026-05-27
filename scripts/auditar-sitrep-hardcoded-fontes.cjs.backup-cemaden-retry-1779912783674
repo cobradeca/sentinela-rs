@@ -61,7 +61,7 @@ function scanFile(rel) {
 
 const endpoints = [
   ["Defesa Civil RS", `https://${PROJECT_REF}.supabase.co/functions/v1/defesa-civil-rs`, (d) => Array.isArray(d.alerts), "SITREP real: alertas oficiais vigentes"],
-  ["CEMADEN RS", `https://${PROJECT_REF}.supabase.co/functions/v1/cemaden-rs`, (d) => d && typeof d === "object", "SITREP real: chuva observada", 3],
+  ["CEMADEN RS", `https://${PROJECT_REF}.supabase.co/functions/v1/cemaden-rs`, (d) => d && typeof d === "object", "SITREP real: chuva observada"],
   ["Lagoa RADAR", `https://${PROJECT_REF}.supabase.co/functions/v1/lagoa-patos-radar`, (d) => d.ok && Array.isArray(d.sensors), "SITREP real: níveis RADAR Lagoa"],
   ["HidroSens Laranjal", `https://${PROJECT_REF}.supabase.co/functions/v1/hidrosens-laranjal`, (d) => d.ok && typeof d.level_m === "number", "SITREP real: nível Laranjal"],
   ["NOAA/CPC ENSO", `https://${PROJECT_REF}.supabase.co/functions/v1/noaa-enso`, (d) => d.ok && (typeof d.enso?.nino34 === "number" || typeof d.nino34 === "number"), "SITREP real: índice observado"],
@@ -71,48 +71,23 @@ const endpoints = [
   ["ANA HidroWeb", `https://${PROJECT_REF}.supabase.co/functions/v1/ana-rs`, (d) => typeof d === "object", "Complementar: pode estar sem leitura validada"],
 ];
 
-async function checkEndpoint([name, url, validate, role, retries = 1]) {
-  let last = null;
-
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    const t0 = Date.now();
-    try {
-      const res = await fetch(url, { signal: AbortSignal.timeout(name === "CEMADEN RS" ? 30000 : 20000) });
-      const text = await res.text();
-      let data = {};
-      try { data = JSON.parse(text); } catch { data = { raw: text.slice(0, 200) }; }
-      const latency = Date.now() - t0;
-      const ok = res.ok && validate(data);
-
-      last = {
-        name, ok, http: res.status, latency_ms: latency, role,
-        attempt,
-        retries,
-        status: data.status || data.mode || data.source || null,
-        note: data.note || data.error || data.message || null,
-      };
-
-      if (ok) return last;
-    } catch (e) {
-      last = {
-        name,
-        ok: false,
-        http: null,
-        latency_ms: Date.now() - t0,
-        role,
-        attempt,
-        retries,
-        error: e.message,
-      };
-    }
-
-    if (attempt < retries) {
-      console.log(`↻ ${name}: tentativa ${attempt} falhou, tentando novamente...`);
-      await new Promise((resolve) => setTimeout(resolve, 1200));
-    }
+async function checkEndpoint([name, url, validate, role]) {
+  const t0 = Date.now();
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(20000) });
+    const text = await res.text();
+    let data = {};
+    try { data = JSON.parse(text); } catch { data = { raw: text.slice(0, 200) }; }
+    const latency = Date.now() - t0;
+    const ok = res.ok && validate(data);
+    return {
+      name, ok, http: res.status, latency_ms: latency, role,
+      status: data.status || data.mode || data.source || null,
+      note: data.note || data.error || data.message || null,
+    };
+  } catch (e) {
+    return { name, ok:false, http:null, latency_ms: Date.now()-t0, role, error:e.message };
   }
-
-  return last;
 }
 
 async function main() {
@@ -153,7 +128,7 @@ async function main() {
 
   for (const r of results) {
     const icon = r.ok ? "✅" : "❌";
-    console.log(`${icon} ${r.name} · HTTP ${r.http ?? "-"} · ${r.latency_ms}ms${r.retries > 1 ? ` · tentativa ${r.attempt}/${r.retries}` : ""} · ${r.status || ""}`);
+    console.log(`${icon} ${r.name} · HTTP ${r.http ?? "-"} · ${r.latency_ms}ms · ${r.status || ""}`);
     console.log(`   ${r.role}${r.note ? " · " + r.note : ""}${r.error ? " · " + r.error : ""}`);
   }
 
