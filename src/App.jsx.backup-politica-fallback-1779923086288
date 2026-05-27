@@ -468,24 +468,6 @@ function getLagoaSourceText(lagoa) {
   return "Fonte validada" + suffix;
 }
 
-function getResponsibleAgencyText(source) {
-  const text = String(source || "").toUpperCase();
-  if (text.includes("HIDROSENS")) return "HidroSens/UFPel";
-  if (text.includes("RADAR")) return "Rede RADAR Lagoa dos Patos";
-  if (text.includes("ANA")) return "ANA HidroWeb";
-  if (text.includes("CEMADEN")) return "CEMADEN/MCTI";
-  if (text.includes("INMET")) return "INMET";
-  if (text.includes("DEFESA")) return "Defesa Civil RS";
-  if (text.includes("COPERNICUS")) return "Copernicus Data Space / Sentinel Hub";
-  if (text.includes("NOAA") || text.includes("IRI")) return "NOAA/CPC ou IRI/CCSR";
-  return "órgão responsável pela fonte";
-}
-
-function getFallbackWarningText(source, ageMinutes = null) {
-  const ageText = typeof ageMinutes === "number" ? ` há ${ageMinutes} min` : "";
-  return `Fonte primária indisponível. Exibindo última leitura válida salva${ageText}. Verifique a informação junto ao órgão responsável: ${getResponsibleAgencyText(source)}.`;
-}
-
 function getLagoaMeasuredAt(lagoa) {
   return lagoa?.hidrosens?.measured_at || lagoa?.radar?.measured_at || null;
 }
@@ -682,7 +664,7 @@ function explainLagoaRisk(point, lagoa) {
   if (measuredAt) lines.push(`Horário da leitura: ${formatDateTimeBR(measuredAt)}.`);
 
   if (lagoa.isFallback) {
-    lines.push("Fonte primária indisponível. Esta é a última leitura válida salva. Verifique a informação junto ao órgão responsável pela fonte antes de qualquer decisão operacional. Fallback vencido não dispara novo alerta automático.");
+    lines.push("Leitura de fallback/localStorage. Não deve gerar novo alerta automático se estiver vencida.");
   }
 
   return {
@@ -1555,7 +1537,7 @@ export default function SentinelaRS() {
                             <div style={{ fontSize:8, color:t.textMuted }}>{measuredAt ? formatDateTimeBR(measuredAt) : "horário não informado"}</div>
                             {lagoa?.isFallback && (
                               <div style={{ fontSize:8, color:"#eab308", marginTop:3 }}>
-                                {getFallbackWarningText(sourceText, lagoa.fallback_age_minutes)}
+                                fallback local · última leitura salva{lagoa.fallback_age_minutes ? ` há ${lagoa.fallback_age_minutes} min` : ""}
                               </div>
                             )}
                             {point.id === "lagoa_patos_pelotas" && (
@@ -2014,16 +1996,6 @@ export default function SentinelaRS() {
         {activeTab==="apis" && (
           <div style={{ display:"grid", gap:12 }}>
 
-            <div style={{ ...s.card, border:"1px solid rgba(34,211,238,0.35)" }}>
-              <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:8 }}>POLÍTICA OPERACIONAL — FONTE REAL E FALLBACK</div>
-              <div style={{ display:"grid", gap:6, fontSize:10, color:t.textMuted, lineHeight:1.55 }}>
-                <div>✅ Dado operacional só é exibido como atual quando vem de endpoint real ativo, com fonte e horário.</div>
-                <div>⚠️ Fallback só é permitido quando já existe endpoint real configurado e a fonte primária falha.</div>
-                <div>📌 Quando fallback aparecer, o card deve informar que é última leitura válida salva e orientar verificação junto ao órgão responsável.</div>
-                <div>🚫 Fallback vencido, CSV manual, referência histórica e dado complementar não disparam novo alerta automático.</div>
-              </div>
-            </div>
-
             {/* BLOCO D — Saúde das fontes em tempo real */}
             <div style={{ ...s.card, border:`1px solid ${t.borderActive}` }}>
               <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:10 }}>SAÚDE DAS FONTES — ÚLTIMA VERIFICAÇÃO</div>
@@ -2067,7 +2039,7 @@ export default function SentinelaRS() {
             <div style={{ display:"grid", gap:8 }}>
             {[
               { n:"Open-Meteo",               st:"ATIVO",     c:"#22c55e", d:"Previsão meteorológica 14 dias — temperatura, precipitação, vento. Atualização automática.", a:"Gratuita, sem chave", h:null },
-              { n:"ANA HidroWeb (Telemetria)", st:"AGUARDANDO CREDENCIAL", c:"#eab308", d:"Uso atual: complementar/histórico. Integração operacional automatizada depende do acesso oficial à API solicitado à ANA. Não aciona alerta automático.", a:"Aguardando credencial oficial", h:"Solicitação enviada para telemetria@ana.gov.br. Até a liberação, a ANA permanece como fonte complementar; dados manuais/CSV não entram como leitura operacional." },
+              { n:"ANA HidroWeb (Telemetria)", st:"ATIVO",     c:"#22c55e", d:"Nível real da Lagoa dos Patos em 4 pontos. Exibe '–' quando indisponível — sem simulação.",  a:"API pública, sem chave", h:null },
               { n:"NOAA/CPC + IRI — ENSO",   st:"ATIVO",  c:"#eab308", d:"El Niño/La Niña: Niño 3.4, ONI, probabilidades 8 meses. Niño 3.4, ONI e probabilidades ENSO atualizados via Edge Functions.", a:"Dados públicos, atualização mensal", h:"1. iri.columbia.edu/our-expertise/climate/forecasts/enso/current/\n2. Atualizar valores activeENSO.nino34, oni3m, prob e forecast no código\n3. Publicação NOAA/IRI: primeira semana de cada mês" },
               { n:"INPE BDQueimadas",          st:"ATIVO",     c:"#22c55e", d:"Focos de queimada últimas 48h no RS — API pública. Exibe histórico de referência quando API indisponível.", a:"Sem chave", h:null },
               { n:"Copernicus — Indicadores de referência",  st:"ATIVO PARCIAL",  c:"#eab308", d:"NDVI, SPI-3, IQA e nível do mar permanecem como referência estática; APIs reais exigem cadastro/token.", a:"Registro gratuito para APIs reais", h:"Para tempo real:\n- NDVI: Sentinel-2 via dataspace.copernicus.eu\n- SPI-3: CHIRPS + cálculo local\n- IQA: QUALAR/IBAMA\n- Nível mar: CMEMS altimetry API" },
@@ -2075,8 +2047,8 @@ export default function SentinelaRS() {
               { n:"CPTEC/INPE",                st:"PLANEJADO", c:"#eab308", d:"Produtos sazonais/subsazonais oficiais por imagem via Edge Function.",           a:"API pública", h:"1. servicos.cptec.inpe.br/XML/cidade/{id}/previsao.xml\n2. Proxy via Supabase Edge Function (CORS)" },
               { n:"Defesa Civil RS",           st:"ATIVO",     c:"#22c55e", d:"Avisos oficiais via RSS da Defesa Civil do Rio Grande do Sul, consumidos por Supabase Edge Function para evitar bloqueio CORS.", a:"RSS oficial via proxy", h:"Endpoint ativo: https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/defesa-civil-rs" },
               { n:"CEMADEN",                   st:"ATIVO",     c:"#22c55e", d:"Chuva observada por acumulados recentes das PCDs CEMADEN. Fonte obrigatória: DADOS DA REDE OBSERVACIONAL DO CEMADEN/MCTIC.", a:"Token PED via Supabase Secret", h:"Endpoint: cemaden-rs. Cache: 10 min. Limite PED para usuário externo: até 12 requisições/minuto." },
-              { n:"RADAR Lagoa dos Patos",     st:"ATIVO",     c:"#22c55e", d:"Sensores RADAR em 5 pontos da Lagoa (Itapuã, Arambaré, São Lourenço, São José do Norte, Rio Grande).", a:"API pública via proxy Supabase", h:"Endpoint: lagoa-patos-radar. Fallback local só entra após falha da fonte primária real, exibido como última leitura salva, com orientação de verificar junto à Rede RADAR Lagoa dos Patos. Fallback vencido não dispara novo alerta automático." },
-              { n:"HidroSens / UFPel",         st:"ATIVO",     c:"#22c55e", d:"Sensor ultrassônico em Laranjal (Pelotas). Limiares: ALERTA 1,20m · CRÍTICO 1,40m · máx mai/2024: 2,40m.", a:"ThingsBoard público via Supabase", h:"Endpoint: hidrosens-laranjal. Altura do sensor: 5,06m. Fallback local só entra após falha da fonte primária real, exibido como última leitura salva, com orientação de verificar junto ao HidroSens/UFPel. Fallback vencido não dispara novo alerta automático." },
+              { n:"RADAR Lagoa dos Patos",     st:"ATIVO",     c:"#22c55e", d:"Sensores RADAR em 5 pontos da Lagoa (Itapuã, Arambaré, São Lourenço, São José do Norte, Rio Grande).", a:"API pública via proxy Supabase", h:"Endpoint: lagoa-patos-radar. Fallback local 6h ativado automaticamente." },
+              { n:"HidroSens / UFPel",         st:"ATIVO",     c:"#22c55e", d:"Sensor ultrassônico em Laranjal (Pelotas). Limiares: ALERTA 1,20m · CRÍTICO 1,40m · máx mai/2024: 2,40m.", a:"ThingsBoard público via Supabase", h:"Endpoint: hidrosens-laranjal. Altura do sensor: 5,06m. Fallback local 6h." },
               { n:"Copernicus Emergency (EU)", st:"FUTURO",    c:"#8b5cf6", d:"Sentinel-1 SAR para detecção de alagamentos.",                     a:"Registro gratuito", h:"1. dataspace.copernicus.eu → cadastro\n2. API STAC Sentinel-1" },
             ].map(api=>(
               <div key={api.n} style={{ background:t.cardBg, border:`1px solid ${t.border}`, borderRadius:5, overflow:"hidden", boxShadow:t.shadowCard }}>
@@ -2141,7 +2113,7 @@ export default function SentinelaRS() {
         )}
 
         <div style={{ marginTop:28, borderTop:`1px solid ${t.border}`, paddingTop:12, display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:6 }}>
-          <div style={{ fontSize:9, color:t.textFaint }}>SENTINELA·RS v2.2 · Open-Meteo + INMET + CEMADEN + Lagoa RADAR + HidroSens + ANA complementar/aguardando API + NOAA ENSO + INPE + Copernicus · Fonte CEMADEN: {CEMADEN_ATTRIBUTION}</div>
+          <div style={{ fontSize:9, color:t.textFaint }}>SENTINELA·RS v2.2 · Open-Meteo + INMET + CEMADEN + Lagoa RADAR + HidroSens + ANA HidroWeb + NOAA ENSO + INPE + Copernicus · Fonte CEMADEN: {CEMADEN_ATTRIBUTION}</div>
           <div style={{ fontSize:9, color:t.textFaint }}>Atualização: 30 min · PWA · github.com/cobradeca/sentinela-rs</div>
         </div>
       </div>
