@@ -739,7 +739,7 @@ export default function SentinelaRS() {
               { l:"Vento máx.",   v:`${d.windMax?.toFixed(0)} km/h`, alert: d.windMax>50 },
               { l:"Contexto ENSO",v:`${(ENSO.prob.elNino*100).toFixed(0)}%`, alert:false },
               ...(d.lagoa ? [
-                { l:"Nível lagoa", v: d.lagoa.isReal && d.lagoa.atual !== null ? `${d.lagoa.atual.toFixed(2)} m (ANA)` : "– (ANA indisponível)", alert: false },
+                { l:"Nível lagoa", v: d.lagoa.isReal && d.lagoa.atual !== null ? `${d.lagoa.atual.toFixed(2)} m (ANA)` : "– (ANA indisponível)", alert: d.lagoa.isReal && d.lagoa.atual > 0.8 },
               ] : []),
             ].map(item=>(
               <div key={item.l} style={{ background: dark?"rgba(0,0,0,0.3)":t.bg, padding:"8px 11px", borderRadius:5, borderLeft:`3px solid ${item.alert?rColor:t.textFaint}` }}>
@@ -942,12 +942,12 @@ export default function SentinelaRS() {
                       {d.lagoa.isReal && d.lagoa.atual !== null ? (
                         <>
                           <div style={{ height:4, background:t.barBg, borderRadius:2, overflow:"hidden" }}>
-                            <div style={{ height:"100%", width:`${Math.min(100,(d.lagoa.atual/1.5)*100)}%`, background:lagoaStatusColor(d.lagoa.levelStatus), borderRadius:2 }} />
+                            <div style={{ height:"100%", width:`${Math.min(100,(d.lagoa.atual/1.5)*100)}%`, background:d.lagoa.atual>1.2?"#ef4444":d.lagoa.atual>0.8?"#f97316":"#22c55e", borderRadius:2 }} />
                           </div>
-                          <div style={{ fontSize:8, color:t.textMuted, marginTop:2 }}>{d.lagoa.atual.toFixed(2)}m / limiar por estação</div>
+                          <div style={{ fontSize:8, color:t.textMuted, marginTop:2 }}>{d.lagoa.atual.toFixed(2)}m / alerta 0.8m</div>
                         </>
                       ) : (
-                        <div style={{ fontSize:8, color:t.textFaint, marginTop:2 }}>Sem leitura operacional validada</div>
+                        <div style={{ fontSize:8, color:t.textFaint, marginTop:2 }}>ANA HidroWeb indisponível</div>
                       )}
                     </div>
                   )}
