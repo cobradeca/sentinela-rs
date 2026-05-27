@@ -709,7 +709,7 @@ export default function SentinelaRS() {
         <CardDetail station={expandedCard} d={stationData[expandedCard.id]} onClose={()=>setExpandedCard(null)} />
       )}
 
-      <div style={{ position:"relative", zIndex:2, maxWidth:1320, margin:"0 auto", padding:"0 16px 40px" }}>
+      <div style={{ position:"relative", zIndex:2, maxWidth:1200, margin:"0 auto", padding:"0 16px 40px" }}>
 
         {/* ── HEADER ── */}
         <header style={{ borderBottom:`1px solid ${dark?"rgba(34,211,238,0.2)":t.border}`, paddingBottom:14, marginBottom:20, paddingTop:18 }}>
@@ -789,15 +789,15 @@ export default function SentinelaRS() {
                   </div>
                 </div>
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(3, minmax(80px, 1fr))", gap:8, minWidth:260 }}>
-                  <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"8px 10px", borderRadius:5 }}>
+                  <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"7px 9px", borderRadius:5 }}>
                     <div style={{ fontSize:8, color:t.textMuted }}>Acima da cota</div>
                     <div style={{ fontSize:15, fontWeight:800, color:lagoaSummary.above ? "#f97316" : "#22c55e" }}>{lagoaSummary.above}</div>
                   </div>
-                  <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"8px 10px", borderRadius:5 }}>
+                  <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"7px 9px", borderRadius:5 }}>
                     <div style={{ fontSize:8, color:t.textMuted }}>Atenção</div>
                     <div style={{ fontSize:15, fontWeight:800, color:lagoaSummary.attention ? "#eab308" : "#22c55e" }}>{lagoaSummary.attention}</div>
                   </div>
-                  <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"8px 10px", borderRadius:5 }}>
+                  <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"7px 9px", borderRadius:5 }}>
                     <div style={{ fontSize:8, color:t.textMuted }}>Última leitura</div>
                     <div style={{ fontSize:10, fontWeight:700, color:t.text }}>{lagoaSummary.latest ? formatDateTimeBR(lagoaSummary.latest) : "—"}</div>
                   </div>
@@ -806,7 +806,7 @@ export default function SentinelaRS() {
               <div style={{ marginTop:8, fontSize:8, color:t.accent, textAlign:"right", opacity:0.75 }}>abrir aba Lagoa dos Patos →</div>
             </div>
 
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(275px,1fr))", gap:11 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(250px,1fr))", gap:10 }}>
             {STATIONS.map(station => {
               const d = stationData[station.id];
               if (!d) return null;
@@ -965,21 +965,21 @@ export default function SentinelaRS() {
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12, flexWrap:"wrap" }}>
                 <div>
                   <div style={{ fontSize:9, color:t.textMuted, letterSpacing:2 }}>LAGOA DOS PATOS</div>
-                  <div style={{ fontSize:24, fontWeight:900, color:t.text, marginTop:2 }}>Monitoramento em ordem de escoamento</div>
+                  <div style={{ fontSize:22, fontWeight:900, color:t.text, marginTop:2 }}>Monitoramento em ordem de escoamento</div>
                   <div style={{ fontSize:10, color:t.textMuted, marginTop:5 }}>
                     Organização visual: Itapuã → Arambaré → São Lourenço do Sul → Pelotas / Laranjal → São José do Norte → Rio Grande.
                   </div>
                 </div>
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(3, minmax(90px, 1fr))", gap:8 }}>
-                  <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
+                  <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"8px 10px", borderRadius:5 }}>
                     <div style={{ fontSize:8, color:t.textMuted }}>Pontos com leitura</div>
                     <div style={{ fontSize:18, fontWeight:800, color:t.accent }}>{lagoaSummary.monitored}/{lagoaSummary.total}</div>
                   </div>
-                  <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
+                  <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"8px 10px", borderRadius:5 }}>
                     <div style={{ fontSize:8, color:t.textMuted }}>Acima da cota</div>
                     <div style={{ fontSize:18, fontWeight:800, color:lagoaSummary.above ? "#f97316" : "#22c55e" }}>{lagoaSummary.above}</div>
                   </div>
-                  <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
+                  <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"8px 10px", borderRadius:5 }}>
                     <div style={{ fontSize:8, color:t.textMuted }}>Atualização</div>
                     <div style={{ fontSize:10, fontWeight:700, color:t.text }}>{lagoaSummary.latest ? formatDateTimeBR(lagoaSummary.latest) : "—"}</div>
                   </div>
@@ -987,7 +987,7 @@ export default function SentinelaRS() {
               </div>
             </div>
 
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(418px,1fr))", gap:11 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(380px,1fr))", gap:10 }}>
               {STATIONS_LAGOA.map((point) => {
                 const d = getLagoaPointData(point, stationData);
                 const lagoa = d?.lagoa;
@@ -1005,7 +1005,7 @@ export default function SentinelaRS() {
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:8, marginBottom:10 }}>
                       <div>
                         <div style={{ fontSize:9, color:t.textMuted, letterSpacing:2 }}>PONTO {point.ordemEscoamento} · ESTAÇÃO</div>
-                        <div style={{ fontSize:20, fontWeight:900, color:t.text }}>{point.name}</div>
+                        <div style={{ fontSize:18, fontWeight:900, color:t.text }}>{point.name}</div>
                         <div style={{ fontSize:8, color:t.textFaint, marginTop:2 }}>{point.displayName}</div>
                       </div>
                       <div style={{ fontSize:9, fontWeight:800, padding:"3px 7px", border:`1px solid ${rColor}`, color:rColor, borderRadius:4 }}>
@@ -1015,27 +1015,27 @@ export default function SentinelaRS() {
 
                     {hasLevel ? (
                       <>
-                        <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:8, marginBottom:10 }}>
-                          <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
+                        <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:7, marginBottom:9 }}>
+                          <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"8px 10px", borderRadius:5 }}>
                             <div style={{ fontSize:8, color:t.textMuted }}>Cota atual</div>
-                            <div style={{ fontSize:33, fontWeight:900, color:rColor }}>{(lagoa.atual*100).toFixed(1)} cm</div>
+                            <div style={{ fontSize:30, fontWeight:900, color:rColor }}>{(lagoa.atual*100).toFixed(1)} cm</div>
                             <div style={{ fontSize:8, color:t.textMuted }}>{lagoa.atual.toFixed(3)} m</div>
                           </div>
-                          <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
+                          <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"8px 10px", borderRadius:5 }}>
                             <div style={{ fontSize:8, color:t.textMuted }}>Fonte</div>
-                            <div style={{ fontSize:17, fontWeight:900, color:t.text }}>{sourceText}</div>
+                            <div style={{ fontSize:15, fontWeight:900, color:t.text }}>{sourceText}</div>
                             <div style={{ fontSize:8, color:t.textMuted }}>{measuredAt ? formatDateTimeBR(measuredAt) : "horário não informado"}</div>
                           </div>
-                          <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
+                          <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"8px 10px", borderRadius:5 }}>
                             <div style={{ fontSize:8, color:t.textMuted }}>Cota de inundação</div>
-                            <div style={{ fontSize:20, fontWeight:900, color:threshold ? "#f97316" : t.textFaint }}>
+                            <div style={{ fontSize:18, fontWeight:900, color:threshold ? "#f97316" : t.textFaint }}>
                               {threshold ? `${(threshold*100).toFixed(0)} cm` : "sem limiar"}
                             </div>
                             <div style={{ fontSize:8, color:t.textMuted }}>{threshold ? `${threshold.toFixed(2)} m` : "não gera alerta por nível"}</div>
                           </div>
-                          <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
+                          <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"8px 10px", borderRadius:5 }}>
                             <div style={{ fontSize:8, color:t.textMuted }}>Máx. maio/2024</div>
-                            <div style={{ fontSize:20, fontWeight:900, color:max2024 ? "#60a5fa" : t.textFaint }}>
+                            <div style={{ fontSize:18, fontWeight:900, color:max2024 ? "#60a5fa" : t.textFaint }}>
                               {max2024 ? `${(max2024*100).toFixed(0)} cm` : "–"}
                             </div>
                             <div style={{ fontSize:8, color:t.textMuted }}>{max2024 ? `${max2024.toFixed(2)} m` : "sem referência no sensor"}</div>
@@ -1081,7 +1081,7 @@ export default function SentinelaRS() {
             </div>
 
             {/* Cards status */}
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))", gap:11 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))", gap:10 }}>
               {[
                 { l:"Fase atual",             v:`${ensoClass.icon} ${ensoClass.label}`, s:`Niño 3.4: +${ENSO.nino34}°C`, c:ensoClass.color },
                 { l:"ONI trimestral",         v:`+${ENSO.oni3m}°C`,                    s:"Limiar El Niño: +0,5°C",        c:"#f97316" },
@@ -1160,7 +1160,7 @@ export default function SentinelaRS() {
             {/* Impactos */}
             <div style={{ padding:16, background: dark?"rgba(249,115,22,0.05)":"rgba(249,115,22,0.04)", border:"1px solid rgba(249,115,22,0.2)", borderRadius:5 }}>
               <div style={{ fontSize:10, color:"#f97316", letterSpacing:2, marginBottom:12 }}>IMPACTOS ESPERADOS — EL NIÑO 2026/27 NO RS</div>
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))", gap:11 }}>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))", gap:10 }}>
                 {[
                   { i:"🌧️", t:"Chuvas 30–50% acima da média",  d:"Primavera/verão 2026/27. Bacias do Jacuí, Taquari e Pelotas em risco." },
                   { i:"🌊", t:"Inundações costeiras",           d:"Ventos do Norte + El Niño = empilhamento na Lagoa dos Patos. Rio Grande em alerta." },
@@ -1182,7 +1182,7 @@ export default function SentinelaRS() {
 
         {/* ══ COPERNICUS ══ */}
         {activeTab==="copernicus" && (
-          <div style={{ display:"grid", gap:11 }}>
+          <div style={{ display:"grid", gap:10 }}>
             <div style={{ padding:"10px 14px", background: dark?"rgba(139,92,246,0.08)":"rgba(139,92,246,0.05)", border:"1px solid rgba(139,92,246,0.3)", borderRadius:5, fontSize:10, color: dark?"#c4b5fd":"#7c3aed" }}>
               🛰️ <strong>Programa Copernicus (UE)</strong> — Monitoramento por satélite. Dados: Sentinel-1, 2, 3, 5P, 6. Última atualização: {COPERNICUS_DATA.lastUpdate}.
             </div>
@@ -1193,7 +1193,7 @@ export default function SentinelaRS() {
             <div style={{ display:"grid", gap:8 }}>
               {COPERNICUS_DATA.themes.map(theme=>(
                 <div key={theme.id} style={{ background:t.cardBg, border:`1px solid ${theme.color}44`, borderLeft:`4px solid ${theme.color}`, borderRadius:5, overflow:"hidden", boxShadow:t.shadowCard }}>
-                  <div style={{ padding:"13px 16px", display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:11 }}>
+                  <div style={{ padding:"13px 16px", display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:10 }}>
                     <div style={{ flex:1 }}>
                       <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
                         <span style={{ fontSize:20 }}>{theme.icon}</span>
@@ -1263,7 +1263,7 @@ export default function SentinelaRS() {
                       { l:"Focos 2024", v:"~900",   c:"#eab308" },
                       { l:"Risco 2026/27", v:"ALTO", c:"#f97316" },
                     ].map(item=>(
-                      <div key={item.l} style={{ background: dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:3 }}>
+                      <div key={item.l} style={{ background: dark?"rgba(0,0,0,0.3)":t.bg, padding:"8px 10px", borderRadius:3 }}>
                         <div style={{ fontSize:8, color:t.textMuted }}>{item.l}</div>
                         <div style={{ fontSize:14, fontWeight:700, color:item.c }}>{item.v}</div>
                       </div>
@@ -1297,7 +1297,7 @@ export default function SentinelaRS() {
                   </div>
                 ))}
               </div>
-              <div style={{ marginTop:10, padding:"9px 11px", background: dark?"rgba(249,115,22,0.06)":"rgba(249,115,22,0.04)", border:"1px solid rgba(249,115,22,0.15)", borderRadius:4, fontSize:9, color:t.textMuted }}>
+              <div style={{ marginTop:10, padding:"8px 10px", background: dark?"rgba(249,115,22,0.06)":"rgba(249,115,22,0.04)", border:"1px solid rgba(249,115,22,0.15)", borderRadius:4, fontSize:9, color:t.textMuted }}>
                 Para risco em tempo real por UC, integre: <span style={{ color:t.accent }}>geo.icmbio.gov.br/portal</span> (WFS focos) + INPE BDQueimadas filtrado por geocerca.
               </div>
             </div>
@@ -1405,7 +1405,7 @@ export default function SentinelaRS() {
               { n:"Copernicus Emergency (EU)", st:"FUTURO",    c:"#8b5cf6", d:"Sentinel-1 SAR para detecção de alagamentos.",                     a:"Registro gratuito", h:"1. dataspace.copernicus.eu → cadastro\n2. API STAC Sentinel-1" },
             ].map(api=>(
               <div key={api.n} style={{ background:t.cardBg, border:`1px solid ${t.border}`, borderRadius:5, overflow:"hidden", boxShadow:t.shadowCard }}>
-                <div style={{ padding:"12px 14px", display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:11 }}>
+                <div style={{ padding:"12px 14px", display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:10 }}>
                   <div style={{ flex:1 }}>
                     <div style={{ fontSize:12, fontWeight:600, color:t.text, marginBottom:3 }}>{api.n}</div>
                     <div style={{ fontSize:10, color:t.textMuted, marginBottom:3 }}>{api.d}</div>
