@@ -1,33 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-
-// ─── BLOCO C: frescor do dado ─────────────────────────────────────────────────
-function dataStaleness(measuredAt) {
-  if (!measuredAt) return "unknown";
-  const ageMin = (Date.now() - new Date(measuredAt).getTime()) / 60000;
-  if (ageMin <= 90)  return "fresh";
-  if (ageMin <= 180) return "attention";
-  return "stale";
-}
-
-function StaleBadge({ measuredAt, fallback, fallbackAgeMin, t }) {
-  const status = fallback ? "stale" : dataStaleness(measuredAt);
-  const cfg = {
-    fresh:     { label: "Atualizado",    color: "#22c55e", dot: "●" },
-    attention: { label: "Atenção",       color: "#eab308", dot: "◐" },
-    stale:     { label: "Desatualizado", color: "#ef4444", dot: "○" },
-    unknown:   { label: "Sem horário",   color: "#64748b", dot: "–" },
-  }[status];
-  const age = fallback && fallbackAgeMin
-    ? ` · ${fallbackAgeMin}min atrás`
-    : measuredAt
-    ? ` · ${Math.round((Date.now()-new Date(measuredAt).getTime())/60000)}min atrás`
-    : "";
-  return (
-    <span style={{ fontSize:8, color:cfg.color, fontWeight:600 }}>
-      {cfg.dot} {cfg.label}{age}
-    </span>
-  );
-}
+import { useState, useEffect, useCallback } from "react";
 
 // ─── ESTAÇÕES ────────────────────────────────────────────────────────────────
 const STATIONS_LAGOA = [
@@ -87,6 +58,7 @@ const HIDROSENS_LARANJAL_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.c
 const NOAA_ENSO_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/noaa-enso";
 const IRI_ENSO_PROB_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/iri-enso-probabilidades";
 const CPTEC_INPE_PRODUCTS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/cptec-inpe-produtos";
+const COPERNICUS_HEALTH_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/copernicus-health";
 
 // ENSO — dados reais NOAA/IRI mai 2026
 // ⚠ Estes valores são ATIVO PARCIALS — publicados pelo NOAA/IRI em mai/2026.
@@ -184,7 +156,21 @@ async function fetchNoaaEnso() {
 
 
 
-// CPTEC/INPE — produtos oficiais sazonais/subsazonais por imagem.
+// CPTEC/INPE
+
+// Copernicus — health check de autenticação via Edge Function.
+// Não consulta produtos ainda. Apenas valida se os secrets estão configurados e se gera token.
+async function fetchCopernicusHealth() {
+  try {
+    const res = await fetch(COPERNICUS_HEALTH_FUNCTION_URL, { signal: AbortSignal.timeout(15000) });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+ — produtos oficiais sazonais/subsazonais por imagem.
 // São dados reais oficiais publicados como PNG, não série numérica JSON.
 async function fetchCptecInpeProducts() {
   try {
@@ -314,53 +300,6 @@ function radarRiskToLevel(status) {
 const LAGOA_FALLBACK_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 const LAGOA_RADAR_CACHE_KEY = "sentinela_rs_lagoa_radar_last_valid_v1";
 const HIDROSENS_LARANJAL_CACHE_KEY = "sentinela_rs_hidrosens_laranjal_last_valid_v1";
-// BLOCO B — histórico em localStorage (ring buffer 48 pontos ~24h @ 30min)
-const LAGOA_HISTORY_KEY = "sentinela_rs_lagoa_history_v1";
-const HISTORY_MAX_POINTS = 48;
-
-function loadHistory() {
-  try { return JSON.parse(localStorage.getItem(LAGOA_HISTORY_KEY) || "{}"); } catch { return {}; }
-}
-
-function appendHistory(stationId, level_m, measuredAt) {
-  if (typeof level_m !== "number") return;
-  const all = loadHistory();
-  const arr = all[stationId] || [];
-  const last = arr[arr.length - 1];
-  // evita duplicatas de mesmo horário
-  if (last && last.t === measuredAt) return;
-  arr.push({ t: measuredAt || new Date().toISOString(), v: level_m });
-  if (arr.length > HISTORY_MAX_POINTS) arr.splice(0, arr.length - HISTORY_MAX_POINTS);
-  all[stationId] = arr;
-  try { localStorage.setItem(LAGOA_HISTORY_KEY, JSON.stringify(all)); } catch {}
-}
-
-function Sparkline({ points, color, t }) {
-  if (!points || points.length < 2) return <div style={{ fontSize:8, color:t.textFaint }}>sem histórico</div>;
-  const vals = points.map(p => p.v);
-  const min = Math.min(...vals);
-  const max = Math.max(...vals);
-  const range = max - min || 0.01;
-  const W = 180, H = 36;
-  const xs = points.map((_, i) => (i / (points.length - 1)) * W);
-  const ys = points.map(p => H - ((p.v - min) / range) * H);
-  const d = xs.map((x, i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)},${ys[i].toFixed(1)}`).join(" ");
-  const lastV = points[points.length - 1].v;
-  return (
-    <div style={{ marginTop:8 }}>
-      <div style={{ fontSize:8, color:t.textMuted, marginBottom:3 }}>HISTÓRICO ~24h ({points.length} leituras)</div>
-      <svg width={W} height={H + 4} style={{ display:"block" }}>
-        <polyline points={xs.map((x,i)=>`${x},${ys[i]}`).join(" ")} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" opacity="0.85"/>
-        <circle cx={xs[xs.length-1]} cy={ys[ys.length-1]} r="2.5" fill={color}/>
-      </svg>
-      <div style={{ display:"flex", justifyContent:"space-between", fontSize:7, color:t.textFaint, marginTop:2 }}>
-        <span>mín {min.toFixed(2)}m</span>
-        <span style={{ color }}>{lastV.toFixed(2)}m agora</span>
-        <span>máx {max.toFixed(2)}m</span>
-      </div>
-    </div>
-  );
-}
 
 function saveFallbackCache(key, data) {
   try {
@@ -695,10 +634,8 @@ export default function SentinelaRS() {
   const [ensoLive, setEnsoLive]         = useState(null);
   const [ensoProbLive, setEnsoProbLive]     = useState(null);
   const [cptecProducts, setCptecProducts]   = useState(null);
+  const [copernicusHealth, setCopernicusHealth] = useState(null);
   const [expandedCard, setExpandedCard] = useState(null); // para detalhe do card
-  // BLOCO D — saúde das fontes
-  const [sourceHealth, setSourceHealth] = useState({});
-  const sourceHealthRef = useRef({});
 
   // Cores dinâmicas por tema
   const t = dark ? {
@@ -755,54 +692,18 @@ export default function SentinelaRS() {
     setLoading(true);
     const results = {};
     const newAlerts = [];
-    const health = { ...sourceHealthRef.current };
-    const t0 = Date.now();
-
-    // ── fetch com rastreio de saúde ──────────────────────────────────────────
-    async function tracked(key, fn) {
-      const start = Date.now();
-      try {
-        const result = await fn();
-        const latencyMs = Date.now() - start;
-        health[key] = { ok: true, lastOk: new Date().toISOString(), latencyMs, error: null };
-        return result;
-      } catch (err) {
-        health[key] = { ok: false, lastOk: health[key]?.lastOk || null, latencyMs: Date.now() - start, error: err?.message || "erro desconhecido" };
-        return typeof fn() === "object" ? {} : null;
-      }
-    }
-
-    const cemadenByCityId       = await tracked("CEMADEN",    fetchCemadenAccumulations);
-    const lagoaRadarByStationId = await tracked("RADAR Lagoa", fetchLagoaRadarLevels);
-    const hidrosensLaranjal     = await tracked("HidroSens",  fetchHidroSensLaranjalLevel);
+    const cemadenByCityId = await fetchCemadenAccumulations();
+    const lagoaRadarByStationId = await fetchLagoaRadarLevels();
+    const hidrosensLaranjal = await fetchHidroSensLaranjalLevel();
 
     for (const st of ALL_STATIONS) {
       try {
-        const weather = await (async () => {
-          const start = Date.now();
-          try {
-            const r = await fetchWeather14Days(st.lat, st.lon);
-            if (!health["Open-Meteo"]) health["Open-Meteo"] = { ok: true, lastOk: new Date().toISOString(), latencyMs: Date.now()-start, error: null };
-            return r;
-          } catch(err) {
-            health["Open-Meteo"] = { ok: false, lastOk: health["Open-Meteo"]?.lastOk || null, latencyMs: Date.now()-start, error: err?.message };
-            throw err;
-          }
-        })();
+        const weather = await fetchWeather14Days(st.lat, st.lon);
         let realLevel = null;
-        if (st.anaCode) {
-          const start = Date.now();
-          realLevel = await fetchAnaLevel(st.anaCode);
-          if (!health["ANA HidroWeb"]) health["ANA HidroWeb"] = { ok: realLevel !== null, lastOk: realLevel !== null ? new Date().toISOString() : health["ANA HidroWeb"]?.lastOk || null, latencyMs: Date.now()-start, error: realLevel === null ? "sem leitura" : null };
-        }
+        if (st.anaCode) realLevel = await fetchAnaLevel(st.anaCode);
         const radarLevel = lagoaRadarByStationId[st.id] || null;
         const hidrosensLevel = st.id === "lagoa_patos_pelotas" ? hidrosensLaranjal : null;
-        const inmet = st.ibgeCode ? await (async () => {
-          const start = Date.now();
-          const r = await fetchInmetForecast(st.ibgeCode);
-          if (!health["INMET"]) health["INMET"] = { ok: r !== null, lastOk: r !== null ? new Date().toISOString() : health["INMET"]?.lastOk || null, latencyMs: Date.now()-start, error: r === null ? "sem resposta" : null };
-          return r;
-        })() : null;
+        const inmet = st.ibgeCode ? await fetchInmetForecast(st.ibgeCode) : null;
         const cemaden = cemadenByCityId[st.id] || null;
         const precip  = weather.daily?.precipitation_sum?.reduce((a,b)=>a+b,0)||0;
         const tempMin  = Math.min(...(weather.daily?.temperature_2m_min||[20]));
@@ -826,11 +727,6 @@ export default function SentinelaRS() {
         } : null;
 
         // Não usa limiar único de 0,8m. Risco de nível só entra quando a fonte traz limiar próprio validado.
-        // BLOCO B — registra histórico local
-        if (lagoa?.isReal && lagoa.atual !== null) {
-          appendHistory(st.id, lagoa.atual, getLagoaMeasuredAt(lagoa));
-        }
-
         const baseRisk = getRiskLevel(precip, tempMin, windMax, null);
         const levelRisk = ((lagoa?.radar || lagoa?.hidrosens) && lagoa?.threshold_m && !lagoa?.isFallback) ? radarRiskToLevel(lagoa.levelStatus) : "NORMAL";
         const order = ["NORMAL","ATENCAO","ALERTA","EMERGENCIA","CRITICO"];
@@ -848,12 +744,8 @@ export default function SentinelaRS() {
         }
       } catch { results[st.id]={ error:true, risk:"NORMAL" }; }
     }
-    const defesaStart = Date.now();
     const officialAlerts = await fetchDefesaCivilAlerts();
-    health["Defesa Civil RS"] = { ok: Array.isArray(officialAlerts), lastOk: Array.isArray(officialAlerts) ? new Date().toISOString() : health["Defesa Civil RS"]?.lastOk || null, latencyMs: Date.now()-defesaStart, error: null };
 
-    sourceHealthRef.current = health;
-    setSourceHealth({ ...health });
     setStationData(results);
     setAlerts([...officialAlerts, ...newAlerts]);
     setLastUpdate(new Date());
@@ -875,6 +767,28 @@ export default function SentinelaRS() {
 
 
 
+
+  useEffect(() => {
+    let alive = true;
+
+    async function loadCptecProducts() {
+  useEffect(() => {
+    let alive = true;
+
+    async function loadCopernicusHealth() {
+      const data = await fetchCopernicusHealth();
+      if (!alive || !data) return;
+      setCopernicusHealth(data);
+    }
+
+    loadCopernicusHealth();
+    const iv = setInterval(loadCopernicusHealth, 6 * 60 * 60 * 1000);
+
+    return () => {
+      alive = false;
+      clearInterval(iv);
+    };
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -1403,22 +1317,6 @@ export default function SentinelaRS() {
                           <span>{sourceText}</span>
                           <span>{threshold ? `limiar ${threshold.toFixed(2)} m` : "limiar não validado"}</span>
                         </div>
-                        {/* BLOCO C — frescor do dado */}
-                        <div style={{ marginTop:6 }}>
-                          <StaleBadge
-                            measuredAt={getLagoaMeasuredAt(lagoa)}
-                            fallback={lagoa?.isFallback}
-                            fallbackAgeMin={lagoa?.fallback_age_minutes}
-                            t={t}
-                          />
-                        </div>
-                        {/* BLOCO B — sparkline histórico */}
-                        {(() => {
-                          const hist = loadHistory()[point.id] || [];
-                          return hist.length >= 2 ? (
-                            <Sparkline points={hist} color={rColor} t={t} />
-                          ) : null;
-                        })()}
                       </>
                     ) : (
                       <div style={{ padding:12, background:dark?"rgba(0,0,0,0.25)":t.bg, borderRadius:5, color:t.textMuted, fontSize:10 }}>
@@ -1812,70 +1710,23 @@ export default function SentinelaRS() {
 
         {/* ══ FONTES DE DADOS ══ */}
         {activeTab==="apis" && (
-          <div style={{ display:"grid", gap:12 }}>
-
-            {/* BLOCO D — Saúde das fontes em tempo real */}
-            <div style={{ ...s.card, border:`1px solid ${t.borderActive}` }}>
-              <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:10 }}>SAÚDE DAS FONTES — ÚLTIMA VERIFICAÇÃO</div>
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))", gap:8 }}>
-                {[
-                  "Open-Meteo","ANA HidroWeb","INMET","CEMADEN","RADAR Lagoa","HidroSens","Defesa Civil RS",
-                ].map(name => {
-                  const h = sourceHealth[name];
-                  const ok   = h?.ok;
-                  const never = !h;
-                  const color = never ? "#64748b" : ok ? "#22c55e" : "#ef4444";
-                  const label = never ? "Aguardando" : ok ? "OK" : "Falhou";
-                  return (
-                    <div key={name} style={{ padding:"9px 12px", background:dark?"rgba(0,0,0,0.25)":t.bg, borderRadius:5, border:`1px solid ${color}33`, borderLeft:`3px solid ${color}` }}>
-                      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
-                        <span style={{ fontSize:10, fontWeight:600, color:t.text }}>{name}</span>
-                        <span style={{ fontSize:8, fontWeight:700, color }}>{label}</span>
-                      </div>
-                      {h && (
-                        <>
-                          <div style={{ fontSize:8, color:t.textMuted }}>Latência: {h.latencyMs}ms</div>
-                          {h.lastOk && <div style={{ fontSize:8, color:t.textFaint }}>Último OK: {formatDateTimeBR(h.lastOk)}</div>}
-                          {h.error && !ok && <div style={{ fontSize:8, color:"#ef4444", marginTop:2 }}>{h.error}</div>}
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-              <div style={{ marginTop:8, fontSize:8, color:t.textFaint }}>
-                Atualizado a cada 30min junto com os dados. Latência medida no navegador.
-              </div>
-            </div>
-
-            {/* Detalhes estáticos por fonte */}
-            <div style={{ display:"grid", gap:8 }}>
+          <div style={{ display:"grid", gap:8 }}>
             {[
               { n:"Open-Meteo",               st:"ATIVO",     c:"#22c55e", d:"Previsão meteorológica 14 dias — temperatura, precipitação, vento. Atualização automática.", a:"Gratuita, sem chave", h:null },
               { n:"ANA HidroWeb (Telemetria)", st:"ATIVO",     c:"#22c55e", d:"Nível real da Lagoa dos Patos em 4 pontos. Exibe '–' quando indisponível — sem simulação.",  a:"API pública, sem chave", h:null },
               { n:"NOAA/CPC + IRI — ENSO",   st:"ATIVO",  c:"#eab308", d:"El Niño/La Niña: Niño 3.4, ONI, probabilidades 8 meses. Niño 3.4, ONI e probabilidades ENSO atualizados via Edge Functions.", a:"Dados públicos, atualização mensal", h:"1. iri.columbia.edu/our-expertise/climate/forecasts/enso/current/\n2. Atualizar valores activeENSO.nino34, oni3m, prob e forecast no código\n3. Publicação NOAA/IRI: primeira semana de cada mês" },
               { n:"INPE BDQueimadas",          st:"ATIVO",     c:"#22c55e", d:"Focos de queimada últimas 48h no RS — API pública. Exibe histórico de referência quando API indisponível.", a:"Sem chave", h:null },
-              { n:"Copernicus — Indicadores de referência",  st:"ATIVO PARCIAL",  c:"#eab308", d:"NDVI, SPI-3, IQA e nível do mar permanecem como referência estática; APIs reais exigem cadastro/token.", a:"Registro gratuito para APIs reais", h:"Para tempo real:\n- NDVI: Sentinel-2 via dataspace.copernicus.eu\n- SPI-3: CHIRPS + cálculo local\n- IQA: QUALAR/IBAMA\n- Nível mar: CMEMS altimetry API" },
+              { n:"Copernicus — Autenticação/API",  st:"ATIVO PARCIAL",  c:"#eab308", d:"Health check de autenticação preparado. Produtos NDVI/água/Sentinel dependem de credenciais válidas.", a:"Registro gratuito para APIs reais", h:"Para tempo real:\n- NDVI: Sentinel-2 via dataspace.copernicus.eu\n- SPI-3: CHIRPS + cálculo local\n- IQA: QUALAR/IBAMA\n- Nível mar: CMEMS altimetry API" },
               { n:"INMET",                     st:"ATIVO",     c:"#22c55e", d:"Previsão oficial por município via apiprevmet3.inmet.gov.br/previsao/{codigo_ibge}. Conectado diretamente no navegador.", a:"API pública, sem chave", h:"Endpoint validado: https://apiprevmet3.inmet.gov.br/previsao/4315602" },
               { n:"CPTEC/INPE",                st:"PLANEJADO", c:"#eab308", d:"Produtos sazonais/subsazonais oficiais por imagem via Edge Function.",           a:"API pública", h:"1. servicos.cptec.inpe.br/XML/cidade/{id}/previsao.xml\n2. Proxy via Supabase Edge Function (CORS)" },
               { n:"Defesa Civil RS",           st:"ATIVO",     c:"#22c55e", d:"Avisos oficiais via RSS da Defesa Civil do Rio Grande do Sul, consumidos por Supabase Edge Function para evitar bloqueio CORS.", a:"RSS oficial via proxy", h:"Endpoint ativo: https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/defesa-civil-rs" },
               { n:"CEMADEN",                   st:"ATIVO",     c:"#22c55e", d:"Chuva observada por acumulados recentes das PCDs CEMADEN. Fonte obrigatória: DADOS DA REDE OBSERVACIONAL DO CEMADEN/MCTIC.", a:"Token PED via Supabase Secret", h:"Endpoint: cemaden-rs. Cache: 10 min. Limite PED para usuário externo: até 12 requisições/minuto." },
-              { n:"RADAR Lagoa dos Patos",     st:"ATIVO",     c:"#22c55e", d:"Sensores RADAR em 5 pontos da Lagoa (Itapuã, Arambaré, São Lourenço, São José do Norte, Rio Grande).", a:"API pública via proxy Supabase", h:"Endpoint: lagoa-patos-radar. Fallback local 6h ativado automaticamente." },
-              { n:"HidroSens / UFPel",         st:"ATIVO",     c:"#22c55e", d:"Sensor ultrassônico em Laranjal (Pelotas). Limiares: ALERTA 1,20m · CRÍTICO 1,40m · máx mai/2024: 2,40m.", a:"ThingsBoard público via Supabase", h:"Endpoint: hidrosens-laranjal. Altura do sensor: 5,06m. Fallback local 6h." },
               { n:"Copernicus Emergency (EU)", st:"FUTURO",    c:"#8b5cf6", d:"Sentinel-1 SAR para detecção de alagamentos.",                     a:"Registro gratuito", h:"1. dataspace.copernicus.eu → cadastro\n2. API STAC Sentinel-1" },
             ].map(api=>(
               <div key={api.n} style={{ background:t.cardBg, border:`1px solid ${t.border}`, borderRadius:5, overflow:"hidden", boxShadow:t.shadowCard }}>
                 <div style={{ padding:"12px 14px", display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:11 }}>
                   <div style={{ flex:1 }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:3 }}>
-                      <div style={{ fontSize:12, fontWeight:600, color:t.text }}>{api.n}</div>
-                      {/* badge de saúde ao vivo */}
-                      {sourceHealth[api.n] !== undefined && (
-                        <span style={{ fontSize:7, padding:"1px 5px", borderRadius:3, border:`1px solid ${sourceHealth[api.n].ok?"#22c55e":"#ef4444"}`, color:sourceHealth[api.n].ok?"#22c55e":"#ef4444" }}>
-                          {sourceHealth[api.n].ok ? "● LIVE OK" : "○ FALHOU"}
-                        </span>
-                      )}
-                    </div>
+                    <div style={{ fontSize:12, fontWeight:600, color:t.text, marginBottom:3 }}>{api.n}</div>
                     <div style={{ fontSize:10, color:t.textMuted, marginBottom:3 }}>{api.d}</div>
                     <div style={{ fontSize:9, color:t.textFaint }}>🔑 {api.a}</div>
                   </div>
@@ -1887,7 +1738,6 @@ export default function SentinelaRS() {
                 {api.h && expanded===api.n && <div style={{ padding:"10px 14px", borderTop:`1px solid ${t.border}`, background: dark?"rgba(0,0,0,0.2)":t.bg, fontSize:10, color:t.textMuted, lineHeight:1.8, whiteSpace:"pre-line" }}>{api.h}</div>}
               </div>
             ))}
-            </div>
           </div>
         )}
 
