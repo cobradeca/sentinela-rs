@@ -1,4 +1,17 @@
-const TB_BASE_URL = "https://tb.labhidrosens.com";
+const fs = require("fs");
+const path = require("path");
+
+const filePath = path.join(process.cwd(), "supabase", "functions", "hidrosens-laranjal", "index.ts");
+
+if (!fs.existsSync(filePath)) {
+  console.error("ERRO: não encontrei supabase/functions/hidrosens-laranjal/index.ts");
+  process.exit(1);
+}
+
+const backup = path.join(process.cwd(), "supabase", "functions", "hidrosens-laranjal", `index.ts.backup-distance-history-${Date.now()}`);
+fs.copyFileSync(filePath, backup);
+
+const content = `const TB_BASE_URL = "https://tb.labhidrosens.com";
 const HIDROSENS_PUBLIC_ID = "0a869e80-d9e8-11f0-ac7c-456d9a25fe9a";
 const LARANJAL_DEVICE_ID = "a3e1d520-b438-11f0-ac7c-456d9a25fe9a";
 
@@ -23,7 +36,7 @@ function numberFromValue(value: unknown): number | null {
 
   if (typeof value === "string") {
     const normalized = value.trim().replace(",", ".");
-    const match = normalized.match(/-?\d+(?:\.\d+)?/);
+    const match = normalized.match(/-?\\d+(?:\\.\\d+)?/);
     if (!match?.[0]) return null;
     const n = Number(match[0]);
     return Number.isFinite(n) ? n : null;
@@ -92,14 +105,14 @@ function extractDistanceMeters(payloadValue: unknown): number | null {
 
     text = text.replace(",", ".");
 
-    const distanceMatch = text.match(/(?:distance|dist[aâ]ncia|distancia|distância|dist)\s*[:=\-]?\s*([0-9]+(?:\.[0-9]+)?)/i);
+    const distanceMatch = text.match(/(?:distance|dist[aâ]ncia|distancia|distância|dist)\\s*[:=\\-]?\\s*([0-9]+(?:\\.[0-9]+)?)/i);
     if (distanceMatch?.[1]) {
       const n = Number(distanceMatch[1]);
       if (Number.isFinite(n)) return n;
     }
 
-    const cleaned = text.replace(/WL-?\d+/gi, "");
-    const meterMatch = cleaned.match(/([0-9]+(?:\.[0-9]+)?)\s*m\b/i);
+    const cleaned = text.replace(/WL-?\\d+/gi, "");
+    const meterMatch = cleaned.match(/([0-9]+(?:\\.[0-9]+)?)\\s*m\\b/i);
     if (meterMatch?.[1]) {
       const n = Number(meterMatch[1]);
       if (Number.isFinite(n)) return n;
@@ -125,7 +138,7 @@ function classifyLaranjal(levelM: number | null, ageMinutes: number | null) {
 }
 
 async function publicLogin() {
-  const response = await fetch(`${TB_BASE_URL}/api/auth/login/public`, {
+  const response = await fetch(\`\${TB_BASE_URL}/api/auth/login/public\`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -136,7 +149,7 @@ async function publicLogin() {
   });
 
   if (!response.ok) {
-    throw new Error(`ThingsBoard public login returned ${response.status}`);
+    throw new Error(\`ThingsBoard public login returned \${response.status}\`);
   }
 
   const data = await response.json();
@@ -152,7 +165,7 @@ async function fetchPayloadSeries(token: string) {
   const endTs = Date.now();
   const startTs = endTs - LOOKBACK_HOURS * 60 * 60 * 1000;
 
-  const url = new URL(`${TB_BASE_URL}/api/plugins/telemetry/DEVICE/${LARANJAL_DEVICE_ID}/values/timeseries`);
+  const url = new URL(\`\${TB_BASE_URL}/api/plugins/telemetry/DEVICE/\${LARANJAL_DEVICE_ID}/values/timeseries\`);
   url.searchParams.set("keys", "payload");
   url.searchParams.set("startTs", String(startTs));
   url.searchParams.set("endTs", String(endTs));
@@ -164,7 +177,7 @@ async function fetchPayloadSeries(token: string) {
   const response = await fetch(url.toString(), {
     headers: {
       "Accept": "application/json",
-      "X-Authorization": `Bearer ${token}`,
+      "X-Authorization": \`Bearer \${token}\`,
       "User-Agent": "SentinelaRS/1.0",
     },
   });
@@ -172,7 +185,7 @@ async function fetchPayloadSeries(token: string) {
   const text = await response.text();
 
   if (!response.ok) {
-    throw new Error(`ThingsBoard telemetry returned ${response.status}: ${text.slice(0, 200)}`);
+    throw new Error(\`ThingsBoard telemetry returned \${response.status}: \${text.slice(0, 200)}\`);
   }
 
   const parsed = JSON.parse(text);
@@ -215,7 +228,7 @@ Deno.serve(async (req) => {
         source: "HidroSens/UFPel ThingsBoard",
         station_id: "lagoa_patos_pelotas",
         name: "Pelotas / Laranjal",
-        error: `Nenhum payload com Distance encontrado nas últimas ${LOOKBACK_HOURS}h`,
+        error: \`Nenhum payload com Distance encontrado nas últimas \${LOOKBACK_HOURS}h\`,
         samples_checked: series.length,
         latest_raw: series[0] || null,
         fetched_at: new Date().toISOString(),
@@ -260,7 +273,7 @@ Deno.serve(async (req) => {
       status,
       samples_checked: series.length,
       note: stale
-        ? `Leitura Distance encontrada, mas com ${ageMinutes}min. Exibida como referência; não aciona alerta automático.`
+        ? \`Leitura Distance encontrada, mas com \${ageMinutes}min. Exibida como referência; não aciona alerta automático.\`
         : "Nível calculado conforme dashboard público HidroSens: nivel = 5.06 - Distance. Limiares adotados: alerta 1,20 m; inundação crítica 1,40 m. Máx. maio/2024 adotado: 2,40 m.",
       fetched_at: new Date().toISOString(),
     }), {
@@ -284,3 +297,14 @@ Deno.serve(async (req) => {
     });
   }
 });
+`;
+
+fs.writeFileSync(filePath, content, "utf8");
+
+console.log("HidroSens ajustado para buscar a última leitura Distance válida na janela histórica.");
+console.log("Backup:", path.relative(process.cwd(), backup));
+console.log("");
+console.log("Agora rode:");
+console.log("supabase functions deploy hidrosens-laranjal --no-verify-jwt");
+console.log("node scripts\\diagnosticar-cemaden-hidrosens.cjs");
+console.log("node scripts\\auditar-sitrep-hardcoded-fontes.cjs");

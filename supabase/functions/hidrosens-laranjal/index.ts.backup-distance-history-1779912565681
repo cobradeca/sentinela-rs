@@ -1,16 +1,10 @@
 const TB_BASE_URL = "https://tb.labhidrosens.com";
 const HIDROSENS_PUBLIC_ID = "0a869e80-d9e8-11f0-ac7c-456d9a25fe9a";
 const LARANJAL_DEVICE_ID = "a3e1d520-b438-11f0-ac7c-456d9a25fe9a";
-
 const SENSOR_HEIGHT_M = 5.06;
 const LARANJAL_ALERT_THRESHOLD_M = 1.20;
 const LARANJAL_CRITICAL_THRESHOLD_M = 1.40;
 const LARANJAL_MAX_MAY_2024_M = 2.40;
-
-// O ThingsBoard pode publicar payloads de telemetria sem Distance.
-// Por isso buscamos uma janela histórica e escolhemos a leitura mais recente que contenha Distance.
-const LOOKBACK_HOURS = 24;
-const MAX_OPERATIONAL_AGE_MINUTES = 180;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -52,6 +46,7 @@ function extractDistanceMeters(payloadValue: unknown): number | null {
 
       const obj = value as Record<string, unknown>;
 
+      // Campos estruturados possíveis do ThingsBoard/sensor.
       for (const key of [
         "distance_m",
         "distance",
@@ -68,6 +63,7 @@ function extractDistanceMeters(payloadValue: unknown): number | null {
         }
       }
 
+      // Alguns payloads vêm como JSON string dentro de text/value/payload.
       for (const key of ["text", "value", "payload", "data", "message"]) {
         if (typeof obj[key] === "string") {
           const found = walk(obj[key]);
@@ -80,24 +76,31 @@ function extractDistanceMeters(payloadValue: unknown): number | null {
 
     let text = String(value ?? "");
 
+    // Se for JSON serializado, tenta parsear primeiro.
     if (typeof value === "string") {
       try {
         const parsed = JSON.parse(value);
         const found = walk(parsed);
         if (found !== null) return found;
       } catch {
-        // texto livre
+        // segue como texto livre
       }
     }
 
     text = text.replace(",", ".");
 
+    // Formatos esperados:
+    // "WL-001: Distance 4.43 m"
+    // "Distance: 4,43 m"
+    // "Distancia 4.43m"
+    // "Distância = 4,43 m"
     const distanceMatch = text.match(/(?:distance|dist[aâ]ncia|distancia|distância|dist)\s*[:=\-]?\s*([0-9]+(?:\.[0-9]+)?)/i);
     if (distanceMatch?.[1]) {
       const n = Number(distanceMatch[1]);
       if (Number.isFinite(n)) return n;
     }
 
+    // Fallback textual seguro: se houver "m" e só um valor plausível depois de remover WL-001.
     const cleaned = text.replace(/WL-?\d+/gi, "");
     const meterMatch = cleaned.match(/([0-9]+(?:\.[0-9]+)?)\s*m\b/i);
     if (meterMatch?.[1]) {
@@ -111,14 +114,8 @@ function extractDistanceMeters(payloadValue: unknown): number | null {
   return walk(payloadValue);
 }
 
-function classifyLaranjal(levelM: number | null, ageMinutes: number | null) {
+function classifyLaranjal(levelM: number | null) {
   if (typeof levelM !== "number") return "SEM_LEITURA";
-
-  // Leitura antiga continua informativa, mas não pode acionar alerta automático.
-  if (typeof ageMinutes === "number" && ageMinutes > MAX_OPERATIONAL_AGE_MINUTES) {
-    return "SEM_LEITURA";
-  }
-
   if (levelM >= LARANJAL_CRITICAL_THRESHOLD_M) return "ALERTA";
   if (levelM >= LARANJAL_ALERT_THRESHOLD_M) return "ATENCAO";
   return "NORMAL";
@@ -148,20 +145,10 @@ async function publicLogin() {
   return data.token;
 }
 
-async function fetchPayloadSeries(token: string) {
-  const endTs = Date.now();
-  const startTs = endTs - LOOKBACK_HOURS * 60 * 60 * 1000;
+async function fetchPayload(token: string) {
+  const url = `${TB_BASE_URL}/api/plugins/telemetry/DEVICE/${LARANJAL_DEVICE_ID}/values/timeseries?keys=payload`;
 
-  const url = new URL(`${TB_BASE_URL}/api/plugins/telemetry/DEVICE/${LARANJAL_DEVICE_ID}/values/timeseries`);
-  url.searchParams.set("keys", "payload");
-  url.searchParams.set("startTs", String(startTs));
-  url.searchParams.set("endTs", String(endTs));
-  url.searchParams.set("interval", "0");
-  url.searchParams.set("limit", "1000");
-  url.searchParams.set("agg", "NONE");
-  url.searchParams.set("orderBy", "DESC");
-
-  const response = await fetch(url.toString(), {
+  const response = await fetch(url, {
     headers: {
       "Accept": "application/json",
       "X-Authorization": `Bearer ${token}`,
@@ -175,21 +162,7 @@ async function fetchPayloadSeries(token: string) {
     throw new Error(`ThingsBoard telemetry returned ${response.status}: ${text.slice(0, 200)}`);
   }
 
-  const parsed = JSON.parse(text);
-  return Array.isArray(parsed?.payload) ? parsed.payload : [];
-}
-
-function findLatestDistanceReading(series: Array<{ ts?: number | string; value?: unknown }>) {
-  const sorted = [...series].sort((a, b) => Number(b?.ts || 0) - Number(a?.ts || 0));
-
-  for (const item of sorted) {
-    const distanceM = extractDistanceMeters(item?.value);
-    if (typeof distanceM === "number") {
-      return { item, distanceM };
-    }
-  }
-
-  return null;
+  return JSON.parse(text);
 }
 
 Deno.serve(async (req) => {
@@ -206,33 +179,37 @@ Deno.serve(async (req) => {
 
   try {
     const token = await publicLogin();
-    const series = await fetchPayloadSeries(token);
-    const found = findLatestDistanceReading(series);
+    const payload = await fetchPayload(token);
+    const latest = Array.isArray(payload?.payload) ? payload.payload[0] : null;
 
-    if (!found) {
+    if (!latest) {
       return new Response(JSON.stringify({
         ok: false,
         source: "HidroSens/UFPel ThingsBoard",
         station_id: "lagoa_patos_pelotas",
         name: "Pelotas / Laranjal",
-        error: `Nenhum payload com Distance encontrado nas últimas ${LOOKBACK_HOURS}h`,
-        samples_checked: series.length,
-        latest_raw: series[0] || null,
-        fetched_at: new Date().toISOString(),
+        error: "Sem payload recente",
+        latest: null,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json; charset=utf-8" },
       });
     }
 
-    const latest = found.item;
-    const distanceM = found.distanceM;
-    const measuredAtMs = Number(latest.ts);
-    const measuredAt = new Date(measuredAtMs).toISOString();
-    const ageMinutes = Math.round((Date.now() - measuredAtMs) / 60000);
+    const distanceM = extractDistanceMeters(latest.value);
+    const levelM = typeof distanceM === "number" ? Number(Math.max(0, SENSOR_HEIGHT_M - distanceM).toFixed(2)) : null;
 
-    const levelM = Number(Math.max(0, SENSOR_HEIGHT_M - distanceM).toFixed(2));
-    const status = classifyLaranjal(levelM, ageMinutes);
-    const stale = ageMinutes > MAX_OPERATIONAL_AGE_MINUTES;
+    if (levelM === null) {
+      return new Response(JSON.stringify({
+        ok: false,
+        source: "HidroSens/UFPel ThingsBoard",
+        station_id: "lagoa_patos_pelotas",
+        name: "Pelotas / Laranjal",
+        error: "Não foi possível extrair Distance do payload",
+        raw: latest,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json; charset=utf-8" },
+      });
+    }
 
     return new Response(JSON.stringify({
       ok: true,
@@ -242,10 +219,7 @@ Deno.serve(async (req) => {
       station_id: "lagoa_patos_pelotas",
       name: "Pelotas / Laranjal",
       device_id: LARANJAL_DEVICE_ID,
-      measured_at: measuredAt,
-      age_minutes: ageMinutes,
-      stale,
-      operational: !stale,
+      measured_at: new Date(Number(latest.ts)).toISOString(),
       raw_payload: latest.value,
       distance_m: distanceM,
       sensor_height_m: SENSOR_HEIGHT_M,
@@ -257,11 +231,8 @@ Deno.serve(async (req) => {
       critical_threshold_cm: Number((LARANJAL_CRITICAL_THRESHOLD_M * 100).toFixed(0)),
       max_may_2024_m: LARANJAL_MAX_MAY_2024_M,
       max_may_2024_cm: Number((LARANJAL_MAX_MAY_2024_M * 100).toFixed(0)),
-      status,
-      samples_checked: series.length,
-      note: stale
-        ? `Leitura Distance encontrada, mas com ${ageMinutes}min. Exibida como referência; não aciona alerta automático.`
-        : "Nível calculado conforme dashboard público HidroSens: nivel = 5.06 - Distance. Limiares adotados: alerta 1,20 m; inundação crítica 1,40 m. Máx. maio/2024 adotado: 2,40 m.",
+      status: classifyLaranjal(levelM),
+      note: "Nível calculado conforme dashboard público HidroSens: nivel = 5.06 - Distance. Limiares adotados: alerta 1,20 m; inundação crítica 1,40 m. Máx. maio/2024 adotado: 2,40 m.",
       fetched_at: new Date().toISOString(),
     }), {
       headers: {
@@ -277,7 +248,6 @@ Deno.serve(async (req) => {
       station_id: "lagoa_patos_pelotas",
       name: "Pelotas / Laranjal",
       error: error instanceof Error ? error.message : "Unknown error",
-      fetched_at: new Date().toISOString(),
     }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json; charset=utf-8" },
