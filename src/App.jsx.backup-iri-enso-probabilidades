@@ -56,7 +56,6 @@ const ANA_RS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/
 const LAGOA_RADAR_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/lagoa-patos-radar";
 const HIDROSENS_LARANJAL_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/hidrosens-laranjal";
 const NOAA_ENSO_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/noaa-enso";
-const IRI_ENSO_PROB_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/iri-enso-probabilidades";
 
 // ENSO — dados reais NOAA/IRI mai 2026
 // ⚠ Estes valores são ATIVO PARCIALS — publicados pelo NOAA/IRI em mai/2026.
@@ -136,7 +135,7 @@ function classifyENSO(a) {
 }
 
 
-// NOAA/CPC + IRI — ENSO real via Edge Function.
+// NOAA/CPC — ENSO observado real via Edge Function.
 // Atualiza Niño 3.4 e ONI. Probabilidades IRI permanecem como camada separada até integração própria.
 async function fetchNoaaEnso() {
   try {
@@ -147,31 +146,6 @@ async function fetchNoaaEnso() {
     if (!data?.ok || !data?.enso) return null;
 
     return data.enso;
-  } catch {
-    return null;
-  }
-}
-
-
-// IRI/CCSR — Probabilidades ENSO reais via Edge Function.
-// Substitui as probabilidades estáticas quando disponível.
-async function fetchIriEnsoProbabilities() {
-  try {
-    const res = await fetch(IRI_ENSO_PROB_FUNCTION_URL, { signal: AbortSignal.timeout(15000) });
-    if (!res.ok) return null;
-
-    const data = await res.json();
-    if (!data?.ok || !data?.prob || !Array.isArray(data?.forecast)) return null;
-
-    return {
-      prob: data.prob,
-      forecast: data.forecast,
-      probabilitySource: data.source,
-      probabilityReferenceDate: data.referenceDate,
-      probabilityDynamic: true,
-      probabilityFetchedAt: data.fetched_at,
-      probabilityParsing: data.parsing,
-    };
   } catch {
     return null;
   }
@@ -599,7 +573,6 @@ export default function SentinelaRS() {
   const [expanded, setExpanded]         = useState(null);
   const [dark, setDark]                 = useState(true);
   const [ensoLive, setEnsoLive]         = useState(null);
-  const [ensoProbLive, setEnsoProbLive]     = useState(null);
   const [expandedCard, setExpandedCard] = useState(null); // para detalhe do card
 
   // Cores dinâmicas por tema
@@ -731,25 +704,6 @@ export default function SentinelaRS() {
   }, [loadAllData]);
 
 
-
-  useEffect(() => {
-    let alive = true;
-
-    async function loadIriProbabilities() {
-      const live = await fetchIriEnsoProbabilities();
-      if (!alive || !live) return;
-      setEnsoProbLive(live);
-    }
-
-    loadIriProbabilities();
-    const iv = setInterval(loadIriProbabilities, 6 * 60 * 60 * 1000);
-
-    return () => {
-      alive = false;
-      clearInterval(iv);
-    };
-  }, []);
-
   useEffect(() => {
     let alive = true;
 
@@ -779,17 +733,7 @@ export default function SentinelaRS() {
     return o.indexOf(d.risk)>o.indexOf(w)?d.risk:w;
   }, "NORMAL");
 
-  const observedENSO = ensoLive || ENSO;
-  const activeENSO = ensoProbLive ? {
-    ...observedENSO,
-    prob: ensoProbLive.prob || observedENSO.prob,
-    forecast: ensoProbLive.forecast || observedENSO.forecast,
-    probabilitySource: ensoProbLive.probabilitySource,
-    probabilityReferenceDate: ensoProbLive.probabilityReferenceDate,
-    probabilityDynamic: true,
-    probabilityFetchedAt: ensoProbLive.probabilityFetchedAt,
-    probabilityParsing: ensoProbLive.probabilityParsing,
-  } : observedENSO;
+  const activeENSO = ensoLive || ENSO;
   const ensoClass = classifyENSO(activeENSO.nino34);
   const selData   = stationData[selStation.id];
   const lagoaSummary = getLagoaSummary(stationData);
@@ -1586,7 +1530,7 @@ export default function SentinelaRS() {
             {[
               { n:"Open-Meteo",               st:"ATIVO",     c:"#22c55e", d:"Previsão meteorológica 14 dias — temperatura, precipitação, vento. Atualização automática.", a:"Gratuita, sem chave", h:null },
               { n:"ANA HidroWeb (Telemetria)", st:"ATIVO",     c:"#22c55e", d:"Nível real da Lagoa dos Patos em 4 pontos. Exibe '–' quando indisponível — sem simulação.",  a:"API pública, sem chave", h:null },
-              { n:"NOAA/CPC + IRI — ENSO",   st:"ATIVO PARCIAL",  c:"#eab308", d:"El Niño/La Niña: Niño 3.4, ONI, probabilidades 8 meses. Niño 3.4, ONI e probabilidades ENSO atualizados via Edge Functions.", a:"Dados públicos, atualização mensal", h:"1. iri.columbia.edu/our-expertise/climate/forecasts/enso/current/\n2. Atualizar valores activeENSO.nino34, oni3m, prob e forecast no código\n3. Publicação NOAA/IRI: primeira semana de cada mês" },
+              { n:"NOAA/CPC — ENSO observado",   st:"ATIVO PARCIAL",  c:"#eab308", d:"El Niño/La Niña: Niño 3.4, ONI, probabilidades 8 meses. Niño 3.4 e ONI atualizados via Edge Function; probabilidades IRI ainda usam referência estática.", a:"Dados públicos, atualização mensal", h:"1. iri.columbia.edu/our-expertise/climate/forecasts/enso/current/\n2. Atualizar valores activeENSO.nino34, oni3m, prob e forecast no código\n3. Publicação NOAA/IRI: primeira semana de cada mês" },
               { n:"INPE BDQueimadas",          st:"ATIVO",     c:"#22c55e", d:"Focos de queimada últimas 48h no RS — API pública. Exibe histórico de referência quando API indisponível.", a:"Sem chave", h:null },
               { n:"Copernicus — Indicadores",  st:"ATIVO PARCIAL",  c:"#eab308", d:"NDVI, SPI-3, IQA, nível do mar: dados de referência de publicações Copernicus/MapBiomas. NÃO são consultados em tempo real.", a:"Registro gratuito para APIs reais", h:"Para tempo real:\n- NDVI: Sentinel-2 via dataspace.copernicus.eu\n- SPI-3: CHIRPS + cálculo local\n- IQA: QUALAR/IBAMA\n- Nível mar: CMEMS altimetry API" },
               { n:"INMET",                     st:"ATIVO",     c:"#22c55e", d:"Previsão oficial por município via apiprevmet3.inmet.gov.br/previsao/{codigo_ibge}. Conectado diretamente no navegador.", a:"API pública, sem chave", h:"Endpoint validado: https://apiprevmet3.inmet.gov.br/previsao/4315602" },
