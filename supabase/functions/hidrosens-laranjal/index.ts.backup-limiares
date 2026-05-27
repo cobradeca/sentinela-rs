@@ -2,8 +2,6 @@ const TB_BASE_URL = "https://tb.labhidrosens.com";
 const HIDROSENS_PUBLIC_ID = "0a869e80-d9e8-11f0-ac7c-456d9a25fe9a";
 const LARANJAL_DEVICE_ID = "a3e1d520-b438-11f0-ac7c-456d9a25fe9a";
 const SENSOR_HEIGHT_M = 5.06;
-const LARANJAL_ALERT_THRESHOLD_M = 1.20;
-const LARANJAL_CRITICAL_THRESHOLD_M = 1.40;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -40,9 +38,10 @@ function extractDistanceMeters(payloadValue: unknown): number | null {
 
 function classifyLaranjal(levelM: number | null) {
   if (typeof levelM !== "number") return "SEM_LEITURA";
-  if (levelM >= LARANJAL_CRITICAL_THRESHOLD_M) return "ALERTA";
-  if (levelM >= LARANJAL_ALERT_THRESHOLD_M) return "ATENCAO";
-  return "NORMAL";
+
+  // Ainda sem limiar oficial validado no Sentinela.
+  // Por segurança, não gera ALERTA automático.
+  return "SEM_LIMIAR";
 }
 
 async function publicLogin() {
@@ -149,12 +148,10 @@ Deno.serve(async (req) => {
       sensor_height_m: SENSOR_HEIGHT_M,
       level_m: levelM,
       level_cm: Number((levelM * 100).toFixed(1)),
-      threshold_m: LARANJAL_ALERT_THRESHOLD_M,
-      threshold_cm: Number((LARANJAL_ALERT_THRESHOLD_M * 100).toFixed(0)),
-      critical_threshold_m: LARANJAL_CRITICAL_THRESHOLD_M,
-      critical_threshold_cm: Number((LARANJAL_CRITICAL_THRESHOLD_M * 100).toFixed(0)),
+      threshold_m: null,
+      threshold_cm: null,
       status: classifyLaranjal(levelM),
-      note: "Nível calculado conforme dashboard público HidroSens: nivel = 5.06 - Distance. Limiares adotados: alerta 1,20 m; inundação crítica 1,40 m.",
+      note: "Nível calculado conforme dashboard público HidroSens: nivel = 5.06 - Distance.",
       fetched_at: new Date().toISOString(),
     }), {
       headers: {
