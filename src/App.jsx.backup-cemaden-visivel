@@ -1170,9 +1170,11 @@ export default function SentinelaRS() {
                           ● INMET: {d.inmet.resumo}
                         </div>
                       )}
-                      <div title={CEMADEN_ATTRIBUTION} style={{ fontSize:8, color:d.cemaden ? "#22c55e" : t.textFaint, marginTop:3 }}>
-                        ● CEMADEN: {d.cemaden ? formatCemadenRain(d.cemaden) : "sem leitura observada"}
-                      </div>
+                      {d.cemaden && (
+                        <div title={CEMADEN_ATTRIBUTION} style={{ fontSize:8, color:"#22c55e", marginTop:3 }}>
+                          ● CEMADEN: {formatCemadenRain(d.cemaden)}
+                        </div>
+                      )}
                     </div>
                     <div style={{ fontSize:9, fontWeight:700, padding:"2px 7px", border:`1px solid ${rColor}`, color:rColor, borderRadius:3 }}>{risk.icon} {risk.label}</div>
                   </div>
