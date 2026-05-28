@@ -963,37 +963,6 @@ export default function SentinelaRS() {
     return dark ? r.bg : r.bgLight;
   };
 
-  function getValidatedSourceHealth(name) {
-    const existing = sourceHealthRef.current?.[name] || sourceHealth?.[name] || null;
-    if (existing) return existing;
-
-    if (name === "NOAA/CPC ENSO" && ensoLive && typeof ensoLive.nino34 === "number") {
-      return { ok: true, lastOk: ensoLive.fetchedAt || ensoLive.referenceDate || new Date().toISOString(), latencyMs: null, validated: true };
-    }
-
-    if (name === "IRI/CCSR ENSO" && ensoProbLive && ensoProbLive.prob && typeof ensoProbLive.prob.elNino === "number") {
-      return { ok: true, lastOk: ensoProbLive.probabilityFetchedAt || ensoProbLive.probabilityReferenceDate || new Date().toISOString(), latencyMs: null, validated: true };
-    }
-
-    if (name === "CPTEC/INPE" && cptecProducts && (cptecProducts.ok === true || Array.isArray(cptecProducts.products))) {
-      return { ok: true, lastOk: cptecProducts.fetched_at || new Date().toISOString(), latencyMs: null, validated: true };
-    }
-
-    if (name === "Copernicus Water" && copernicusWater && copernicusWater.ok === true && typeof copernicusWater.water_percent === "number") {
-      return { ok: true, lastOk: copernicusWater.fetched_at || new Date().toISOString(), latencyMs: null, validated: true };
-    }
-
-    if (name === "Copernicus Sentinel-1" && copernicusS1 && (copernicusS1.status === "OK" || copernicusS1.ok === true) && typeof copernicusS1.water_like_percent === "number") {
-      return { ok: true, lastOk: copernicusS1.fetched_at || new Date().toISOString(), latencyMs: null, validated: true };
-    }
-
-    if (name === "Copernicus NDVI" && copernicusNdvi && copernicusNdvi.ok === true && typeof copernicusNdvi.ndvi_mean === "number") {
-      return { ok: true, lastOk: copernicusNdvi.fetched_at || new Date().toISOString(), latencyMs: null, validated: true };
-    }
-
-    return null;
-  }
-
   function markSourceHealth(name, ok, startedAt, error = null) {
     const next = {
       ...sourceHealthRef.current,
@@ -2302,7 +2271,7 @@ export default function SentinelaRS() {
                   "Open-Meteo","INMET","CEMADEN","RADAR Lagoa","HidroSens","Defesa Civil RS",
                   "NOAA/CPC ENSO","IRI/CCSR ENSO","CPTEC/INPE","Copernicus Water","Copernicus Sentinel-1","Copernicus NDVI","ANA HidroWeb",
                 ].map(name => {
-                  const h = getValidatedSourceHealth(name);
+                  const h = sourceHealth[name];
                   const ok   = h?.ok;
                   const never = !h;
                   const anaComplementar = name === "ANA HidroWeb" && (!h || !ok);
