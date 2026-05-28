@@ -192,16 +192,49 @@ body[data-theme="dark"] div[style*="rgba(255,255,255,0.02)"] {
     0 12px 34px rgba(0,0,0,0.16);
 }
 
-body[data-theme="dark"] div[style*="fontSize:8"],
-body[data-theme="dark"] span[style*="fontSize:8"],
-body[data-theme="dark"] button[style*="fontSize:8"] {
+div[style*="fontSize:7"],
+span[style*="fontSize:7"],
+button[style*="fontSize:7"],
+a[style*="fontSize:7"] {
   font-size: 10px !important;
 }
 
-body[data-theme="dark"] div[style*="fontSize:9"],
-body[data-theme="dark"] span[style*="fontSize:9"],
-body[data-theme="dark"] button[style*="fontSize:9"] {
-  font-size: 11px !important;
+div[style*="fontSize:8"],
+span[style*="fontSize:8"],
+button[style*="fontSize:8"],
+a[style*="fontSize:8"],
+text[style*="fontSize:8"] {
+  font-size: 12px !important;
+}
+
+div[style*="fontSize:9"],
+span[style*="fontSize:9"],
+button[style*="fontSize:9"],
+a[style*="fontSize:9"],
+text[style*="fontSize:9"] {
+  font-size: 12px !important;
+}
+
+div[style*="fontSize:10"],
+span[style*="fontSize:10"],
+button[style*="fontSize:10"],
+a[style*="fontSize:10"],
+text[style*="fontSize:10"] {
+  font-size: 13px !important;
+}
+
+div[style*="fontSize:11"],
+span[style*="fontSize:11"],
+button[style*="fontSize:11"],
+a[style*="fontSize:11"] {
+  font-size: 14px !important;
+}
+
+div[style*="fontSize:12"],
+span[style*="fontSize:12"],
+button[style*="fontSize:12"],
+a[style*="fontSize:12"] {
+  font-size: 15px !important;
 }
 
 body[data-theme="dark"] div[style*="#64748b"],
