@@ -79,6 +79,7 @@ const dayNames = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
 
 const DEFESA_CIVIL_RS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/defesa-civil-rs";
 const INMET_FORECAST_BASE_URL = "https://apiprevmet3.inmet.gov.br/previsao";
+const INMET_PREVISAO_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/inmet-previsao";
 const CEMADEN_RS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/cemaden-rs";
 const CEMADEN_ATTRIBUTION = "DADOS DA REDE OBSERVACIONAL DO CEMADEN/MCTIC";
 const ANA_RS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/ana-rs";
@@ -761,15 +762,21 @@ async function fetchInmetForecast(ibgeCode) {
   if (!ibgeCode) return null;
 
   try {
-    const res = await fetch(`${INMET_FORECAST_BASE_URL}/${ibgeCode}`, {
+    const res = await fetch(`${INMET_PREVISAO_FUNCTION_URL}?codigo_ibge=${encodeURIComponent(ibgeCode)}`, {
       headers: { "Accept": "application/json" },
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(15000),
     });
 
     if (!res.ok) return null;
 
-    const raw = await res.json();
-    return normalizeInmetForecast(raw, ibgeCode);
+    const data = await res.json();
+    if (!data?.ok || !data?.latest) return null;
+
+    return {
+      ...data.latest,
+      proxied: true,
+      fetched_at: data.fetched_at,
+    };
   } catch {
     return null;
   }
@@ -2306,7 +2313,7 @@ export default function SentinelaRS() {
               { n:"Copernicus Water / Sentinel-2", st:"ATIVO", c:"#22c55e", d:"Indicador real de água superficial por Sentinel-2 L2A/NDWI para a Lagoa dos Patos. Contexto hidrológico por satélite; não aciona alerta sozinho.", a:"Copernicus Data Space / Sentinel Hub", h:"Endpoint: copernicus-water. Produto óptico: depende de baixa nebulosidade. Usar como contexto junto com Defesa Civil, CEMADEN, RADAR Lagoa e HidroSens." },
               { n:"Copernicus Sentinel-1 SAR", st:"ATIVO", c:"#22c55e", d:"Indicador real SAR de água/alagamento sob nuvens/noite. Contexto remoto por radar; não é alerta oficial nem máscara validada de inundação.", a:"Copernicus Data Space / Sentinel Hub", h:"Endpoint: copernicus-sentinel1-water. Método: Sentinel-1 GRD IW/DV. Pode falhar em áreas urbanas, vegetação inundada, vento forte sobre água e sombras de relevo. Confirmar com órgãos responsáveis." },
               { n:"Copernicus NDVI / Vegetação", st:"ATIVO", c:"#22c55e", d:"Indicador real de vegetação/estiagem por Sentinel-2 L2A/NDVI. Contexto ambiental; não aciona alerta sozinho.", a:"Copernicus Data Space / Sentinel Hub", h:"Endpoint: copernicus-ndvi. Produto óptico: depende de baixa nebulosidade. Usar como contexto, não como alerta automático." },
-              { n:"INMET",                     st:"ATIVO",     c:"#22c55e", d:"Previsão oficial por município via apiprevmet3.inmet.gov.br/previsao/{codigo_ibge}. Complementa a previsão 14 dias; se falhar no navegador, verificar junto ao INMET.", a:"API pública, sem chave", h:"Endpoint validado: https://apiprevmet3.inmet.gov.br/previsao/4315602" },
+              { n:"INMET",                     st:"ATIVO",     c:"#22c55e", d:"Previsão oficial por município via proxy Supabase da API apiprevmet3.inmet.gov.br/previsao/{codigo_ibge}. Complementa a previsão 14 dias; se falhar, verificar junto ao INMET.", a:"API pública, sem chave", h:"Endpoint validado: https://apiprevmet3.inmet.gov.br/previsao/4315602" },
               { n:"CPTEC/INPE",                st:"ATIVO", c:"#22c55e", d:"Produtos sazonais/subsazonais oficiais por imagem via Edge Function. Uso: contexto climático, não alerta local imediato.", a:"API pública via Supabase Edge Function", h:"Endpoint: cptec-inpe-produtos. Produtos gráficos oficiais sazonais/subsazonais. Não são série numérica JSON e não disparam alerta local sozinhos." },
               { n:"Defesa Civil RS",           st:"ATIVO",     c:"#22c55e", d:"Avisos oficiais via RSS da Defesa Civil do Rio Grande do Sul, consumidos por Supabase Edge Function para evitar bloqueio CORS.", a:"RSS oficial via proxy", h:"Endpoint ativo: https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/defesa-civil-rs" },
               { n:"CEMADEN",                   st:"ATIVO",     c:"#22c55e", d:"Chuva observada por acumulados recentes das PCDs CEMADEN. Fonte obrigatória: DADOS DA REDE OBSERVACIONAL DO CEMADEN/MCTIC.", a:"Token PED via Supabase Secret", h:"Endpoint: cemaden-rs. Cache: 10 min. Limite PED para usuário externo: até 12 requisições/minuto." },
