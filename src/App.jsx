@@ -68,6 +68,16 @@ const APAS_RS = [
   { id: "parna_lagoa_peixe",  name: "PARNA Lagoa do Peixe",      lat: -31.25, lon: -51.05, municipio: "Mostardas" },
 ];
 
+const FIRE_MONITORED_AREAS_RS = [
+  { id:"delta_jacui", name:"Porto Alegre / Delta do Jacuí", lat:-30.03, lon:-51.23, focus:"interface urbana, banhados e fumaça sobre a capital" },
+  { id:"itapua_viamao", name:"Viamão / Itapuã", lat:-30.36, lon:-51.03, focus:"parques, campos, margem norte da Lagoa" },
+  { id:"lagoa_peixe", name:"Mostardas / Lagoa do Peixe", lat:-31.25, lon:-51.05, focus:"unidade de conservação, restinga e banhados" },
+  { id:"sao_lourenco", name:"São Lourenço do Sul", lat:-31.36, lon:-51.98, focus:"margem oeste da Lagoa e áreas rurais" },
+  { id:"pelotas_laranjal", name:"Pelotas / Laranjal", lat:-31.77, lon:-52.34, focus:"orla, banhados e transição urbano-rural" },
+  { id:"rio_grande_taim", name:"Rio Grande / Taim", lat:-32.55, lon:-52.60, focus:"ESEC Taim, campos, banhados e fumaça costeira" },
+  { id:"santa_vitoria_chui", name:"Santa Vitória do Palmar / Chuí", lat:-33.52, lon:-53.37, focus:"extremo sul, campos e fronteira" },
+];
+
 const RISK_LEVELS = {
   NORMAL:     { label: "Normal",     color: "#22c55e", bg: "#052e16", bgLight: "#dcfce7", colorLight: "#15803d", icon: "✓" },
   ATENCAO:    { label: "Atenção",    color: "#eab308", bg: "#1c1a05", bgLight: "#fef9c3", colorLight: "#a16207", icon: "⚠" },
@@ -92,6 +102,10 @@ const CPTEC_INPE_PRODUCTS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.
 const COPERNICUS_WATER_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/copernicus-water";
 const COPERNICUS_SENTINEL1_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/copernicus-sentinel1-water";
 const COPERNICUS_NDVI_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/copernicus-ndvi";
+const COPERNICUS_EMS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/copernicus-ems";
+const COPERNICUS_EMS_RAPID_INFO_URL = "https://rapidmapping.emergency.copernicus.eu/backend/dashboard-api/public-activations-info/";
+const COPERNICUS_EMS_RAPID_DETAIL_URL = "https://rapidmapping.emergency.copernicus.eu/backend/dashboard-api/public-activations/";
+const COPERNICUS_EMS_RRM_URL = "https://riskandrecovery.emergency.copernicus.eu/api/public-activations/";
 
 // ENSO — estado base não operacional.
 const ENSO_UNAVAILABLE = {
@@ -256,6 +270,90 @@ async function fetchCopernicusNdvi(aoi = "entorno_lagoa_patos", days = 30) {
     if (!data || typeof data.ndvi_mean !== "number") return data || null;
 
     return data;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchCopernicusEms() {
+  try {
+    const res = await fetch(COPERNICUS_EMS_FUNCTION_URL, { signal: AbortSignal.timeout(30000) });
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    return data?.ok ? data : null;
+  } catch {
+    return fetchCopernicusEmsDirect();
+  }
+}
+
+async function fetchCopernicusEmsDirect() {
+  try {
+    const [infoRes, rapidRes, rrmRes] = await Promise.all([
+      fetch(`${COPERNICUS_EMS_RAPID_INFO_URL}?limit=100`, { signal: AbortSignal.timeout(30000) }),
+      fetch(`${COPERNICUS_EMS_RAPID_DETAIL_URL}?code=EMSR720`, { signal: AbortSignal.timeout(30000) }),
+      fetch(`${COPERNICUS_EMS_RRM_URL}?code=EMSN194`, { signal: AbortSignal.timeout(30000) }),
+    ]);
+    if (!infoRes.ok || !rapidRes.ok || !rrmRes.ok) return null;
+
+    const [info, rapid, rrm] = await Promise.all([infoRes.json(), rapidRes.json(), rrmRes.json()]);
+    const rapidRs = rapid?.results?.[0] || null;
+    const rrmRs = rrm?.results?.[0] || null;
+    const recentBrazilFloods = (info?.results || [])
+      .filter((item) => (item.countries || []).some((c) => String(c?.name || c).toLowerCase() === "brazil") && String(item.category || "").toLowerCase().includes("flood"))
+      .slice(0, 8)
+      .map((item) => ({
+        code:item.code, name:item.name, category:item.category, activationTime:item.activationTime, closed:item.closed,
+        n_aois:item.n_aois ?? item.aois?.length ?? 0, n_products:item.n_products ?? 0,
+        viewerUrl:`https://mapping.emergency.copernicus.eu/activations/${item.code}`,
+      }));
+
+    return {
+      ok: true,
+      source: "Copernicus EMS Mapping public APIs (direto)",
+      fetched_at: new Date().toISOString(),
+      rapid_mapping: {
+        recent_brazil_floods: recentBrazilFloods,
+        rs_2024: rapidRs && {
+          code: rapidRs.code,
+          name: rapidRs.name,
+          category: rapidRs.category,
+          activationTime: rapidRs.activationTime,
+          closed: rapidRs.closed,
+          reportLink: rapidRs.reportLink,
+          productsPath: rapidRs.productsPath,
+          stats: rapidRs.stats,
+          aois: (rapidRs.aois || []).map((a) => ({
+            name: a.name,
+            number: a.number,
+            products: (a.products || []).map((p) => ({ type:p.type, mapsCount:p.mapsCount, downloadPath:p.downloadPath, layers:p.layers || [] })),
+          })),
+        },
+      },
+      risk_recovery: {
+        rs_2024: rrmRs && {
+          code: rrmRs.code,
+          name: rrmRs.name,
+          category: rrmRs.category,
+          activationTime: rrmRs.activationTime,
+          closed: rrmRs.closed,
+          viewerUrl: rrmRs.viewerUrl,
+          storyMapUrl: rrmRs.storyMapUrl,
+          generalArcgisLayers: rrmRs.GeneralArcGISRestAPILayers || [],
+          products: (rrmRs.products || []).map((p) => ({
+            productName:p.productName,
+            productAcronym:p.productAcronym,
+            analysisName:p.analysisName,
+            statusCode:p.statusCode,
+            mapsCount:p.mapsCount,
+            versionDelivery:p.versionDelivery,
+            arcgisLayers:p.ProductArcGISRestAPILayers || [],
+            aois:(p.linkedAois || []).map((a)=>({ aoiNumber:a.aoiNumber, aoiName:a.aoiName, sqkm:a.sqkm })),
+          })),
+        },
+      },
+      operational_use: "CEMS EMSR/EMSN é produto oficial pós-evento. No Sentinela-RS entra como camada de referência e resposta a desastre; não aciona alerta automático sozinho.",
+    };
   } catch {
     return null;
   }
@@ -937,6 +1035,7 @@ export default function SentinelaRS() {
   const [copernicusWater, setCopernicusWater] = useState(null);
   const [copernicusS1, setCopernicusS1] = useState(null);
   const [copernicusNdvi, setCopernicusNdvi] = useState(null);
+  const [copernicusEms, setCopernicusEms] = useState(null);
   const [expandedCard, setExpandedCard] = useState(null); // para detalhe do card
   const [riskExplain, setRiskExplain] = useState(null);
   // BLOCO D — saúde das fontes
@@ -1025,6 +1124,10 @@ export default function SentinelaRS() {
 
     if (name === "Copernicus NDVI" && copernicusNdvi && copernicusNdvi.ok === true && typeof copernicusNdvi.ndvi_mean === "number") {
       return { ok: true, lastOk: copernicusNdvi.fetched_at || new Date().toISOString(), latencyMs: null, validated: true };
+    }
+
+    if (name === "Copernicus EMS" && copernicusEms && copernicusEms.ok === true) {
+      return { ok: true, lastOk: copernicusEms.fetched_at || new Date().toISOString(), latencyMs: null, validated: true };
     }
 
     return null;
@@ -1242,6 +1345,26 @@ export default function SentinelaRS() {
 
     loadCopernicusSentinel1();
     const iv = setInterval(loadCopernicusSentinel1, 6 * 60 * 60 * 1000);
+
+    return () => {
+      alive = false;
+      clearInterval(iv);
+    };
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+
+    async function loadCopernicusEms() {
+      const startedAt = Date.now();
+      const data = await fetchCopernicusEms();
+      if (!alive) return;
+      markSourceHealth("Copernicus EMS", Boolean(data?.ok), startedAt, data?.error || (data ? data.source : "sem resposta"));
+      setCopernicusEms(data);
+    }
+
+    loadCopernicusEms();
+    const iv = setInterval(loadCopernicusEms, 6 * 60 * 60 * 1000);
 
     return () => {
       alive = false;
@@ -2063,6 +2186,66 @@ export default function SentinelaRS() {
               🛰️ <strong>Copernicus — produtos reais ativos.</strong> Sentinel-2 observa água e vegetação quando há céu útil. Sentinel-1 usa radar e ajuda mesmo com nuvens ou à noite. As cores dos números destacam o tipo do indicador e a qualidade da leitura; não são alerta oficial. A decisão operacional continua dependendo de Defesa Civil, CEMADEN, RADAR Lagoa, HidroSens e demais fontes responsáveis.
             </div>
 
+            <div style={{ ...s.card, border:`1px solid ${copernicusEms?.ok ? "#22c55e55" : "#eab30855"}` }}>
+              <div style={{ display:"flex", justifyContent:"space-between", gap:12, alignItems:"flex-start", marginBottom:12 }}>
+                <div>
+                  <div style={{ fontSize:9, color:t.textMuted, letterSpacing:2 }}>COPERNICUS EMS / CEMS</div>
+                  <div style={{ fontSize:20, fontWeight:900, color:t.text, marginTop:2 }}>Rapid Mapping + Risk and Recovery</div>
+                  <div style={{ fontSize:10, color:t.textMuted, marginTop:4 }}>
+                    API pública oficial. Uso no Sentinela-RS: resposta pós-evento e referência histórica validada; não aciona alerta automático sozinho.
+                  </div>
+                </div>
+                <div style={{ fontSize:9, padding:"4px 8px", borderRadius:4, border:`1px solid ${copernicusEms?.ok ? "#22c55e" : "#eab308"}`, color:copernicusEms?.ok ? "#22c55e" : "#eab308" }}>
+                  {copernicusEms?.ok ? "ATIVO" : "AGUARDANDO"}
+                </div>
+              </div>
+
+              {copernicusEms?.ok ? (
+                <div style={{ display:"grid", gap:10 }}>
+                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))", gap:8 }}>
+                    <div style={{ background:dark?"rgba(0,0,0,0.25)":t.bg, border:`1px solid ${t.border}`, borderRadius:5, padding:"10px 12px" }}>
+                      <div style={{ fontSize:8, color:t.textMuted, letterSpacing:1.5 }}>ATIVAÇÕES BRASIL/FLOOD</div>
+                      <div style={{ fontSize:22, fontWeight:900, color:"#22c55e" }}>{copernicusEms.rapid_mapping?.recent_brazil_floods?.length ?? 0}</div>
+                      <div style={{ fontSize:8, color:t.textMuted }}>consulta pública Rapid Mapping</div>
+                    </div>
+                    <div style={{ background:dark?"rgba(0,0,0,0.25)":t.bg, border:`1px solid ${t.border}`, borderRadius:5, padding:"10px 12px" }}>
+                      <div style={{ fontSize:8, color:t.textMuted, letterSpacing:1.5 }}>EMSR720</div>
+                      <div style={{ fontSize:15, fontWeight:900, color:t.text }}>{copernicusEms.rapid_mapping?.rs_2024?.aois?.length ?? 0} áreas</div>
+                      <div style={{ fontSize:8, color:t.textMuted }}>RS 2024 · Rapid Mapping</div>
+                    </div>
+                    <div style={{ background:dark?"rgba(0,0,0,0.25)":t.bg, border:`1px solid ${t.border}`, borderRadius:5, padding:"10px 12px" }}>
+                      <div style={{ fontSize:8, color:t.textMuted, letterSpacing:1.5 }}>EMSN194</div>
+                      <div style={{ fontSize:15, fontWeight:900, color:t.text }}>{copernicusEms.risk_recovery?.rs_2024?.products?.length ?? 0} produtos</div>
+                      <div style={{ fontSize:8, color:t.textMuted }}>Porto Alegre · Risk and Recovery</div>
+                    </div>
+                  </div>
+
+                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))", gap:8 }}>
+                    {(copernicusEms.risk_recovery?.rs_2024?.products || []).map((p) => (
+                      <div key={p.productName} style={{ background:dark?"rgba(0,0,0,0.25)":t.bg, border:`1px solid ${t.border}`, borderRadius:5, padding:"10px 12px" }}>
+                        <div style={{ fontSize:14, fontWeight:900, color:t.text }}>{p.productName} · {p.productAcronym}</div>
+                        <div style={{ fontSize:10, color:t.textMuted, marginTop:3 }}>{p.analysisName}</div>
+                        <div style={{ fontSize:8, color:t.textFaint, marginTop:5 }}>
+                          AOIs: {(p.aois || []).map(a=>a.aoiName).join(", ") || "não informado"} · Camadas ArcGIS: {p.arcgisLayers?.length || 0}
+                        </div>
+                        {p.arcgisLayers?.[0]?.[1] && (
+                          <a href={p.arcgisLayers[0][1]} target="_blank" rel="noreferrer" style={{ display:"inline-block", marginTop:7, fontSize:9, color:t.accent }}>
+                            abrir camada ArcGIS →
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div style={{ fontSize:9, color:t.textMuted, lineHeight:1.55 }}>
+                    EMSR720 cobre áreas mapeadas no evento de maio/2024 como Guaporé, Encantado, Das Antas Dam e Santa Tereza. EMSN194 cobre Porto Alegre, Canoas, Porto Alegre North e Porto Alegre South em produtos de delineação, análise temporal, danos e exposição.
+                  </div>
+                </div>
+              ) : (
+                <div style={{ fontSize:10, color:t.textMuted }}>Copernicus EMS ainda não carregado nesta sessão.</div>
+              )}
+            </div>
+
             <div style={{ ...s.card, border:`1px solid ${copernicusWater?.ok ? "#22c55e55" : "#eab30855"}` }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12, marginBottom:12 }}>
                 <div>
@@ -2287,6 +2470,28 @@ export default function SentinelaRS() {
               </div>
             )}
 
+            <div style={{ ...s.card }}>
+              <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:4 }}>ÁREAS MONITORADAS — PORTO ALEGRE AO CHUÍ</div>
+              <div style={{ fontSize:9, color:t.textMuted, marginBottom:12, lineHeight:1.5 }}>
+                Corredor costeiro e lagunar para cruzar focos INPE, unidades de conservação, fumaça e camadas futuras EFFIS. Estes cards indicam área de monitoramento; só viram alerta quando houver foco real ou endpoint de risco validado.
+              </div>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))", gap:8 }}>
+                {FIRE_MONITORED_AREAS_RS.map((area, idx)=>(
+                  <div key={area.id} style={{ background:dark?"rgba(0,0,0,0.25)":t.bg, border:`1px solid ${t.border}`, borderRadius:5, padding:"10px 12px" }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", gap:8, alignItems:"flex-start" }}>
+                      <div>
+                        <div style={{ fontSize:8, color:t.textFaint, letterSpacing:1.5 }}>TRECHO {idx+1}</div>
+                        <div style={{ fontSize:13, fontWeight:900, color:t.text }}>{area.name}</div>
+                      </div>
+                      <div style={{ fontSize:8, color:"#eab308", border:"1px solid rgba(234,179,8,0.45)", borderRadius:3, padding:"2px 6px" }}>monitorar</div>
+                    </div>
+                    <div style={{ fontSize:9, color:t.textMuted, lineHeight:1.45, marginTop:6 }}>{area.focus}</div>
+                    <div style={{ fontSize:8, color:t.textFaint, marginTop:7 }}>{area.lat.toFixed(2)}°, {area.lon.toFixed(2)}° · INPE/EFFIS quando integrado</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* Focos INPE */}
             <div style={{ ...s.card }}>
               <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:12 }}>FOCOS INPE — RS (últimas 48h)</div>
@@ -2477,7 +2682,7 @@ export default function SentinelaRS() {
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))", gap:8 }}>
                 {[
                   "Open-Meteo","INMET","CEMADEN","RADAR Lagoa","HidroSens","Defesa Civil RS",
-                  "NOAA/CPC ENSO","IRI/CCSR ENSO","CPTEC/INPE","Copernicus Water","Copernicus Sentinel-1","Copernicus NDVI","ANA HidroWeb",
+                  "NOAA/CPC ENSO","IRI/CCSR ENSO","CPTEC/INPE","Copernicus Water","Copernicus Sentinel-1","Copernicus NDVI","Copernicus EMS","ANA HidroWeb",
                 ].map(name => {
                   const h = getValidatedSourceHealth(name);
                   const ok   = h?.ok;
@@ -2527,7 +2732,7 @@ export default function SentinelaRS() {
               { n:"CEMADEN",                   st:"ATIVO",     c:"#22c55e", d:"Chuva observada por acumulados recentes das PCDs CEMADEN. Fonte obrigatória: DADOS DA REDE OBSERVACIONAL DO CEMADEN/MCTIC.", a:"Token PED via Supabase Secret", h:"Endpoint: cemaden-rs. Cache: 10 min. Limite PED para usuário externo: até 12 requisições/minuto." },
               { n:"RADAR Lagoa dos Patos",     st:"ATIVO",     c:"#22c55e", d:"Sensores RADAR em 5 pontos da Lagoa (Itapuã, Arambaré, São Lourenço, São José do Norte, Rio Grande).", a:"API pública via proxy Supabase", h:"Endpoint: lagoa-patos-radar. Fallback local só entra após falha da fonte primária real, exibido como última leitura salva, com orientação de verificar junto à Rede RADAR Lagoa dos Patos. Fallback vencido não dispara novo alerta automático." },
               { n:"HidroSens / UFPel",         st:"ATIVO",     c:"#22c55e", d:"Sensor ultrassônico em Laranjal (Pelotas). Limiares: ALERTA 1,20m · CRÍTICO 1,40m · máx mai/2024: 2,40m.", a:"ThingsBoard público via Supabase", h:"Endpoint: hidrosens-laranjal. Altura do sensor: 5,06m. Fallback local só entra após falha da fonte primária real, exibido como última leitura salva, com orientação de verificar junto ao HidroSens/UFPel. Fallback vencido não dispara novo alerta automático." },
-              { n:"Copernicus Emergency / Produtos avançados", st:"NÃO ATIVO", c:"#8b5cf6", d:"Produtos avançados do Copernicus Emergency Management Service (EMS) para resposta a desastre — ex: mapeamento de áreas inundadas por SAR pós-evento. Não estão ativos porque exigem integração adicional além dos endpoints Sentinel-1/Water já operacionais.", a:"Copernicus Data Space — requer configuração de endpoint específico do CEMS", h:"Por que não está ativo? O Copernicus EMS gera produtos sob demanda após eventos (ex: EMSR728 para RS 2024). Para integrar: (1) identificar o activation ID do evento; (2) acessar a API CEMS/GeoServer; (3) criar Edge Function dedicada. Os produtos Sentinel-1 SAR e Water já ativos cobrem monitoramento contínuo — o EMS cobre resposta pós-evento. Só integrar quando houver ativação real em curso." },
+              { n:"Copernicus Emergency / Produtos avançados", st:copernicusEms?.ok ? "ATIVO" : "AGUARDANDO DEPLOY", c:copernicusEms?.ok ? "#22c55e" : "#eab308", d:"Copernicus EMS por API pública: Rapid Mapping EMSR720 e Risk and Recovery EMSN194 para o RS 2024, além de ativações recentes de Flood/Brazil. Camada oficial pós-evento; não aciona alerta automático sozinha.", a:"API pública CEMS / ArcGIS REST layers", h:null },
             ].map(api=>(
               <div key={api.n} style={{ background:t.cardBg, border:`1px solid ${t.border}`, borderRadius:5, overflow:"hidden", boxShadow:t.shadowCard }}>
                 <div style={{ padding:"12px 14px", display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:11 }}>
