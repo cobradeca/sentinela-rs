@@ -880,13 +880,25 @@ function PushButton({ dark }) {
     } catch(e) { setMsg(e.message.slice(0,25)); setState("error"); }
   }
   const c = { idle:"#22d3ee", requesting:"#eab308", subscribed:"#22c55e", error:"#ef4444" };
+  const helpText = state === "error"
+    ? msg.includes("negado") || msg.includes("denied") || msg.includes("Negado")
+      ? "Permissão de notificação bloqueada. No Android: Configurações → Notificações → [browser] → permitir. No iOS 16.4+: adicionar à tela inicial primeiro."
+      : msg.includes("VAPID")
+      ? "Chave VAPID não configurada. Defina VITE_VAPID_PUBLIC_KEY no .env do projeto."
+      : null
+    : null;
   return (
-    <button onClick={subscribe} disabled={state==="subscribed"||state==="requesting"}
-      style={{ padding:"6px 12px", borderRadius:4, fontFamily:"inherit", fontSize:10, cursor:"pointer",
-        background: dark ? "rgba(0,0,0,0.3)" : "rgba(255,255,255,0.6)",
-        border:`1px solid ${c[state]}44`, color:c[state] }}>
-      {state==="idle"&&"🔔 Push"}{state==="requesting"&&"⏳..."}{state==="subscribed"&&`✓ ${msg}`}{state==="error"&&`✗ ${msg}`}
-    </button>
+    <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:3 }}>
+      <button onClick={subscribe} disabled={state==="subscribed"||state==="requesting"}
+        style={{ padding:"6px 12px", borderRadius:4, fontFamily:"inherit", fontSize:10, cursor:"pointer",
+          background: dark ? "rgba(0,0,0,0.3)" : "rgba(255,255,255,0.6)",
+          border:`1px solid ${c[state]}44`, color:c[state] }}>
+        {state==="idle"&&"🔔 Push"}{state==="requesting"&&"⏳..."}{state==="subscribed"&&`✓ ${msg}`}{state==="error"&&`✗ ${msg}`}
+      </button>
+      {helpText && (
+        <div style={{ fontSize:8, color:"#ef4444", maxWidth:220, textAlign:"right", lineHeight:1.4 }}>{helpText}</div>
+      )}
+    </div>
   );
 }
 
@@ -921,8 +933,8 @@ export default function SentinelaRS() {
     border: "rgba(255,255,255,0.08)",
     borderActive: "rgba(34,211,238,0.5)",
     text: "#e2e8f0",
-    textMuted: "#64748b",
-    textFaint: "#334155",
+    textMuted: "#94a3b8",
+    textFaint: "#64748b",
     accent: "#22d3ee",
     grid: "rgba(34,211,238,0.04)",
     tabActiveBg: "rgba(34,211,238,0.15)",
@@ -1499,7 +1511,7 @@ export default function SentinelaRS() {
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8 }}>
                     <div>
                       <div style={{ fontSize:9, color:t.textMuted, letterSpacing:2 }}>{station.type.toUpperCase()}</div>
-                      <div style={{ fontSize:12, fontWeight:600, color:t.text }}>{station.name}</div>
+                      <div style={{ fontSize:14, fontWeight:700, color:t.text }}>{station.name}</div>
                       {station.rioRef && <div style={{ fontSize:8, color:t.textFaint, marginTop:1 }}>{station.rioRef}</div>}
                       {d.inmet && (
                         <div style={{ fontSize:8, color:t.accent, marginTop:3 }}>
@@ -1527,8 +1539,8 @@ export default function SentinelaRS() {
                         { l:"Contexto climático", v: ensoObservedAvailable ? `${ensoClass.icon} ${ensoClass.label}` : (ensoProbabilityAvailable ? `prob. El Niño ${formatProbability(activeENSO.prob?.elNino)}` : "ENSO indisponível"), highlight: ensoProbabilityAvailable || ensoObservedAvailable },
                       ].map(item => (
                         <div key={item.l} style={{ background: dark?"rgba(0,0,0,0.3)":t.bg, padding:"5px 7px", borderRadius:3 }}>
-                          <div style={{ fontSize:8, color:t.textMuted }}>{item.l}</div>
-                          <div style={{ fontSize:11, fontWeight:600, color:item.highlight?"#f97316":t.text }}>{item.v}</div>
+                          <div style={{ fontSize:9, fontWeight:600, color:t.textMuted }}>{item.l}</div>
+                          <div style={{ fontSize:13, fontWeight:700, color:item.highlight?"#f97316":t.text }}>{item.v}</div>
                         </div>
                       ))}
                     </div>
@@ -1842,25 +1854,76 @@ export default function SentinelaRS() {
             </div>
 
             <div style={{ ...s.card }}>
-              <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:12 }}>PREVISÃO PROBABILÍSTICA IRI/CCSR</div>
-              {safeEnsoForecast(activeENSO.forecast).length ? (
-                <div style={{ display:"grid", gap:7 }}>
-                  {safeEnsoForecast(activeENSO.forecast).map((f,i)=>(
-                    <div key={i} style={{ display:"grid", gridTemplateColumns:"100px 1fr 1fr 1fr", gap:6, alignItems:"center" }}>
-                      <div style={{ fontSize:9, color:t.textMuted }}>{f.p}</div>
-                      {[{l:"El Niño",v:f.en,c:"#f97316"},{l:"Neutro",v:f.nu,c:"#22c55e"},{l:"La Niña",v:f.ln,c:"#3b82f6"}].map(bar=>(
-                        <div key={bar.l}>
-                          <div style={{ fontSize:7, color:bar.c, marginBottom:2 }}>{bar.l} {formatProbability(bar.v)}</div>
-                          <div style={{ height:4, background:t.barBg, borderRadius:2, overflow:"hidden" }}>
-                            <div style={{ height:"100%", width:`${percentValue(bar.v)}%`, background:bar.c }} />
-                          </div>
+              <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:4 }}>PREVISÃO PROBABILÍSTICA IRI/CCSR — CURVAS DE EVOLUÇÃO</div>
+              <div style={{ fontSize:9, color:t.textFaint, marginBottom:12 }}>
+                Cada linha mostra como a probabilidade de cada fase ENSO sobe ou cai mês a mês. O cruzamento das curvas indica transição de fase.
+              </div>
+              {safeEnsoForecast(activeENSO.forecast).length >= 2 ? (() => {
+                const pts = safeEnsoForecast(activeENSO.forecast);
+                const W = 520, H = 160, padL = 36, padR = 12, padT = 10, padB = 28;
+                const innerW = W - padL - padR;
+                const innerH = H - padT - padB;
+                const xOf = (i) => padL + (i / (pts.length - 1)) * innerW;
+                const yOf = (v) => padT + innerH - (typeof v === "number" && Number.isFinite(v) ? v * innerH : 0);
+                const mkLine = (key, color) => {
+                  const d = pts.map((f,i) => `${i===0?"M":"L"}${xOf(i).toFixed(1)},${yOf(f[key]).toFixed(1)}`).join(" ");
+                  const lastV = pts[pts.length-1][key];
+                  const lastX = xOf(pts.length-1);
+                  const lastY = yOf(lastV);
+                  return { d, color, lastV, lastX, lastY };
+                };
+                const lines = [
+                  { key:"en", label:"El Niño",  ...mkLine("en","#f97316") },
+                  { key:"nu", label:"Neutro",   ...mkLine("nu","#22c55e") },
+                  { key:"ln", label:"La Niña",  ...mkLine("ln","#3b82f6") },
+                ];
+                const yGridVals = [0, 0.25, 0.5, 0.75, 1.0];
+                return (
+                  <div>
+                    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ overflow:"visible", display:"block" }}>
+                      {/* grid horizontal */}
+                      {yGridVals.map(v => (
+                        <g key={v}>
+                          <line x1={padL} x2={W-padR} y1={yOf(v)} y2={yOf(v)} stroke={dark?"rgba(255,255,255,0.06)":"rgba(0,0,0,0.07)"} strokeWidth="1"/>
+                          <text x={padL-4} y={yOf(v)+3} textAnchor="end" fontSize="7" fill={dark?"#64748b":"#94a3b8"}>{Math.round(v*100)}%</text>
+                        </g>
+                      ))}
+                      {/* grid vertical por período */}
+                      {pts.map((f,i) => (
+                        <g key={i}>
+                          <line x1={xOf(i)} x2={xOf(i)} y1={padT} y2={padT+innerH} stroke={dark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.05)"} strokeWidth="1"/>
+                          <text x={xOf(i)} y={padT+innerH+14} textAnchor="middle" fontSize="7" fill={dark?"#64748b":"#94a3b8"}>{f.p}</text>
+                        </g>
+                      ))}
+                      {/* limiar 50% */}
+                      <line x1={padL} x2={W-padR} y1={yOf(0.5)} y2={yOf(0.5)} stroke="#eab30855" strokeWidth="1" strokeDasharray="4 3"/>
+                      {/* linhas das fases */}
+                      {lines.map(ln => (
+                        <g key={ln.key}>
+                          <path d={ln.d} fill="none" stroke={ln.color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" opacity="0.9"/>
+                          {pts.map((f,i) => (
+                            <circle key={i} cx={xOf(i)} cy={yOf(f[ln.key])} r="3" fill={ln.color} opacity="0.85"/>
+                          ))}
+                          {/* label no final */}
+                          <text x={ln.lastX + 6} y={ln.lastY + 3} fontSize="8" fill={ln.color} fontWeight="700">{ln.label} {typeof ln.lastV === "number" ? Math.round(ln.lastV*100)+"%" : ""}</text>
+                        </g>
+                      ))}
+                    </svg>
+                    {/* tabela compacta abaixo */}
+                    <div style={{ display:"grid", gap:5, marginTop:10 }}>
+                      {pts.map((f,i) => (
+                        <div key={i} style={{ display:"grid", gridTemplateColumns:"90px 1fr 1fr 1fr", gap:6, alignItems:"center", padding:"4px 6px", background: i===0?(dark?"rgba(34,211,238,0.06)":"rgba(8,145,178,0.05)"):"transparent", borderRadius:3 }}>
+                          <div style={{ fontSize:9, fontWeight: i===0?700:400, color: i===0?t.accent:t.textMuted }}>{f.p}{i===0?" (próximo)":""}</div>
+                          {[{l:"El Niño",v:f.en,c:"#f97316"},{l:"Neutro",v:f.nu,c:"#22c55e"},{l:"La Niña",v:f.ln,c:"#3b82f6"}].map(bar=>(
+                            <div key={bar.l} style={{ fontSize:9, color:bar.c, fontWeight:600 }}>{bar.l} {formatProbability(bar.v)}</div>
+                          ))}
                         </div>
                       ))}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div style={{ fontSize:10, color:t.textMuted }}>Sem previsão probabilística validada no momento.</div>
+                  </div>
+                );
+              })() : (
+                <div style={{ fontSize:10, color:t.textMuted }}>Sem previsão probabilística validada no momento. A curva aparece quando a Edge Function IRI/CCSR retornar dados.</div>
               )}
               <div style={{ fontSize:8, color:t.textFaint, marginTop:8 }}>
                 Fonte: {activeENSO.probabilitySource || "IRI/CCSR"} · Referência: {activeENSO.probabilityReferenceDate || "indisponível"} · Consulta: {activeENSO.probabilityFetchedAt ? formatDateTimeBR(activeENSO.probabilityFetchedAt) : "sem horário"}
@@ -1914,6 +1977,22 @@ export default function SentinelaRS() {
                   <div style={{ marginTop:7, fontSize:8, color:t.textMuted }}>
                     Fonte: CPTEC/INPE · produto gráfico oficial · {p.contentLength ? `${Math.round(p.contentLength/1024)} KB` : "tamanho não informado"}
                   </div>
+                  {/* Rodapé explicativo por tipo de produto */}
+                  <div style={{ marginTop:6, padding:"7px 10px", background: dark?"rgba(34,211,238,0.04)":"rgba(8,145,178,0.03)", border:`1px solid ${t.border}`, borderRadius:4, fontSize:8, color:t.textMuted, lineHeight:1.6 }}>
+                    {p.group?.toLowerCase().includes("precipitacao") || p.group?.toLowerCase().includes("chuva") ? (
+                      <span>🌧 <strong style={{color:t.text}}>Precipitação prevista:</strong> mostra estimativa de chuva acumulada para o período (geralmente mensal ou sazonal). Cores azuis/roxas indicam maior acumulado esperado; verdes e amarelos indicam abaixo da média.</span>
+                    ) : p.group?.toLowerCase().includes("temperatura") || p.group?.toLowerCase().includes("temp") ? (
+                      <span>🌡 <strong style={{color:t.text}}>Temperatura prevista:</strong> mapa de anomalia ou média prevista. Tons avermelhados indicam temperatura acima da média histórica; tons azuis indicam abaixo da média.</span>
+                    ) : p.group?.toLowerCase().includes("enso") || p.group?.toLowerCase().includes("el ni") ? (
+                      <span>🌊 <strong style={{color:t.text}}>Previsão ENSO/clima:</strong> produto que mostra a influência do El Niño ou La Niña nas condições climáticas do Brasil e do RS para o período indicado.</span>
+                    ) : p.group?.toLowerCase().includes("saz") || p.title?.toLowerCase().includes("sazonal") ? (
+                      <span>📅 <strong style={{color:t.text}}>Previsão sazonal (3 meses):</strong> baseada em modelos climáticos globais e condições oceânicas atuais. Indica tendência probabilística, não previsão determinística diária.</span>
+                    ) : p.title?.toLowerCase().includes("subsaz") || p.group?.toLowerCase().includes("subsaz") ? (
+                      <span>📆 <strong style={{color:t.text}}>Previsão subsazonal (semanas):</strong> horizonte de 2 a 6 semanas. Mais detalhada que a sazonal, mas com incerteza crescente a partir da 3ª semana.</span>
+                    ) : (
+                      <span>🛰 <strong style={{color:t.text}}>Produto CPTEC/INPE:</strong> imagem de previsão ou monitoramento climático oficial. Clique para ampliar no site do CPTEC. Uso: contexto climático regional; não substitui alertas operacionais locais.</span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -1930,7 +2009,7 @@ export default function SentinelaRS() {
         {activeTab==="copernicus" && (
           <div style={{ display:"grid", gap:12 }}>
             <div style={{ padding:"10px 14px", background: dark?"rgba(139,92,246,0.08)":"rgba(139,92,246,0.05)", border:"1px solid rgba(139,92,246,0.3)", borderRadius:5, fontSize:10, color: dark?"#c4b5fd":"#7c3aed" }}>
-              🛰️ <strong>Copernicus — produto real ativo</strong> · Sentinel-2 L2A / NDWI para água superficial. Uso: contexto hidrológico por satélite.
+              🛰️ <strong>Copernicus — produtos reais ativos</strong> · Sentinel-1 SAR (radar, funciona sob nuvens e à noite) + Sentinel-2 L2A/NDWI (óptico, depende de céu claro). Uso: contexto hidrológico por satélite; não substituem Defesa Civil, CEMADEN, RADAR Lagoa ou HidroSens.
             </div>
 
             <div style={{ ...s.card, border:`1px solid ${copernicusWater?.ok ? "#22c55e55" : "#eab30855"}` }}>
@@ -1975,10 +2054,14 @@ export default function SentinelaRS() {
                     Período: {copernicusWater.period?.from ? formatDateTimeBR(copernicusWater.period.from) : "–"} → {copernicusWater.period?.to ? formatDateTimeBR(copernicusWater.period.to) : "–"} · Consulta: {copernicusWater.fetched_at ? formatDateTimeBR(copernicusWater.fetched_at) : "sem horário"}
                   </div>
 
-                  <div style={{ marginTop:8, padding:"8px 10px", background: dark?"rgba(234,179,8,0.06)":"rgba(234,179,8,0.05)", border:"1px solid rgba(234,179,8,0.25)", borderRadius:4, fontSize:9, color:dark?"#fef08a":"#854d0e", lineHeight:1.5 }}>
-                    ⚠ {copernicusWater.limitation || "Sentinel-2 é óptico e depende de baixa nebulosidade. Para alagamento sob nuvens, usar Sentinel-1."}
+                  {/* Explicação em linguagem clara */}
+                  <div style={{ marginTop:10, padding:"9px 12px", background: dark?"rgba(34,211,238,0.05)":"rgba(8,145,178,0.04)", border:`1px solid ${t.border}`, borderRadius:4, fontSize:9, color:t.textMuted, lineHeight:1.65 }}>
+                    <strong style={{ color:t.text, display:"block", marginBottom:4 }}>📖 O que significam esses números?</strong>
+                    <strong style={{ color:t.text }}>Água superficial {copernicusWater.water_percent}%</strong> — dos pixels válidos analisados na área da Lagoa dos Patos, {copernicusWater.water_percent}% apresentaram NDWI acima de 0,20, indicando presença de água. <strong style={{ color:t.text }}>NDWI médio {typeof copernicusWater.ndwi_mean === "number" ? copernicusWater.ndwi_mean.toFixed(3) : "–"}</strong> — valores positivos indicam água; negativos indicam solo ou vegetação (acima de 0,20 = água detectada). <strong style={{ color:t.text }}>Cobertura válida {typeof copernicusWater.valid_coverage_percent === "number" ? copernicusWater.valid_coverage_percent+"%" : "–"}</strong> — percentual de pixels sem nuvem, sombra ou neve; abaixo de 30% o valor de água superficial fica pouco confiável. <strong style={{ color:t.text }}>Amostras {copernicusWater.sample_count?.toLocaleString("pt-BR") || "–"}</strong> — pixels processados.
                   </div>
-
+                  <div style={{ marginTop:8, padding:"8px 10px", background: dark?"rgba(234,179,8,0.06)":"rgba(234,179,8,0.05)", border:"1px solid rgba(234,179,8,0.25)", borderRadius:4, fontSize:9, color:dark?"#fef08a":"#854d0e", lineHeight:1.5 }}>
+                    ⚠ Sentinel-2 é óptico e depende de baixa nebulosidade. Para alagamento sob nuvens, o Sentinel-1 SAR abaixo funciona mesmo à noite e com céu fechado.
+                  </div>
                   <div style={{ marginTop:6, fontSize:8, color:t.textFaint }}>
                     Fonte: {copernicusWater.source} · Regra: {copernicusWater.threshold}
                   </div>
@@ -2032,10 +2115,17 @@ export default function SentinelaRS() {
                     Período: {copernicusS1.period?.from ? formatDateTimeBR(copernicusS1.period.from) : "–"} → {copernicusS1.period?.to ? formatDateTimeBR(copernicusS1.period.to) : "–"} · Consulta: {copernicusS1.fetched_at ? formatDateTimeBR(copernicusS1.fetched_at) : "sem horário"}
                   </div>
 
-                  <div style={{ marginTop:8, padding:"8px 10px", background: dark?"rgba(234,179,8,0.06)":"rgba(234,179,8,0.05)", border:"1px solid rgba(234,179,8,0.25)", borderRadius:4, fontSize:9, color:dark?"#fef08a":"#854d0e", lineHeight:1.5 }}>
-                    ⚠ {copernicusS1.limitation || "Indicador SAR de baixa retroespalhamento compatível com água; confirmar com órgãos responsáveis."}
+                  {/* Explicação em linguagem clara */}
+                  <div style={{ marginTop:10, padding:"9px 12px", background: dark?"rgba(139,92,246,0.05)":"rgba(139,92,246,0.04)", border:`1px solid ${t.border}`, borderRadius:4, fontSize:9, color:t.textMuted, lineHeight:1.65 }}>
+                    <strong style={{ color:t.text, display:"block", marginBottom:4 }}>📖 O que significam esses números?</strong>
+                    <strong style={{ color:t.text }}>Indicador SAR água {copernicusS1.water_like_percent}%</strong> — percentual de pixels onde os sinais de radar (VV e VH) são característicos de superfície de água: baixo retroespalhamento, típico de superfície lisa sem obstáculos.<br/>
+                    <strong style={{ color:t.text }}>VV médio {typeof copernicusS1.vv_db_mean === "number" ? copernicusS1.vv_db_mean.toFixed(2)+" dB" : "–"}</strong> — polarização vertical/vertical. Superfície de água calma: geralmente abaixo de −17 dB.<br/>
+                    <strong style={{ color:t.text }}>VH médio {typeof copernicusS1.vh_db_mean === "number" ? copernicusS1.vh_db_mean.toFixed(2)+" dB" : "–"}</strong> — polarização vertical/horizontal. Água detectada quando abaixo de −24 dB junto com VV.<br/>
+                    <strong style={{ color:t.text }}>Cobertura válida {typeof copernicusS1.valid_coverage_percent === "number" ? copernicusS1.valid_coverage_percent+"%" : "–"}</strong> — percentual de pixels processados com dado SAR válido no período.
                   </div>
-
+                  <div style={{ marginTop:8, padding:"8px 10px", background: dark?"rgba(234,179,8,0.06)":"rgba(234,179,8,0.05)", border:"1px solid rgba(234,179,8,0.25)", borderRadius:4, fontSize:9, color:dark?"#fef08a":"#854d0e", lineHeight:1.5 }}>
+                    ⚠ {copernicusS1.limitation || "Indicador SAR de baixa retroespalhamento compatível com água. Pode falhar em áreas urbanas, vegetação inundada, vento forte sobre água e sombras de relevo. Confirmar com Defesa Civil, CEMADEN, RADAR Lagoa e HidroSens."}
+                  </div>
                   <div style={{ marginTop:6, fontSize:8, color:t.textFaint }}>
                     Fonte: {copernicusS1.source} · Método: {copernicusS1.method}
                   </div>
@@ -2135,9 +2225,15 @@ export default function SentinelaRS() {
         {/* ══ QUEIMADAS / APAs ══ */}
         {activeTab==="queimadas" && (
           <div style={{ display:"grid", gap:12 }}>
-            <div style={{ padding:"10px 14px", background: dark?"rgba(249,115,22,0.08)":"rgba(249,115,22,0.05)", border:"1px solid rgba(249,115,22,0.3)", borderRadius:5, fontSize:10, color: dark?"#fdba74":"#c2410c" }}>
-              🔥 Focos via <strong>INPE BDQueimadas</strong> (48h) + <strong>Copernicus EFFIS</strong> (risco incêndio).
+            <div style={{ padding:"10px 14px", background: dark?"rgba(249,115,22,0.08)":"rgba(249,115,22,0.05)", border:"1px solid rgba(249,115,22,0.3)", borderRadius:5, fontSize:10, color: dark?"#fdba74":"#c2410c", display:"flex", justifyContent:"space-between", alignItems:"center", gap:12, flexWrap:"wrap" }}>
+              <span>🔥 Focos via <strong>INPE BDQueimadas</strong> (48h) + <strong>Copernicus EFFIS</strong> (risco incêndio). Dados só aparecem quando a API INPE responder.</span>
+              <button onClick={loadQueimadas} disabled={qLoading} style={{ background:"none", border:"1px solid rgba(249,115,22,0.5)", color:"#fdba74", padding:"5px 12px", borderRadius:4, cursor:"pointer", fontFamily:"inherit", fontSize:9, letterSpacing:1 }}>{qLoading ? "⏳ Consultando..." : "↻ Atualizar"}</button>
             </div>
+            {!queimadas && !qLoading && (
+              <div style={{ padding:"10px 14px", background: dark?"rgba(0,0,0,0.2)":t.bg, border:`1px solid ${t.border}`, borderRadius:5, fontSize:10, color:t.textMuted }}>
+                ℹ️ A API INPE BDQueimadas pode estar temporariamente indisponível. Isso é frequente fora do período de seca (maio/inverno). Clique em <strong>Atualizar</strong> para tentar novamente. Dados históricos de referência: RS registrou focos concentrados em outubro–novembro, com pico em anos de estiagem.
+              </div>
+            )}
 
             {/* Focos INPE */}
             <div style={{ ...s.card }}>
@@ -2276,7 +2372,7 @@ export default function SentinelaRS() {
               <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:10 }}>CANAIS DE NOTIFICAÇÃO</div>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))", gap:8 }}>
                 {[
-                  { i:"📱", n:"Push nativo (PWA)",  s:"Ativo — botão no header",  ok:true,  h:null },
+                  { i:"📱", n:"Push nativo (PWA)",  s:"Requer permissão do browser",  ok:false, h:"Se aparecer 'negado' no celular:\n• Android: Configurações do browser → Notificações → Permitir para o site\n• iOS 16.4+: Primeiro adicione o app à tela inicial (Compartilhar → Adicionar à Tela de Início), depois abra e autorize as notificações\n• Após liberar, clique novamente em 🔔 Push no cabeçalho" },
                   { i:"🔔", n:"Alertas na tela",    s:"Ativo — 30min",            ok:true,  h:null },
                   { i:"📧", n:"E-mail (Resend)",    s:"Configurar",               ok:false, h:"1. resend.com → API key\n2. RESEND_API_KEY nos secrets Supabase\n3. Chamar resend.emails.send() no send-alerts" },
                   { i:"📢", n:"Defesa Civil RS",    s:"Ativo — RSS oficial",      ok:true,  h:"Fonte oficial conectada via Supabase Edge Function. RSS: www.defesacivil.rs.gov.br/rss" },
@@ -2370,7 +2466,7 @@ export default function SentinelaRS() {
               { n:"CEMADEN",                   st:"ATIVO",     c:"#22c55e", d:"Chuva observada por acumulados recentes das PCDs CEMADEN. Fonte obrigatória: DADOS DA REDE OBSERVACIONAL DO CEMADEN/MCTIC.", a:"Token PED via Supabase Secret", h:"Endpoint: cemaden-rs. Cache: 10 min. Limite PED para usuário externo: até 12 requisições/minuto." },
               { n:"RADAR Lagoa dos Patos",     st:"ATIVO",     c:"#22c55e", d:"Sensores RADAR em 5 pontos da Lagoa (Itapuã, Arambaré, São Lourenço, São José do Norte, Rio Grande).", a:"API pública via proxy Supabase", h:"Endpoint: lagoa-patos-radar. Fallback local só entra após falha da fonte primária real, exibido como última leitura salva, com orientação de verificar junto à Rede RADAR Lagoa dos Patos. Fallback vencido não dispara novo alerta automático." },
               { n:"HidroSens / UFPel",         st:"ATIVO",     c:"#22c55e", d:"Sensor ultrassônico em Laranjal (Pelotas). Limiares: ALERTA 1,20m · CRÍTICO 1,40m · máx mai/2024: 2,40m.", a:"ThingsBoard público via Supabase", h:"Endpoint: hidrosens-laranjal. Altura do sensor: 5,06m. Fallback local só entra após falha da fonte primária real, exibido como última leitura salva, com orientação de verificar junto ao HidroSens/UFPel. Fallback vencido não dispara novo alerta automático." },
-              { n:"Copernicus Emergency / Produtos avançados", st:"FUTURO", c:"#8b5cf6", d:"Produtos avançados oficiais/derivados para resposta a desastre. Não substituir os endpoints Sentinel-1/Water já ativos.", a:"Copernicus / serviços especializados", h:"Manter como futuro. Só integrar quando houver endpoint real, fonte, período, limitações e auditoria." },
+              { n:"Copernicus Emergency / Produtos avançados", st:"NÃO ATIVO", c:"#8b5cf6", d:"Produtos avançados do Copernicus Emergency Management Service (EMS) para resposta a desastre — ex: mapeamento de áreas inundadas por SAR pós-evento. Não estão ativos porque exigem integração adicional além dos endpoints Sentinel-1/Water já operacionais.", a:"Copernicus Data Space — requer configuração de endpoint específico do CEMS", h:"Por que não está ativo? O Copernicus EMS gera produtos sob demanda após eventos (ex: EMSR728 para RS 2024). Para integrar: (1) identificar o activation ID do evento; (2) acessar a API CEMS/GeoServer; (3) criar Edge Function dedicada. Os produtos Sentinel-1 SAR e Water já ativos cobrem monitoramento contínuo — o EMS cobre resposta pós-evento. Só integrar quando houver ativação real em curso." },
             ].map(api=>(
               <div key={api.n} style={{ background:t.cardBg, border:`1px solid ${t.border}`, borderRadius:5, overflow:"hidden", boxShadow:t.shadowCard }}>
                 <div style={{ padding:"12px 14px", display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:11 }}>
