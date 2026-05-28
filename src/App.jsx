@@ -126,7 +126,10 @@ function getRiskLevel(precipAccum, tempMin, windMax, lagoaLevel = null) {
   let score = 0;
   if (precipAccum > 150) score += 4; else if (precipAccum > 80) score += 3;
   else if (precipAccum > 40) score += 2; else if (precipAccum > 20) score += 1;
-  if (tempMin < 0) score += 3; else if (tempMin < 5) score += 2; else if (tempMin < 10) score += 1;
+  // Temperatura: limiar revisado para RS. < 10°C é frequente no inverno gaúcho
+  // sem associação a risco de catástrofe — removido como gatilho.
+  // < 5°C → Atenção; < 0°C → Alerta (geada/gelo operacional).
+  if (tempMin < 0) score += 3; else if (tempMin < 5) score += 2;
   if (windMax > 80) score += 3; else if (windMax > 50) score += 2; else if (windMax > 30) score += 1;
   // ENSO é contexto climático, não alerta operacional local. Não entra no score das cidades.
   if (lagoaLevel !== null) {
@@ -645,10 +648,9 @@ function explainCityRisk(station, d, ensoText = "") {
   }
 
   if (tempMin !== null) {
-    if (tempMin < 0) lines.push(`Temperatura mínima extrema: ${tempMin.toFixed(1)}°C.`);
-    else if (tempMin < 5) lines.push(`Temperatura mínima baixa: ${tempMin.toFixed(1)}°C.`);
-    else if (tempMin < 10) lines.push(`Temperatura mínima em atenção: ${tempMin.toFixed(1)}°C.`);
-    else lines.push(`Temperatura mínima sem gatilho de atenção: ${tempMin.toFixed(1)}°C.`);
+    if (tempMin < 0) lines.push(`Temperatura mínima extrema: ${tempMin.toFixed(1)}°C (geada/gelo — gatilho operacional).`);
+    else if (tempMin < 5) lines.push(`Temperatura mínima baixa: ${tempMin.toFixed(1)}°C (gatilho de Atenção no RS).`);
+    else lines.push(`Temperatura mínima sem gatilho operacional: ${tempMin.toFixed(1)}°C.`);
   }
 
   if (windMax !== null) {
@@ -659,7 +661,7 @@ function explainCityRisk(station, d, ensoText = "") {
   }
 
   if (d.cemaden) lines.push(`CEMADEN: ${formatCemadenRain(d.cemaden)}.`);
-  else lines.push("CEMADEN: sem leitura observada validada validada para esta cidade no período.");
+  else lines.push("CEMADEN: sem estação ativa ou sem acumulado validado para esta cidade no período. Ausência de dado não significa ausência de chuva.");
 
   const riskLabel = RISK_LEVELS[d.risk]?.label || d.risk || "Indefinido";
 
@@ -678,11 +680,11 @@ function explainDailyRisk(station, date, p, tn, w, riskCode) {
   return {
     title: `${station?.name || "Cidade"} — ${dd.toLocaleDateString("pt-BR")} — ${riskLabel}`,
     lines: [
-      `Chuva prevista no dia: ${p.toFixed(0)}mm. Critério: 10mm ou mais entra em acompanhamento/atenção leve.`,
-      `Temperatura mínima prevista: ${tn.toFixed(1)}°C.`,
-      `Vento máximo previsto: ${w.toFixed(0)}km/h.`
+      `Chuva prevista no dia: ${p.toFixed(0)}mm. Critério: ≥10mm aciona acompanhamento/Atenção leve.`,
+      `Temperatura mínima prevista: ${tn.toFixed(1)}°C. Gatilho RS: <5°C → Atenção; <0°C → Alerta. Abaixo de 10°C é frequente no inverno gaúcho e não é gatilho isolado.`,
+      `Vento máximo previsto: ${w.toFixed(0)}km/h. Gatilho: ≥30km/h → Atenção; ≥50km/h → Alerta; ≥80km/h → Crítico.`
     ],
-    note: "Normal significa sem gatilho operacional relevante no dia. Atenção significa combinação leve de parâmetros meteorológicos; não é alerta oficial."
+    note: "Normal significa sem gatilho operacional relevante no dia. Atenção significa combinação leve de parâmetros; não é alerta oficial."
   };
 }
 
@@ -1331,9 +1333,9 @@ export default function SentinelaRS() {
               { l:"Precip. 14d", v:`${d.precip?.toFixed(0)} mm`,    alert: d.precip>80 },
               { l:"Temp. mínima", v:`${d.tempMin?.toFixed(1)} °C`,   alert: d.tempMin<5 },
               { l:"Vento máx.",   v:`${d.windMax?.toFixed(0)} km/h`, alert: d.windMax>50 },
-              { l:"Contexto climático",v:formatProbability(activeENSO.prob?.elNino), alert:false },
+              { l:"Contexto climático",v: ensoObservedAvailable ? `${ensoClass.label} · ${formatSignedCelsius(activeENSO.nino34)}` : "ENSO indisponível", alert:false },
               ...(d.lagoa ? [
-                { l:"Nível lagoa", v: d.lagoa.isReal && d.lagoa.atual !== null ? `${d.lagoa.atual.toFixed(2)} m (ANA)` : "– (ANA indisponível)", alert: false },
+                { l:"Nível lagoa", v: d.lagoa.isReal && d.lagoa.atual !== null ? `${d.lagoa.atual.toFixed(2)} m (${d.lagoa.source || "real"})` : "– (indisponível)", alert: false },
               ] : []),
             ].map(item=>(
               <div key={item.l} style={{ background: dark?"rgba(0,0,0,0.3)":t.bg, padding:"8px 11px", borderRadius:5, borderLeft:`3px solid ${item.alert?rColor:t.textFaint}` }}>
@@ -1405,7 +1407,7 @@ export default function SentinelaRS() {
               </div>
               {/* ENSO badge — apenas evento mais próximo */}
               <div style={{ padding:"4px 10px", borderRadius:4, border:`1px solid ${ensoClass.color}55`, color:ensoClass.color, fontSize:10, fontWeight:700 }}>
-                {ensoClass.icon} ENSO observado/probabilístico · +{activeENSO.nino34}°C · {formatProbability(activeENSO.prob?.elNino)} prob.
+                {ensoClass.icon} ENSO {ensoObservedAvailable ? `${ensoClass.label} · Niño 3.4 ${formatSignedCelsius(activeENSO.nino34)}` : "observado indisponível"}{ensoProbabilityAvailable ? ` · prob. El Niño ${formatProbability(activeENSO.prob?.elNino)}` : ""}
               </div>
               <div style={{ display:"flex", gap:6, alignItems:"center" }}>
                 {/* Toggle modo claro/escuro */}
@@ -1505,7 +1507,7 @@ export default function SentinelaRS() {
                         </div>
                       )}
                       <div title={CEMADEN_ATTRIBUTION} style={{ fontSize:8, color:d.cemaden ? "#22c55e" : t.textFaint, marginTop:3 }}>
-                        ● CEMADEN: {d.cemaden ? formatCemadenRain(d.cemaden) : "sem leitura observada validada"}
+                        ● CEMADEN: {d.cemaden ? formatCemadenRain(d.cemaden) : "sem estação/acumulado validado"}
                       </div>
                     </div>
                     <button
@@ -1522,7 +1524,7 @@ export default function SentinelaRS() {
                         { l:"Precip. 14d", v:`${d.precip?.toFixed(0)}mm` },
                         { l:"Temp. mín.",  v:`${d.tempMin?.toFixed(1)}°C` },
                         { l:"Vento",       v:`${d.windMax?.toFixed(0)}km/h` },
-                        { l:"Contexto climático", v:formatProbability(activeENSO.prob?.elNino), highlight:true },
+                        { l:"Contexto climático", v: ensoObservedAvailable ? `${ensoClass.icon} ${ensoClass.label}` : (ensoProbabilityAvailable ? `prob. El Niño ${formatProbability(activeENSO.prob?.elNino)}` : "ENSO indisponível"), highlight: ensoProbabilityAvailable || ensoObservedAvailable },
                       ].map(item => (
                         <div key={item.l} style={{ background: dark?"rgba(0,0,0,0.3)":t.bg, padding:"5px 7px", borderRadius:3 }}>
                           <div style={{ fontSize:8, color:t.textMuted }}>{item.l}</div>
@@ -1581,7 +1583,7 @@ export default function SentinelaRS() {
                     const w=selData.weather.daily.windspeed_10m_max?.[i]||0;
                     const c=selData.weather.daily.weathercode?.[i]||0;
                     const baseDr=getRiskLevel(p*1.5,tn,w);
-                    const dr=["CRITICO","EMERGENCIA","ALERTA"].includes(baseDr) ? baseDr : ((p>=10||w>=30||tn<10) ? "ATENCAO" : baseDr);
+                    const dr=["CRITICO","EMERGENCIA","ALERTA"].includes(baseDr) ? baseDr : ((p>=10||w>=30||tn<5) ? "ATENCAO" : baseDr);
                     const r=RISK_LEVELS[dr];
                     const rColor=getRiskColor(dr);
                     return (
@@ -1635,7 +1637,7 @@ export default function SentinelaRS() {
                       { l:"Precipitação", v:`${selData.precip?.toFixed(0)} mm`, a:selData.precip>80 },
                       { l:"Temp. mínima", v:`${selData.tempMin?.toFixed(1)}°C`,  a:selData.tempMin<5 },
                       { l:"Vento máx.",   v:`${selData.windMax?.toFixed(0)} km/h`, a:selData.windMax>50 },
-                      { l:"Contexto climático",v:formatProbability(activeENSO.prob?.elNino), a:false },
+                      { l:"Contexto climático",v: ensoObservedAvailable ? `${ensoClass.label} (Niño 3.4 ${formatSignedCelsius(activeENSO.nino34)})` : (ensoProbabilityAvailable ? `prob. El Niño ${formatProbability(activeENSO.prob?.elNino)}` : "ENSO indisponível"), a:false },
                     ].map(item=>(
                       <div key={item.l} style={{ display:"flex", justifyContent:"space-between" }}>
                         <span style={{ fontSize:10, color:t.textMuted }}>{item.l}</span>
@@ -1949,9 +1951,15 @@ export default function SentinelaRS() {
 
               {copernicusWater?.ok ? (
                 <>
+                  {/* BLOCO: aviso de cobertura insuficiente */}
+                  {typeof copernicusWater.valid_coverage_percent === "number" && copernicusWater.valid_coverage_percent < 30 && (
+                    <div style={{ marginBottom:10, padding:"8px 10px", background: dark?"rgba(239,68,68,0.08)":"rgba(239,68,68,0.06)", border:"1px solid rgba(239,68,68,0.4)", borderRadius:4, fontSize:9, color:dark?"#fca5a5":"#b91c1c", lineHeight:1.5 }}>
+                      ⛅ <strong>Cobertura válida insuficiente: {copernicusWater.valid_coverage_percent}%</strong> — alta nebulosidade no período. O indicador de água superficial ({copernicusWater.water_percent}%) pode não ser representativo. Use Sentinel-1 SAR como referência complementar e confirme com Defesa Civil, CEMADEN e RADAR Lagoa.
+                    </div>
+                  )}
                   <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))", gap:8 }}>
                     {[
-                      { l:"Água superficial", v:`${copernicusWater.water_percent}%`, c:"#22d3ee" },
+                      { l:"Água superficial", v:`${copernicusWater.water_percent}%`, c: typeof copernicusWater.valid_coverage_percent === "number" && copernicusWater.valid_coverage_percent < 30 ? "#64748b" : "#22d3ee" },
                       { l:"NDWI médio", v: typeof copernicusWater.ndwi_mean === "number" ? copernicusWater.ndwi_mean.toFixed(3) : "–", c:"#60a5fa" },
                       { l:"Cobertura válida", v: typeof copernicusWater.valid_coverage_percent === "number" ? `${copernicusWater.valid_coverage_percent}%` : "–", c:"#22c55e" },
                       { l:"Amostras", v: copernicusWater.sample_count?.toLocaleString("pt-BR") || "–", c:t.text },
@@ -2000,9 +2008,15 @@ export default function SentinelaRS() {
 
               {copernicusS1?.water_like_percent !== undefined ? (
                 <>
+                  {/* BLOCO: aviso cobertura SAR insuficiente */}
+                  {typeof copernicusS1.valid_coverage_percent === "number" && copernicusS1.valid_coverage_percent < 30 && (
+                    <div style={{ marginBottom:10, padding:"8px 10px", background: dark?"rgba(239,68,68,0.08)":"rgba(239,68,68,0.06)", border:"1px solid rgba(239,68,68,0.4)", borderRadius:4, fontSize:9, color:dark?"#fca5a5":"#b91c1c", lineHeight:1.5 }}>
+                      📡 <strong>Cobertura SAR válida: {copernicusS1.valid_coverage_percent}%</strong> — dados insuficientes para o período. O Sentinel-1 é radar (funciona com nuvens), mas baixa cobertura indica ausência de passagens no intervalo. Interprete com cautela.
+                    </div>
+                  )}
                   <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))", gap:8 }}>
                     {[
-                      { l:"Indicador SAR água", v:`${copernicusS1.water_like_percent}%`, c:"#8b5cf6" },
+                      { l:"Indicador SAR água", v:`${copernicusS1.water_like_percent}%`, c: typeof copernicusS1.valid_coverage_percent === "number" && copernicusS1.valid_coverage_percent < 30 ? "#64748b" : "#8b5cf6" },
                       { l:"VV médio", v: typeof copernicusS1.vv_db_mean === "number" ? `${copernicusS1.vv_db_mean.toFixed(2)} dB` : "–", c:"#60a5fa" },
                       { l:"VH médio", v: typeof copernicusS1.vh_db_mean === "number" ? `${copernicusS1.vh_db_mean.toFixed(2)} dB` : "–", c:"#22d3ee" },
                       { l:"Cobertura válida", v: typeof copernicusS1.valid_coverage_percent === "number" ? `${copernicusS1.valid_coverage_percent}%` : "–", c:"#22c55e" },
@@ -2051,9 +2065,15 @@ export default function SentinelaRS() {
 
               {copernicusNdvi?.ndvi_mean !== undefined ? (
                 <>
+                  {/* BLOCO: aviso cobertura NDVI insuficiente */}
+                  {typeof copernicusNdvi.valid_coverage_percent === "number" && copernicusNdvi.valid_coverage_percent < 30 && (
+                    <div style={{ marginBottom:10, padding:"8px 10px", background: dark?"rgba(239,68,68,0.08)":"rgba(239,68,68,0.06)", border:"1px solid rgba(239,68,68,0.4)", borderRadius:4, fontSize:9, color:dark?"#fca5a5":"#b91c1c", lineHeight:1.5 }}>
+                      🌿 <strong>Cobertura válida insuficiente: {copernicusNdvi.valid_coverage_percent}%</strong> — alta nebulosidade no período. O NDVI ({copernicusNdvi.ndvi_mean.toFixed(3)}) pode não ser representativo do estado atual da vegetação.
+                    </div>
+                  )}
                   <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))", gap:8 }}>
                     {[
-                      { l:"NDVI médio", v:copernicusNdvi.ndvi_mean.toFixed(3), c:"#22c55e" },
+                      { l:"NDVI médio", v:copernicusNdvi.ndvi_mean.toFixed(3), c: typeof copernicusNdvi.valid_coverage_percent === "number" && copernicusNdvi.valid_coverage_percent < 30 ? "#64748b" : "#22c55e" },
                       { l:"Vegetação saudável", v: typeof copernicusNdvi.vegetation_percent === "number" ? `${copernicusNdvi.vegetation_percent}%` : "–", c:"#16a34a" },
                       { l:"Vegetação baixa", v: typeof copernicusNdvi.low_vegetation_percent === "number" ? `${copernicusNdvi.low_vegetation_percent}%` : "–", c:"#eab308" },
                       { l:"Cobertura válida", v: typeof copernicusNdvi.valid_coverage_percent === "number" ? `${copernicusNdvi.valid_coverage_percent}%` : "–", c:"#22d3ee" },
@@ -2224,7 +2244,7 @@ export default function SentinelaRS() {
         {!loading && activeTab==="alertas" && (
           <div>
             <div style={{ marginBottom:12, padding:"10px 14px", background: dark?"rgba(249,115,22,0.08)":"rgba(249,115,22,0.05)", border:"1px solid rgba(249,115,22,0.3)", borderRadius:5, fontSize:10, color: dark?"#fdba74":"#c2410c" }}>
-              🌡️ <strong>El Niño (+0.47°C) em desenvolvimento.</strong> Probabilidade–jul 2026: 98% (NOAA/IRI). Risco elevado no RS.
+              🌡️ <strong>ENSO — contexto climático:</strong> {ensoObservedAvailable ? `${ensoClass.label} · Niño 3.4 ${formatSignedCelsius(activeENSO.nino34)}.` : "leitura NOAA/CPC indisponível."} {ensoProbabilityAvailable ? `Probabilidade El Niño: ${formatProbability(activeENSO.prob?.elNino)} (IRI/CCSR).` : "Probabilidade IRI/CCSR indisponível."} ENSO é contexto climático e não aciona alerta local sozinho.
             </div>
             {alerts.length===0 ? (
               <div style={{ textAlign:"center", padding:50, border:"1px solid rgba(34,197,94,0.3)", borderRadius:5, background:"rgba(34,197,94,0.05)" }}>
