@@ -36,13 +36,24 @@ export function usePush() {
     setLoading(true);
     setError(null);
     try {
+      if (!supported) {
+        throw new Error("Este navegador não oferece Push API para PWA.");
+      }
+      if (!VAPID_PUBLIC_KEY) {
+        throw new Error("Push ainda não configurado: defina VITE_VAPID_PUBLIC_KEY no app e VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY no Supabase.");
+      }
+      if (Notification.permission === "denied") {
+        throw new Error("Permissão bloqueada no navegador. Abra as configurações do site, permita notificações para o Sentinela-RS e recarregue a página. No iOS, adicione o PWA à tela inicial antes de autorizar.");
+      }
       // 1. Registra o SW
       const reg = await navigator.serviceWorker.register("/sentinela-rs/sw.js");
       await navigator.serviceWorker.ready;
 
       // 2. Pede permissão
       const permission = await Notification.requestPermission();
-      if (permission !== "granted") throw new Error("Permissão de notificação negada.");
+      if (permission !== "granted") {
+        throw new Error("Permissão não concedida. Para receber alertas, permita notificações para este site no navegador.");
+      }
 
       // 3. Inscreve no push
       const sub = await reg.pushManager.subscribe({

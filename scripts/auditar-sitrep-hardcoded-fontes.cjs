@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { execFileSync } = require("child_process");
 
 const ROOT = process.cwd();
 const PROJECT_REF = "ykaaxrzkfeaxatrnkkxj";
@@ -25,7 +26,8 @@ const CRITICAL_PATTERNS = [
   { id:"probability_static_98", pattern:/98%\s*(de prob|prob)|prob\.\s*mai|elNino:\s*0\.98/gi, msg:"Probabilidade fixa de El Niño. Deve vir do endpoint IRI/CCSR." },
   { id:"impact_static_2026_27", pattern:/Chuvas\s+30.?50%|Inundações costeiras|Risco de queimadas no verão|Ondas de calor intensas|Risco de enchentes e queimadas elevado/gi, msg:"Impacto esperado fixo. Deve ser contexto rotulado ou substituído por fonte oficial com timestamp." },
   { id:"copernicus_static_operational", pattern:/const\s+COPERNICUS_DATA\s*=\s*\{|Copernicus.*não atualizados em tempo real|Indicadores abaixo são dados de referência/gi, msg:"Copernicus fixo/de referência. Deve ficar fora de SITREP até AUTH_OK e produto real." },
-  { id:"placeholder_terms", pattern:/\\bTODO\\b|\\bFIXME\\b|PLACEHOLDER|\\bmock\\b|\\bdummy\\b|\\blorem\\b|SEU_CLIENT_ID|SEU_CLIENT_SECRET|valor_real/g, msg:"Placeholder ou termo de desenvolvimento encontrado." },
+  { id:"placeholder_terms", pattern:/\\bTODO\\b|\\bFIXME\\b|PLACEHOLDER|\\bmock\\b|\\bdummy\\b|\\blorem\\b|SEU_CLIENT_ID|SEU_CLIENT_SECRET|valor_real|dados de exemplo|aguardando valor/gi, msg:"Placeholder ou termo de desenvolvimento encontrado." },
+  { id:"unlabeled_operational_claim", pattern:/alerta fixo|probabilidade fixa|chuva fixa|nível fixo|nivel fixo/gi, msg:"Alegação operacional fixa ou sem fonte real. Deve ser removida ou marcada como referência não operacional." },
 ];
 
 const ACCEPTABLE_PATTERNS = [
@@ -74,16 +76,32 @@ const endpoints = [
   ["ANA HidroWeb", `https://${PROJECT_REF}.supabase.co/functions/v1/ana-rs`, (d) => typeof d === "object", "Complementar: pode estar sem leitura validada"],
 ];
 
+async function fetchTextWithWindowsFallback(url, timeoutMs) {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+    return { status: res.status, ok: res.ok, text: await res.text() };
+  } catch (fetchError) {
+    const ps = [
+      "-NoProfile",
+      "-Command",
+      `$ErrorActionPreference='Stop'; $r=Invoke-WebRequest '${url}' -UseBasicParsing -TimeoutSec ${Math.ceil(timeoutMs / 1000)}; Write-Output $r.StatusCode; Write-Output $r.Content`,
+    ];
+    const out = execFileSync("powershell.exe", ps, { encoding: "utf8", timeout: timeoutMs + 5000 });
+    const firstBreak = out.indexOf("\n");
+    const status = Number(out.slice(0, firstBreak).trim());
+    return { status, ok: status >= 200 && status < 300, text: out.slice(firstBreak + 1).trim() };
+  }
+}
+
 async function checkEndpoint([name, url, validate, role, retries = 1]) {
   let last = null;
 
   for (let attempt = 1; attempt <= retries; attempt++) {
     const t0 = Date.now();
     try {
-      const res = await fetch(url, { signal: AbortSignal.timeout(name === "CEMADEN RS" ? 30000 : 20000) });
-      const text = await res.text();
+      const res = await fetchTextWithWindowsFallback(url, name === "CEMADEN RS" ? 30000 : 20000);
       let data = {};
-      try { data = JSON.parse(text); } catch { data = { raw: text.slice(0, 200) }; }
+      try { data = JSON.parse(res.text); } catch { data = { raw: res.text.slice(0, 200) }; }
       const latency = Date.now() - t0;
       const ok = res.ok && validate(data);
 

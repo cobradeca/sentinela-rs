@@ -10,7 +10,7 @@ const LARANJAL_MAX_MAY_2024_M = 2.40;
 // O ThingsBoard pode publicar payloads de telemetria sem Distance.
 // Por isso buscamos uma janela histórica e escolhemos a leitura mais recente que contenha Distance.
 const LOOKBACK_HOURS = 24;
-const MAX_OPERATIONAL_AGE_MINUTES = 180;
+const MAX_OPERATIONAL_AGE_MINUTES = 24 * 60;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

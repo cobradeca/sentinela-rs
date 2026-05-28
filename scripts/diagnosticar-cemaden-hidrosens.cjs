@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { execFileSync } = require("child_process");
 
 const PROJECT_REF = "ykaaxrzkfeaxatrnkkxj";
 const outDir = path.join(process.cwd(), "diagnostico-fontes");
@@ -13,8 +14,24 @@ const checks = [
 async function runOne([name, url, timeoutMs]) {
   const started = Date.now();
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
-    const text = await res.text();
+    let status = null;
+    let text = "";
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+      status = res.status;
+      text = await res.text();
+    } catch (fetchError) {
+      // Em alguns ambientes Windows, o fetch do Node falha enquanto o PowerShell acessa HTTPS normalmente.
+      const ps = [
+        "-NoProfile",
+        "-Command",
+        `$r=Invoke-WebRequest '${url}' -UseBasicParsing -TimeoutSec ${Math.ceil(timeoutMs / 1000)}; Write-Output $r.StatusCode; Write-Output $r.Content`,
+      ];
+      const out = execFileSync("powershell.exe", ps, { encoding: "utf8", timeout: timeoutMs + 5000 });
+      const firstBreak = out.indexOf("\n");
+      status = Number(out.slice(0, firstBreak).trim());
+      text = out.slice(firstBreak + 1).trim();
+    }
     const ms = Date.now() - started;
 
     const file = path.join(outDir, `${name}.json`);
@@ -24,7 +41,7 @@ async function runOne([name, url, timeoutMs]) {
     try { data = JSON.parse(text); } catch {}
 
     console.log(`\n=== ${name} ===`);
-    console.log(`HTTP: ${res.status}`);
+    console.log(`HTTP: ${status}`);
     console.log(`Tempo: ${ms}ms`);
     console.log(`Arquivo: ${path.relative(process.cwd(), file)}`);
 
@@ -40,7 +57,7 @@ async function runOne([name, url, timeoutMs]) {
       console.log(text.slice(0, 500));
     }
 
-    return res.ok;
+    return status >= 200 && status < 300;
   } catch (e) {
     const ms = Date.now() - started;
     console.log(`\n=== ${name} ===`);

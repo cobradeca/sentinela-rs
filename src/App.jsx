@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { usePush } from "./hooks/usePush";
 
 // ─── BLOCO C: frescor do dado ─────────────────────────────────────────────────
 function dataStaleness(measuredAt) {
   if (!measuredAt) return "unknown";
   const ageMin = (Date.now() - new Date(measuredAt).getTime()) / 60000;
-  if (ageMin <= 90)  return "fresh";
-  if (ageMin <= 180) return "attention";
+  if (ageMin <= 180)  return "fresh";
+  if (ageMin <= 1440) return "attention";
   return "stale";
 }
 
@@ -173,6 +174,24 @@ function safeEnsoForecast(forecast) {
   return Array.isArray(forecast) ? forecast : [];
 }
 
+function getDominantEnsoPhase(prob) {
+  const items = [
+    { key: "elNino", label: "El Niño", value: prob?.elNino, color: "#f97316" },
+    { key: "neutral", label: "Neutro", value: prob?.neutral, color: "#22c55e" },
+    { key: "laNina", label: "La Niña", value: prob?.laNina, color: "#3b82f6" },
+  ].filter((item) => typeof item.value === "number" && Number.isFinite(item.value));
+
+  if (!items.length) return null;
+  return items.sort((a, b) => b.value - a.value)[0];
+}
+
+function formatDominantEnsoProbability(prob, period = "") {
+  const dominant = getDominantEnsoPhase(prob);
+  if (!dominant) return "Probabilidade IRI/CCSR indisponível";
+  const prefix = dominant.key === "neutral" ? "Cenário mais provável" : "Evento mais provável";
+  return `${prefix}: ${dominant.label} ${formatProbability(dominant.value)}${period ? ` · ${period}` : ""}`;
+}
+
 
 // NOAA/CPC + IRI — ENSO real via Edge Function.
 // Atualiza Niño 3.4 e ONI. Probabilidades IRI permanecem como camada separada até integração própria.
@@ -280,7 +299,7 @@ async function fetchIriEnsoProbabilities() {
 // Previsão 14 dias via Open-Meteo (forecast_days=14)
 async function fetchWeather14Days(lat, lon) {
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max,weathercode&timezone=America%2FSao_Paulo&forecast_days=14`;
-  const res = await fetch(url);
+  const res = await fetch(url, { signal: AbortSignal.timeout(12000) });
   if (!res.ok) throw new Error("Open-Meteo indisponível");
   return res.json();
 }
@@ -301,6 +320,12 @@ async function fetchHidroSensLaranjalLevel() {
     const data = await res.json();
     if (!data?.ok || typeof data.level_m !== "number") return cached || null;
 
+    const ageMinutes = typeof data.age_minutes === "number"
+      ? data.age_minutes
+      : data.measured_at
+      ? Math.round((Date.now() - new Date(data.measured_at).getTime()) / 60000)
+      : null;
+    const readingOlderThan24h = typeof ageMinutes === "number" && ageMinutes > 1440;
     const live = {
       ok: true,
       station_id: data.station_id,
@@ -312,17 +337,20 @@ async function fetchHidroSensLaranjalLevel() {
       level_cm: data.level_cm,
       distance_m: data.distance_m,
       sensor_height_m: data.sensor_height_m,
+      operational: !readingOlderThan24h,
+      stale: readingOlderThan24h,
+      age_minutes: ageMinutes,
       threshold_m: data.threshold_m ?? 1.20,
       threshold_cm: data.threshold_cm ?? 120,
       critical_threshold_m: data.critical_threshold_m ?? 1.40,
       critical_threshold_cm: data.critical_threshold_cm ?? 140,
       max_may_2024_m: data.max_may_2024_m ?? 2.40,
       max_may_2024_cm: data.max_may_2024_cm ?? 240,
-      status: data.status || (data.level_m >= 1.40 ? "ALERTA" : data.level_m >= 1.20 ? "ATENCAO" : "NORMAL"),
+      status: readingOlderThan24h ? "SEM_LEITURA" : (data.level_m >= 1.40 ? "ALERTA" : data.level_m >= 1.20 ? "ATENCAO" : "NORMAL"),
       note: data.note,
     };
 
-    saveFallbackCache(HIDROSENS_LARANJAL_CACHE_KEY, live);
+    if (live.operational) saveFallbackCache(HIDROSENS_LARANJAL_CACHE_KEY, live);
     return live;
   } catch {
     return cached || null;
@@ -480,6 +508,7 @@ function lagoaStatusLabel(status) {
   if (status === "ATENCAO") return "Atenção";
   if (status === "NORMAL") return "Normal";
   if (status === "SEM_LIMIAR") return "Dado real";
+  if (status === "SEM_LEITURA") return "Sem leitura";
   return "Sem leitura";
 }
 
@@ -640,24 +669,24 @@ function explainCityRisk(station, d, ensoText = "") {
   const windMax = typeof d.windMax === "number" ? d.windMax : null;
 
   if (precip !== null) {
-    if (precip > 150) lines.push(`Chuva prevista muito alta em 14 dias: ${precip.toFixed(0)}mm.`);
-    else if (precip > 80) lines.push(`Chuva prevista alta em 14 dias: ${precip.toFixed(0)}mm.`);
-    else if (precip > 40) lines.push(`Chuva prevista moderada em 14 dias: ${precip.toFixed(0)}mm.`);
-    else if (precip > 20) lines.push(`Chuva prevista em acompanhamento em 14 dias: ${precip.toFixed(0)}mm.`);
-    else lines.push(`Chuva prevista baixa em 14 dias: ${precip.toFixed(0)}mm.`);
+    if (precip > 150) lines.push(`A previsão soma ${precip.toFixed(0)}mm de chuva em 14 dias, um volume muito alto para acompanhar de perto.`);
+    else if (precip > 80) lines.push(`A previsão soma ${precip.toFixed(0)}mm de chuva em 14 dias, volume alto o suficiente para elevar a atenção.`);
+    else if (precip > 40) lines.push(`A previsão soma ${precip.toFixed(0)}mm de chuva em 14 dias. É chuva moderada, ainda sem sinal severo isolado.`);
+    else if (precip > 20) lines.push(`A previsão soma ${precip.toFixed(0)}mm de chuva em 14 dias. Por enquanto, é um cenário de acompanhamento.`);
+    else lines.push(`A previsão soma apenas ${precip.toFixed(0)}mm de chuva em 14 dias, sem pressão relevante por chuva acumulada.`);
   }
 
   if (tempMin !== null) {
-    if (tempMin < 0) lines.push(`Temperatura mínima extrema: ${tempMin.toFixed(1)}°C (geada/gelo — gatilho operacional).`);
-    else if (tempMin < 5) lines.push(`Temperatura mínima baixa: ${tempMin.toFixed(1)}°C (gatilho de Atenção no RS).`);
-    else lines.push(`Temperatura mínima sem gatilho operacional: ${tempMin.toFixed(1)}°C.`);
+    if (tempMin < 0) lines.push(`A mínima prevista chega a ${tempMin.toFixed(1)}°C, com risco de geada ou gelo.`);
+    else if (tempMin < 5) lines.push(`A mínima prevista é de ${tempMin.toFixed(1)}°C. É frio suficiente para entrar em atenção no RS.`);
+    else lines.push(`A mínima prevista é de ${tempMin.toFixed(1)}°C. Esse frio não aumenta o nível de atenção agora.`);
   }
 
   if (windMax !== null) {
-    if (windMax > 80) lines.push(`Vento muito forte previsto: ${windMax.toFixed(0)}km/h.`);
-    else if (windMax > 50) lines.push(`Vento forte previsto: ${windMax.toFixed(0)}km/h.`);
-    else if (windMax > 30) lines.push(`Vento em acompanhamento: ${windMax.toFixed(0)}km/h.`);
-    else lines.push(`Vento sem gatilho de atenção: ${windMax.toFixed(0)}km/h.`);
+    if (windMax > 80) lines.push(`As rajadas podem chegar a ${windMax.toFixed(0)}km/h, faixa de vento muito forte.`);
+    else if (windMax > 50) lines.push(`As rajadas podem chegar a ${windMax.toFixed(0)}km/h, vento forte para acompanhar.`);
+    else if (windMax > 30) lines.push(`As rajadas podem chegar a ${windMax.toFixed(0)}km/h. Ainda é atenção leve por vento.`);
+    else lines.push(`O vento previsto chega a ${windMax.toFixed(0)}km/h, baixo demais para aumentar o nível de atenção.`);
   }
 
   if (d.cemaden) lines.push(`CEMADEN: ${formatCemadenRain(d.cemaden)}.`);
@@ -680,11 +709,19 @@ function explainDailyRisk(station, date, p, tn, w, riskCode) {
   return {
     title: `${station?.name || "Cidade"} — ${dd.toLocaleDateString("pt-BR")} — ${riskLabel}`,
     lines: [
-      `Chuva prevista no dia: ${p.toFixed(0)}mm. Critério: ≥10mm aciona acompanhamento/Atenção leve.`,
-      `Temperatura mínima prevista: ${tn.toFixed(1)}°C. Gatilho RS: <5°C → Atenção; <0°C → Alerta. Abaixo de 10°C é frequente no inverno gaúcho e não é gatilho isolado.`,
-      `Vento máximo previsto: ${w.toFixed(0)}km/h. Gatilho: ≥30km/h → Atenção; ≥50km/h → Alerta; ≥80km/h → Crítico.`
+      p >= 10
+        ? `Há ${p.toFixed(0)}mm de chuva previstos para o dia. Esse volume já justifica acompanhar a situação.`
+        : `Quase não há chuva prevista para o dia (${p.toFixed(0)}mm), então a chuva não pesa no risco.`,
+      tn < 0
+        ? `A mínima pode cair para ${tn.toFixed(1)}°C, com risco de geada ou gelo.`
+        : tn < 5
+        ? `A mínima pode chegar a ${tn.toFixed(1)}°C. É frio relevante para o RS e entra como atenção.`
+        : `A mínima prevista é de ${tn.toFixed(1)}°C. Esse frio não aumenta o nível de atenção agora.`,
+      w >= 30
+        ? `O vento pode chegar a ${w.toFixed(0)}km/h. A partir de 30km/h o app passa a acompanhar o vento com mais cuidado.`
+        : `O vento previsto é baixo (${w.toFixed(0)}km/h), sem influência relevante no risco do dia.`
     ],
-    note: "Normal significa sem gatilho operacional relevante no dia. Atenção significa combinação leve de parâmetros; não é alerta oficial."
+    note: "Este status resume chuva, frio e vento previstos. Para decisões de segurança, confira também os avisos oficiais da Defesa Civil e dos órgãos responsáveis."
   };
 }
 
@@ -715,6 +752,15 @@ function explainLagoaRisk(point, lagoa) {
 
   const measuredAt = getLagoaMeasuredAt(lagoa);
   if (measuredAt) lines.push(`Horário da leitura: ${formatDateTimeBR(measuredAt)}.`);
+
+  if (lagoa.operational === false || lagoa.stale) {
+    const ageText = typeof lagoa.age_minutes === "number" ? ` (${lagoa.age_minutes}min atrás)` : "";
+    lines.push(`A fonte retornou uma leitura real${ageText}, mas ela está velha para uso como leitura atual. O app mostra o valor como referência e não eleva o alerta com base nele.`);
+  }
+
+  if (lagoa.hidrosens?.distance_m && lagoa.hidrosens?.sensor_height_m) {
+    lines.push(`Cálculo HidroSens: altura do sensor ${lagoa.hidrosens.sensor_height_m.toFixed(2)}m − Distance ${lagoa.hidrosens.distance_m.toFixed(2)}m = ${lagoa.atual.toFixed(2)}m.`);
+  }
 
   if (lagoa.isFallback) {
     lines.push("Fonte primária indisponível. Esta é a última leitura válida salva. Verifique a informação junto ao órgão responsável pela fonte antes de qualquer decisão operacional. Fallback vencido não dispara novo alerta automático.");
@@ -861,42 +907,24 @@ const wmoEmoji = (c) => WMO_WEATHER[Number(c)]?.[0] || "🌦️";
 
 // ─── PUSH ────────────────────────────────────────────────────────────────────
 function PushButton({ dark }) {
-  const [state, setState] = useState("idle");
-  const [msg, setMsg] = useState("");
+  const { supported, subscribed, loading, error, subscribe: subscribePush } = usePush();
   async function subscribe() {
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) { setMsg("Não suportado"); setState("error"); return; }
-    setState("requesting");
-    try {
-      const reg = await navigator.serviceWorker.register("/sentinela-rs/sw.js");
-      await navigator.serviceWorker.ready;
-      const perm = await Notification.requestPermission();
-      if (perm !== "granted") { setMsg("Negado"); setState("error"); return; }
-      const VAPID = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-      if (!VAPID) { setMsg("VAPID ausente"); setState("error"); return; }
-      const pad = "=".repeat((4 - VAPID.length % 4) % 4);
-      const key = Uint8Array.from([...atob((VAPID + pad).replace(/-/g,"+").replace(/_/g,"/"))].map(c=>c.charCodeAt(0)));
-      await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
-      setState("subscribed"); setMsg("Ativo!");
-    } catch(e) { setMsg(e.message.slice(0,25)); setState("error"); }
+    await subscribePush([]);
   }
+  const state = subscribed ? "subscribed" : loading ? "requesting" : error ? "error" : "idle";
   const c = { idle:"#22d3ee", requesting:"#eab308", subscribed:"#22c55e", error:"#ef4444" };
-  const helpText = state === "error"
-    ? msg.includes("negado") || msg.includes("denied") || msg.includes("Negado")
-      ? "Permissão de notificação bloqueada. No Android: Configurações → Notificações → [browser] → permitir. No iOS 16.4+: adicionar à tela inicial primeiro."
-      : msg.includes("VAPID")
-      ? "Chave VAPID não configurada. Defina VITE_VAPID_PUBLIC_KEY no .env do projeto."
-      : null
-    : null;
+  const helpText = error || (!supported ? "Este navegador não oferece Push API para PWA." : null);
+  const label = subscribed ? "✓ Push ativo" : loading ? "⏳..." : error ? "✗ Ajustar push" : "🔔 Push";
   return (
     <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:3 }}>
-      <button onClick={subscribe} disabled={state==="subscribed"||state==="requesting"}
+      <button onClick={subscribe} disabled={state==="subscribed"||state==="requesting"||!supported}
         style={{ padding:"6px 12px", borderRadius:4, fontFamily:"inherit", fontSize:10, cursor:"pointer",
           background: dark ? "rgba(0,0,0,0.3)" : "rgba(255,255,255,0.6)",
           border:`1px solid ${c[state]}44`, color:c[state] }}>
-        {state==="idle"&&"🔔 Push"}{state==="requesting"&&"⏳..."}{state==="subscribed"&&`✓ ${msg}`}{state==="error"&&`✗ ${msg}`}
+        {label}
       </button>
       {helpText && (
-        <div style={{ fontSize:8, color:"#ef4444", maxWidth:220, textAlign:"right", lineHeight:1.4 }}>{helpText}</div>
+        <div style={{ fontSize:9, color:"#fca5a5", maxWidth:280, textAlign:"right", lineHeight:1.45 }}>{helpText}</div>
       )}
     </div>
   );
@@ -926,15 +954,20 @@ export default function SentinelaRS() {
   const [sourceHealth, setSourceHealth] = useState({});
   const sourceHealthRef = useRef({});
 
+  useEffect(() => {
+    document.body.dataset.theme = dark ? "dark" : "light";
+    return () => { delete document.body.dataset.theme; };
+  }, [dark]);
+
   // Cores dinâmicas por tema
   const t = dark ? {
     bg: "#070b12",
     surface: "rgba(255,255,255,0.03)",
     border: "rgba(255,255,255,0.08)",
     borderActive: "rgba(34,211,238,0.5)",
-    text: "#e2e8f0",
-    textMuted: "#94a3b8",
-    textFaint: "#64748b",
+    text: "#f3f8ff",
+    textMuted: "#c6d3e1",
+    textFaint: "#9fb0c3",
     accent: "#22d3ee",
     grid: "rgba(34,211,238,0.04)",
     tabActiveBg: "rgba(34,211,238,0.15)",
@@ -1039,15 +1072,19 @@ export default function SentinelaRS() {
         return result;
       } catch (err) {
         health[key] = { ok: false, lastOk: health[key]?.lastOk || null, latencyMs: Date.now() - start, error: err?.message || "erro desconhecido" };
-        return typeof fn() === "object" ? {} : null;
+        return null;
       }
     }
 
-    const cemadenByCityId       = await tracked("CEMADEN",    fetchCemadenAccumulations);
-    const lagoaRadarByStationId = await tracked("RADAR Lagoa", fetchLagoaRadarLevels);
-    const hidrosensLaranjal     = await tracked("HidroSens",  fetchHidroSensLaranjalLevel);
+    const [cemadenByCityId, lagoaRadarByStationId, hidrosensLaranjal] = await Promise.all([
+      tracked("CEMADEN", fetchCemadenAccumulations),
+      tracked("RADAR Lagoa", fetchLagoaRadarLevels),
+      tracked("HidroSens", fetchHidroSensLaranjalLevel),
+    ]);
+    const cemadenMap = cemadenByCityId || {};
+    const lagoaRadarMap = lagoaRadarByStationId || {};
 
-    for (const st of ALL_STATIONS) {
+    await Promise.all(ALL_STATIONS.map(async (st) => {
       try {
         const weather = await (async () => {
           const start = Date.now();
@@ -1066,7 +1103,7 @@ export default function SentinelaRS() {
           realLevel = await fetchAnaLevel(st.anaCode);
           if (!health["ANA HidroWeb"]) health["ANA HidroWeb"] = { ok: realLevel !== null, lastOk: realLevel !== null ? new Date().toISOString() : health["ANA HidroWeb"]?.lastOk || null, latencyMs: Date.now()-start, error: realLevel === null ? "sem leitura" : null };
         }
-        const radarLevel = lagoaRadarByStationId[st.id] || null;
+        const radarLevel = lagoaRadarMap[st.id] || null;
         const hidrosensLevel = st.id === "lagoa_patos_pelotas" ? hidrosensLaranjal : null;
         const inmet = st.ibgeCode ? await (async () => {
           const start = Date.now();
@@ -1074,7 +1111,7 @@ export default function SentinelaRS() {
           if (!health["INMET"]) health["INMET"] = { ok: r !== null, lastOk: r !== null ? new Date().toISOString() : health["INMET"]?.lastOk || null, latencyMs: Date.now()-start, error: r === null ? "sem resposta" : null };
           return r;
         })() : null;
-        const cemaden = cemadenByCityId[st.id] || null;
+        const cemaden = cemadenMap[st.id] || null;
         const precip  = weather.daily?.precipitation_sum?.reduce((a,b)=>a+b,0)||0;
         const tempMin  = Math.min(...(weather.daily?.temperature_2m_min||[20]));
         const windMax  = Math.max(...(weather.daily?.windspeed_10m_max||[0]));
@@ -1085,6 +1122,10 @@ export default function SentinelaRS() {
           atual: hidrosensLevel?.level_m ?? radarLevel?.level_m ?? realLevel,
           isReal: Boolean(hidrosensLevel?.level_m ?? radarLevel?.level_m ?? realLevel),
           source: hidrosensLevel ? "HIDROSENS" : (radarLevel ? "RADAR" : (realLevel !== null ? "ANA" : null)),
+          operational: hidrosensLevel?.operational ?? radarLevel?.operational ?? (realLevel !== null),
+          stale: Boolean(hidrosensLevel?.stale || radarLevel?.stale),
+          age_minutes: hidrosensLevel?.age_minutes ?? radarLevel?.age_minutes ?? null,
+          note: hidrosensLevel?.note ?? radarLevel?.note ?? null,
           isFallback: Boolean(hidrosensLevel?.fallback || radarLevel?.fallback),
           fallback_saved_at: hidrosensLevel?.fallback_saved_at || radarLevel?.fallback_saved_at || null,
           fallback_age_minutes: hidrosensLevel?.fallback_age_minutes ?? radarLevel?.fallback_age_minutes ?? null,
@@ -1103,7 +1144,7 @@ export default function SentinelaRS() {
         }
 
         const baseRisk = getRiskLevel(precip, tempMin, windMax, null);
-        const levelRisk = ((lagoa?.radar || lagoa?.hidrosens) && lagoa?.threshold_m && !lagoa?.isFallback) ? radarRiskToLevel(lagoa.levelStatus) : "NORMAL";
+        const levelRisk = ((lagoa?.radar || lagoa?.hidrosens) && lagoa?.threshold_m && !lagoa?.isFallback && lagoa?.operational !== false) ? radarRiskToLevel(lagoa.levelStatus) : "NORMAL";
         const order = ["NORMAL","ATENCAO","ALERTA","EMERGENCIA","CRITICO"];
         const risk = order.indexOf(levelRisk) > order.indexOf(baseRisk) ? levelRisk : baseRisk;
         results[st.id] = { weather, inmet, cemaden, lagoa, precip, tempMin, windMax, risk, realLevel, radarLevel };
@@ -1115,10 +1156,21 @@ export default function SentinelaRS() {
           if (tempMin<5) parts.push(`temp. mín. ${tempMin.toFixed(1)}°C`);
           if (windMax>50) parts.push(`rajadas ${windMax.toFixed(0)}km/h`);
           if (lagoa?.radar && lagoa.levelStatus === "ALERTA") parts.push(`lagoa ${lagoa.atual.toFixed(2)}m / limiar ${lagoa.threshold_m.toFixed(2)}m (RADAR)`);
-          newAlerts.push({ id:`${st.id}_${Date.now()}`, station:st.name, risk_level:risk, message:parts.join(" · ")||"Parâmetros acima do normal", at:new Date(), official:false });
+          const explain = st.type === "lagoa"
+            ? explainLagoaRisk(st, lagoa)
+            : explainCityRisk(st, results[st.id], ensoProbabilityText);
+          newAlerts.push({
+            id:`${st.id}_${Date.now()}`,
+            station:st.name,
+            risk_level:risk,
+            message:parts.join(" · ") || "Clique para ver os parâmetros que elevaram o risco.",
+            at:new Date(),
+            official:false,
+            explain,
+          });
         }
       } catch { results[st.id]={ error:true, risk:"NORMAL" }; }
-    }
+    }));
     const defesaStart = Date.now();
     const officialAlerts = await fetchDefesaCivilAlerts();
     health["Defesa Civil RS"] = { ok: Array.isArray(officialAlerts), lastOk: Array.isArray(officialAlerts) ? new Date().toISOString() : health["Defesa Civil RS"]?.lastOk || null, latencyMs: Date.now()-defesaStart, error: null };
@@ -1295,11 +1347,12 @@ export default function SentinelaRS() {
   const ensoObservedAvailable = typeof activeENSO.nino34 === "number" && Number.isFinite(activeENSO.nino34);
   const ensoProbabilityAvailable = typeof activeENSO.prob?.elNino === "number" && Number.isFinite(activeENSO.prob.elNino);
   const ensoFirstForecast = safeEnsoForecast(activeENSO.forecast)[0] || null;
+  const ensoDominantProb = getDominantEnsoPhase(activeENSO.prob);
   const ensoObservedText = ensoObservedAvailable
     ? `${ensoClass.icon} Condição observada: ${ensoClass.label} · Niño 3.4 ${formatSignedCelsius(activeENSO.nino34)}`
     : "ENSO observado indisponível";
   const ensoProbabilityText = ensoProbabilityAvailable
-    ? `IRI/CCSR: ${formatProbability(activeENSO.prob.elNino)} para El Niño${ensoFirstForecast?.p ? ` · ${ensoFirstForecast.p}` : ""}`
+    ? `IRI/CCSR: ${formatDominantEnsoProbability(activeENSO.prob, ensoFirstForecast?.p || "")}`
     : "Probabilidade IRI/CCSR indisponível";
   const selData   = stationData[selStation.id];
   const lagoaSummary = getLagoaSummary(stationData);
@@ -1309,7 +1362,7 @@ export default function SentinelaRS() {
     { key:"dashboard",  label:"📡 Dashboard" },
     { key:"previsao",   label:"📅 Previsão 14 Dias" },
     { key:"lagoa",      label:"🌊 Lagoa dos Patos" },
-    { key:"enso",       label:"🌡️ El Niño / La Niña" },
+    { key:"enso",       label:"🌡️ ENSO" },
     { key:"cptec",      label:"🌦️ CPTEC/INPE" },
     { key:"copernicus", label:"🛰️ Copernicus" },
     { key:"queimadas",  label:"🔥 Queimadas / APAs" },
@@ -1419,7 +1472,7 @@ export default function SentinelaRS() {
               </div>
               {/* ENSO badge — apenas evento mais próximo */}
               <div style={{ padding:"4px 10px", borderRadius:4, border:`1px solid ${ensoClass.color}55`, color:ensoClass.color, fontSize:10, fontWeight:700 }}>
-                {ensoClass.icon} ENSO {ensoObservedAvailable ? `${ensoClass.label} · Niño 3.4 ${formatSignedCelsius(activeENSO.nino34)}` : "observado indisponível"}{ensoProbabilityAvailable ? ` · prob. El Niño ${formatProbability(activeENSO.prob?.elNino)}` : ""}
+                {ensoClass.icon} ENSO {ensoObservedAvailable ? `${ensoClass.label} · Niño 3.4 ${formatSignedCelsius(activeENSO.nino34)}` : "observado indisponível"}{ensoDominantProb ? ` · ${ensoDominantProb.label} ${formatProbability(ensoDominantProb.value)}` : ""}
               </div>
               <div style={{ display:"flex", gap:6, alignItems:"center" }}>
                 {/* Toggle modo claro/escuro */}
@@ -1434,7 +1487,7 @@ export default function SentinelaRS() {
             </div>
           </div>
 
-          {/* Banner El Niño */}
+          {/* Banner ENSO */}
           <div style={{ marginTop:10, padding:"9px 14px", background: dark?"rgba(220,38,38,0.08)":"rgba(220,38,38,0.06)", border:"1px solid rgba(220,38,38,0.3)", borderRadius:4, fontSize:11, color: dark?"#fca5a5":"#b91c1c", display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
             ⚠️ <strong>ENSO — leitura observada e probabilidade</strong> — {ensoObservedText}. {ensoProbabilityText}.
             <button onClick={()=>setActiveTab("enso")} style={{ background:"none", border:"none", color:t.accent, cursor:"pointer", fontSize:11, padding:0, fontFamily:"inherit" }}>Ver dados completos →</button>
@@ -1536,7 +1589,7 @@ export default function SentinelaRS() {
                         { l:"Precip. 14d", v:`${d.precip?.toFixed(0)}mm` },
                         { l:"Temp. mín.",  v:`${d.tempMin?.toFixed(1)}°C` },
                         { l:"Vento",       v:`${d.windMax?.toFixed(0)}km/h` },
-                        { l:"Contexto climático", v: ensoObservedAvailable ? `${ensoClass.icon} ${ensoClass.label}` : (ensoProbabilityAvailable ? `prob. El Niño ${formatProbability(activeENSO.prob?.elNino)}` : "ENSO indisponível"), highlight: ensoProbabilityAvailable || ensoObservedAvailable },
+                        { l:"Contexto climático", v: ensoObservedAvailable ? `${ensoClass.icon} ${ensoClass.label}` : (ensoDominantProb ? `${ensoDominantProb.label} ${formatProbability(ensoDominantProb.value)}` : "ENSO indisponível"), highlight: ensoProbabilityAvailable || ensoObservedAvailable },
                       ].map(item => (
                         <div key={item.l} style={{ background: dark?"rgba(0,0,0,0.3)":t.bg, padding:"5px 7px", borderRadius:3 }}>
                           <div style={{ fontSize:9, fontWeight:600, color:t.textMuted }}>{item.l}</div>
@@ -1548,7 +1601,7 @@ export default function SentinelaRS() {
                   {station.type==="lagoa" && d.lagoa && (
                     <div style={{ marginTop:7 }}>
                       <div style={{ fontSize:8, color:t.textMuted, marginBottom:3, display:"flex", justifyContent:"space-between" }}>
-                        <span>NÍVEL {d.lagoa.isReal ? "REAL" : "INDISPONÍVEL"}</span>
+                        <span>NÍVEL {d.lagoa.isReal ? (dataStaleness(getLagoaMeasuredAt(d.lagoa)) === "stale" ? "DESATUALIZADO" : "REAL") : "INDISPONÍVEL"}</span>
                         {d.lagoa.isReal && <span style={{ color:"#22c55e" }}>● ANA</span>}
                       </div>
                       {d.lagoa.isReal && d.lagoa.atual !== null ? (
@@ -1649,7 +1702,7 @@ export default function SentinelaRS() {
                       { l:"Precipitação", v:`${selData.precip?.toFixed(0)} mm`, a:selData.precip>80 },
                       { l:"Temp. mínima", v:`${selData.tempMin?.toFixed(1)}°C`,  a:selData.tempMin<5 },
                       { l:"Vento máx.",   v:`${selData.windMax?.toFixed(0)} km/h`, a:selData.windMax>50 },
-                      { l:"Contexto climático",v: ensoObservedAvailable ? `${ensoClass.label} (Niño 3.4 ${formatSignedCelsius(activeENSO.nino34)})` : (ensoProbabilityAvailable ? `prob. El Niño ${formatProbability(activeENSO.prob?.elNino)}` : "ENSO indisponível"), a:false },
+                      { l:"Contexto climático",v: ensoObservedAvailable ? `${ensoClass.label} (Niño 3.4 ${formatSignedCelsius(activeENSO.nino34)})` : (ensoDominantProb ? `${ensoDominantProb.label} ${formatProbability(ensoDominantProb.value)}` : "ENSO indisponível"), a:false },
                     ].map(item=>(
                       <div key={item.l} style={{ display:"flex", justifyContent:"space-between" }}>
                         <span style={{ fontSize:10, color:t.textMuted }}>{item.l}</span>
@@ -1675,6 +1728,9 @@ export default function SentinelaRS() {
                   </div>
                   <div style={{ fontSize:9, color:t.textMuted, marginTop:4 }}>
                     Limiares validados: {lagoaSummary.thresholdValidated ?? 0}/{lagoaSummary.monitored} · sem limiar: {lagoaSummary.withoutThreshold ?? 0}
+                  </div>
+                  <div style={{ fontSize:9, color:t.textMuted, marginTop:4, lineHeight:1.6, wordBreak:"break-word" }}>
+                    APIs em uso: RADAR Lagoa dos Patos ({LAGOA_RADAR_FUNCTION_URL}) · HidroSens/UFPel ({HIDROSENS_LARANJAL_FUNCTION_URL}) · ANA HidroWeb complementar quando houver código de estação.
                   </div>
                 </div>
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(3, minmax(90px, 1fr))", gap:8 }}>
@@ -1946,7 +2002,7 @@ export default function SentinelaRS() {
               <div style={{ fontSize:9, color:t.textMuted, letterSpacing:2 }}>CPTEC/INPE</div>
               <div style={{ fontSize:20, fontWeight:900, color:t.text, marginTop:2 }}>Produtos sazonais e subsazonais oficiais</div>
               <div style={{ fontSize:10, color:t.textMuted, marginTop:5 }}>
-                Produtos gráficos reais do CPTEC/INPE. Atualização verificada via Edge Function. Uso operacional: contexto climático, não alerta local imediato.
+                Mapas oficiais do CPTEC/INPE para tendência climática. Eles ajudam a entender o cenário das próximas semanas ou meses, mas não substituem alerta local da Defesa Civil, CEMADEN, INMET ou sensores de nível.
               </div>
               <div style={{ marginTop:8, display:"flex", gap:8, flexWrap:"wrap", fontSize:9 }}>
                 <span style={{ padding:"4px 8px", border:`1px solid ${cptecProducts?.ok ? "#22c55e" : "#64748b"}`, color:cptecProducts?.ok ? "#22c55e" : t.textMuted, borderRadius:4 }}>
@@ -1959,6 +2015,10 @@ export default function SentinelaRS() {
                   Última consulta: {cptecProducts?.fetched_at ? formatDateTimeBR(cptecProducts.fetched_at) : "—"}
                 </span>
               </div>
+            </div>
+
+            <div style={{ padding:"10px 14px", background: dark?"rgba(34,211,238,0.05)":"rgba(8,145,178,0.04)", border:`1px solid ${t.border}`, borderRadius:5, fontSize:10, color:t.textMuted, lineHeight:1.6, marginBottom:12 }}>
+              <strong style={{ color:t.text }}>Como ler estes mapas:</strong> todos mostram tendência, não previsão exata para um dia específico. Precipitação indica tendência de chuva acumulada; temperatura compara frio/calor com o padrão histórico; ENSO mostra influência oceânica; produtos sazonais olham cerca de 3 meses; subsazonais olham algumas semanas.
             </div>
 
             <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(360px,1fr))", gap:12 }}>
@@ -1980,17 +2040,17 @@ export default function SentinelaRS() {
                   {/* Rodapé explicativo por tipo de produto */}
                   <div style={{ marginTop:6, padding:"7px 10px", background: dark?"rgba(34,211,238,0.04)":"rgba(8,145,178,0.03)", border:`1px solid ${t.border}`, borderRadius:4, fontSize:8, color:t.textMuted, lineHeight:1.6 }}>
                     {p.group?.toLowerCase().includes("precipitacao") || p.group?.toLowerCase().includes("chuva") ? (
-                      <span>🌧 <strong style={{color:t.text}}>Precipitação prevista:</strong> mostra estimativa de chuva acumulada para o período (geralmente mensal ou sazonal). Cores azuis/roxas indicam maior acumulado esperado; verdes e amarelos indicam abaixo da média.</span>
+                      <span>🌧 <strong style={{color:t.text}}>Chuva:</strong> indica onde o modelo espera mais ou menos chuva no período do mapa. Serve para tendência regional, não para decidir chuva diária por município.</span>
                     ) : p.group?.toLowerCase().includes("temperatura") || p.group?.toLowerCase().includes("temp") ? (
-                      <span>🌡 <strong style={{color:t.text}}>Temperatura prevista:</strong> mapa de anomalia ou média prevista. Tons avermelhados indicam temperatura acima da média histórica; tons azuis indicam abaixo da média.</span>
+                      <span>🌡 <strong style={{color:t.text}}>Temperatura:</strong> compara a temperatura esperada com o padrão histórico. Vermelho costuma indicar mais quente que o normal; azul, mais frio que o normal.</span>
                     ) : p.group?.toLowerCase().includes("enso") || p.group?.toLowerCase().includes("el ni") ? (
-                      <span>🌊 <strong style={{color:t.text}}>Previsão ENSO/clima:</strong> produto que mostra a influência do El Niño ou La Niña nas condições climáticas do Brasil e do RS para o período indicado.</span>
+                      <span>🌊 <strong style={{color:t.text}}>ENSO:</strong> mostra como El Niño, La Niña ou neutralidade podem influenciar chuva e temperatura. É contexto climático, não alerta local.</span>
                     ) : p.group?.toLowerCase().includes("saz") || p.title?.toLowerCase().includes("sazonal") ? (
-                      <span>📅 <strong style={{color:t.text}}>Previsão sazonal (3 meses):</strong> baseada em modelos climáticos globais e condições oceânicas atuais. Indica tendência probabilística, não previsão determinística diária.</span>
+                      <span>📅 <strong style={{color:t.text}}>Sazonal:</strong> resume a tendência provável para cerca de 3 meses, usando modelos climáticos e condições dos oceanos. Não informa o tempo de um dia específico.</span>
                     ) : p.title?.toLowerCase().includes("subsaz") || p.group?.toLowerCase().includes("subsaz") ? (
-                      <span>📆 <strong style={{color:t.text}}>Previsão subsazonal (semanas):</strong> horizonte de 2 a 6 semanas. Mais detalhada que a sazonal, mas com incerteza crescente a partir da 3ª semana.</span>
+                      <span>📆 <strong style={{color:t.text}}>Subsazonal:</strong> olha as próximas semanas. É mais próximo que a sazonal, mas a incerteza aumenta quanto mais distante estiver a semana analisada.</span>
                     ) : (
-                      <span>🛰 <strong style={{color:t.text}}>Produto CPTEC/INPE:</strong> imagem de previsão ou monitoramento climático oficial. Clique para ampliar no site do CPTEC. Uso: contexto climático regional; não substitui alertas operacionais locais.</span>
+                      <span>🛰 <strong style={{color:t.text}}>Produto CPTEC/INPE:</strong> imagem oficial de previsão ou monitoramento climático. Clique para ampliar. Use como contexto regional, sem acionar alerta sozinho.</span>
                     )}
                   </div>
                 </div>
@@ -2009,7 +2069,7 @@ export default function SentinelaRS() {
         {activeTab==="copernicus" && (
           <div style={{ display:"grid", gap:12 }}>
             <div style={{ padding:"10px 14px", background: dark?"rgba(139,92,246,0.08)":"rgba(139,92,246,0.05)", border:"1px solid rgba(139,92,246,0.3)", borderRadius:5, fontSize:10, color: dark?"#c4b5fd":"#7c3aed" }}>
-              🛰️ <strong>Copernicus — produtos reais ativos</strong> · Sentinel-1 SAR (radar, funciona sob nuvens e à noite) + Sentinel-2 L2A/NDWI (óptico, depende de céu claro). Uso: contexto hidrológico por satélite; não substituem Defesa Civil, CEMADEN, RADAR Lagoa ou HidroSens.
+              🛰️ <strong>Copernicus — produtos reais ativos.</strong> Sentinel-2 observa água e vegetação quando há céu útil. Sentinel-1 usa radar e ajuda mesmo com nuvens ou à noite. As cores dos números destacam o tipo do indicador e a qualidade da leitura; não são alerta oficial. A decisão operacional continua dependendo de Defesa Civil, CEMADEN, RADAR Lagoa, HidroSens e demais fontes responsáveis.
             </div>
 
             <div style={{ ...s.card, border:`1px solid ${copernicusWater?.ok ? "#22c55e55" : "#eab30855"}` }}>
@@ -2056,8 +2116,8 @@ export default function SentinelaRS() {
 
                   {/* Explicação em linguagem clara */}
                   <div style={{ marginTop:10, padding:"9px 12px", background: dark?"rgba(34,211,238,0.05)":"rgba(8,145,178,0.04)", border:`1px solid ${t.border}`, borderRadius:4, fontSize:9, color:t.textMuted, lineHeight:1.65 }}>
-                    <strong style={{ color:t.text, display:"block", marginBottom:4 }}>📖 O que significam esses números?</strong>
-                    <strong style={{ color:t.text }}>Água superficial {copernicusWater.water_percent}%</strong> — dos pixels válidos analisados na área da Lagoa dos Patos, {copernicusWater.water_percent}% apresentaram NDWI acima de 0,20, indicando presença de água. <strong style={{ color:t.text }}>NDWI médio {typeof copernicusWater.ndwi_mean === "number" ? copernicusWater.ndwi_mean.toFixed(3) : "–"}</strong> — valores positivos indicam água; negativos indicam solo ou vegetação (acima de 0,20 = água detectada). <strong style={{ color:t.text }}>Cobertura válida {typeof copernicusWater.valid_coverage_percent === "number" ? copernicusWater.valid_coverage_percent+"%" : "–"}</strong> — percentual de pixels sem nuvem, sombra ou neve; abaixo de 30% o valor de água superficial fica pouco confiável. <strong style={{ color:t.text }}>Amostras {copernicusWater.sample_count?.toLocaleString("pt-BR") || "–"}</strong> — pixels processados.
+                    <strong style={{ color:t.text, display:"block", marginBottom:4 }}>Como interpretar:</strong>
+                    O app compara os pixels válidos da imagem com um índice de água. Se a cobertura válida for baixa, havia nuvem, sombra ou outro bloqueio e o resultado fica menos confiável. Água superficial e NDWI ajudam a ver a presença de água na imagem, mas não confirmam inundação sozinhos.
                   </div>
                   <div style={{ marginTop:8, padding:"8px 10px", background: dark?"rgba(234,179,8,0.06)":"rgba(234,179,8,0.05)", border:"1px solid rgba(234,179,8,0.25)", borderRadius:4, fontSize:9, color:dark?"#fef08a":"#854d0e", lineHeight:1.5 }}>
                     ⚠ Sentinel-2 é óptico e depende de baixa nebulosidade. Para alagamento sob nuvens, o Sentinel-1 SAR abaixo funciona mesmo à noite e com céu fechado.
@@ -2117,11 +2177,8 @@ export default function SentinelaRS() {
 
                   {/* Explicação em linguagem clara */}
                   <div style={{ marginTop:10, padding:"9px 12px", background: dark?"rgba(139,92,246,0.05)":"rgba(139,92,246,0.04)", border:`1px solid ${t.border}`, borderRadius:4, fontSize:9, color:t.textMuted, lineHeight:1.65 }}>
-                    <strong style={{ color:t.text, display:"block", marginBottom:4 }}>📖 O que significam esses números?</strong>
-                    <strong style={{ color:t.text }}>Indicador SAR água {copernicusS1.water_like_percent}%</strong> — percentual de pixels onde os sinais de radar (VV e VH) são característicos de superfície de água: baixo retroespalhamento, típico de superfície lisa sem obstáculos.<br/>
-                    <strong style={{ color:t.text }}>VV médio {typeof copernicusS1.vv_db_mean === "number" ? copernicusS1.vv_db_mean.toFixed(2)+" dB" : "–"}</strong> — polarização vertical/vertical. Superfície de água calma: geralmente abaixo de −17 dB.<br/>
-                    <strong style={{ color:t.text }}>VH médio {typeof copernicusS1.vh_db_mean === "number" ? copernicusS1.vh_db_mean.toFixed(2)+" dB" : "–"}</strong> — polarização vertical/horizontal. Água detectada quando abaixo de −24 dB junto com VV.<br/>
-                    <strong style={{ color:t.text }}>Cobertura válida {typeof copernicusS1.valid_coverage_percent === "number" ? copernicusS1.valid_coverage_percent+"%" : "–"}</strong> — percentual de pixels processados com dado SAR válido no período.
+                    <strong style={{ color:t.text, display:"block", marginBottom:4 }}>Como interpretar:</strong>
+                    O Sentinel-1 mede o retorno do sinal de radar. Superfícies de água costumam devolver pouco sinal, por isso aparecem como “compatíveis com água”. Esse é um bom apoio quando há nuvens, mas pode confundir áreas urbanas, vegetação inundada, vento sobre a água e sombras de relevo.
                   </div>
                   <div style={{ marginTop:8, padding:"8px 10px", background: dark?"rgba(234,179,8,0.06)":"rgba(234,179,8,0.05)", border:"1px solid rgba(234,179,8,0.25)", borderRadius:4, fontSize:9, color:dark?"#fef08a":"#854d0e", lineHeight:1.5 }}>
                     ⚠ {copernicusS1.limitation || "Indicador SAR de baixa retroespalhamento compatível com água. Pode falhar em áreas urbanas, vegetação inundada, vento forte sobre água e sombras de relevo. Confirmar com Defesa Civil, CEMADEN, RADAR Lagoa e HidroSens."}
@@ -2180,7 +2237,7 @@ export default function SentinelaRS() {
                   </div>
 
                   <div style={{ marginTop:8, padding:"8px 10px", background: dark?"rgba(234,179,8,0.06)":"rgba(234,179,8,0.05)", border:"1px solid rgba(234,179,8,0.25)", borderRadius:4, fontSize:9, color:dark?"#fef08a":"#854d0e", lineHeight:1.5 }}>
-                    ⚠ {copernicusNdvi.limitation || "NDVI é contexto de vegetação/estiagem e não gera alerta automático sozinho."}
+                    ⚠ {copernicusNdvi.limitation || "NDVI ajuda a acompanhar vigor da vegetação e sinais de estiagem. É contexto ambiental e não gera alerta automático sozinho."}
                   </div>
 
                   <div style={{ marginTop:6, fontSize:8, color:t.textFaint }}>
@@ -2226,7 +2283,7 @@ export default function SentinelaRS() {
         {activeTab==="queimadas" && (
           <div style={{ display:"grid", gap:12 }}>
             <div style={{ padding:"10px 14px", background: dark?"rgba(249,115,22,0.08)":"rgba(249,115,22,0.05)", border:"1px solid rgba(249,115,22,0.3)", borderRadius:5, fontSize:10, color: dark?"#fdba74":"#c2410c", display:"flex", justifyContent:"space-between", alignItems:"center", gap:12, flexWrap:"wrap" }}>
-              <span>🔥 Focos via <strong>INPE BDQueimadas</strong> (48h) + <strong>Copernicus EFFIS</strong> (risco incêndio). Dados só aparecem quando a API INPE responder.</span>
+              <span>🔥 Focos via <strong>INPE BDQueimadas</strong> (48h). <strong>EFFIS/Copernicus</strong> fica como integração complementar possível para perigo de fogo, focos ativos e área queimada, sem acionar alerta enquanto não houver endpoint validado.</span>
               <button onClick={loadQueimadas} disabled={qLoading} style={{ background:"none", border:"1px solid rgba(249,115,22,0.5)", color:"#fdba74", padding:"5px 12px", borderRadius:4, cursor:"pointer", fontFamily:"inherit", fontSize:9, letterSpacing:1 }}>{qLoading ? "⏳ Consultando..." : "↻ Atualizar"}</button>
             </div>
             {!queimadas && !qLoading && (
@@ -2248,7 +2305,7 @@ export default function SentinelaRS() {
                   <div style={{ fontSize:10, color:t.textMuted }}>detectados no RS nas últimas 48h · INPE BDQueimadas</div>
                   {/* Nota sobre probabilidades queimadas */}
                   <div style={{ marginTop:10, padding:"8px 12px", background: dark?"rgba(249,115,22,0.08)":"rgba(249,115,22,0.05)", border:"1px solid rgba(249,115,22,0.25)", borderRadius:4, fontSize:9, color:dark?"#fdba74":"#c2410c" }}>
-                    ℹ️ <strong>Probabilidades EFFIS:</strong> baseadas em risco estrutural por bioma (vegetação seca, histórico). Números são consistentes com dados Copernicus EFFIS para o RS no período. ENSO é contexto climático e não aciona alerta de queimadas sozinho.
+                    ℹ️ <strong>EFFIS nesta versão:</strong> integração complementar ainda não operacional. O alerta de queimadas só considera foco real retornado pelo INPE ou outro endpoint validado, com fonte e horário.
                   </div>
                   {Array.isArray(queimadas) && queimadas.length > 0 && (
                     <div style={{ marginTop:10, display:"grid", gap:5, maxHeight:200, overflowY:"auto" }}>
@@ -2277,7 +2334,7 @@ export default function SentinelaRS() {
                     </div>
                   </div>
                   <div style={{ marginTop:10, padding:"8px 12px", background: dark?"rgba(249,115,22,0.06)":"rgba(249,115,22,0.04)", border:"1px solid rgba(249,115,22,0.2)", borderRadius:4, fontSize:9, color:t.textMuted }}>
-                    ℹ️ EFFIS não está conectado em tempo real nesta versão. Não usar estimativa estrutural como alerta operacional.
+                    ℹ️ EFFIS não está conectado em tempo real nesta versão. Não usar camada complementar como alerta operacional até existir endpoint validado.
                   </div>
                   <button onClick={loadQueimadas} style={{ marginTop:10, background: dark?"rgba(249,115,22,0.1)":"rgba(249,115,22,0.08)", border:"1px solid rgba(249,115,22,0.4)", color:"#fdba74", padding:"7px 14px", borderRadius:4, cursor:"pointer", fontFamily:"inherit", fontSize:10 }}>
                     ↻ Tentar novamente
@@ -2311,16 +2368,16 @@ export default function SentinelaRS() {
 
             {/* EFFIS */}
             <div style={{ ...s.card }}>
-              <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:4 }}>COPERNICUS EFFIS — RISCO ESTRUTURAL DE INCÊNDIO RS</div>
+              <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:4 }}>COPERNICUS EFFIS — INTEGRAÇÃO COMPLEMENTAR</div>
               <div style={{ fontSize:9, color: dark?"#fef08a":"#854d0e", marginBottom:10, padding:"5px 10px", background: dark?"rgba(234,179,8,0.07)":"rgba(234,179,8,0.05)", border:"1px solid rgba(234,179,8,0.2)", borderRadius:4 }}>
-                🗓 Referência por bioma — EFFIS não conectado em tempo real nesta versão. Não aciona alerta operacional.
+                🗓 EFFIS não está conectado em tempo real nesta versão. Não aciona alerta operacional.
               </div>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))", gap:8 }}>
                 {[
-                  { l:"Pampa Gaúcho",  v:"Médio-Alto", c:"#f97316", d:"Vegetação seca · bioma Pampa" },
-                  { l:"Serra Gaúcha",  v:"Médio",       c:"#eab308", d:"Mata Atlântica úmida" },
-                  { l:"Litoral RS",    v:"Baixo",        c:"#22c55e", d:"Restinga úmida" },
-                  { l:"Missões",       v:"Médio",        c:"#eab308", d:"Campos e matas" },
+                  { l:"Fire Danger Forecast",  v:"1 a 10 dias", c:"#f97316", d:"Perigo meteorológico de fogo. É previsão de condição favorável, não confirmação de incêndio." },
+                  { l:"Active Fires",  v:"MODIS/VIIRS", c:"#eab308", d:"Focos ativos detectados por satélite. Pode complementar o INPE após endpoint validado." },
+                  { l:"Burnt Areas",    v:"Área queimada", c:"#22c55e", d:"Perímetros/áreas queimadas para análise pós-evento." },
+                  { l:"Data request",       v:"Sob demanda", c:"#8b5cf6", d:"Produtos históricos ou brutos podem exigir solicitação específica ao EFFIS." },
                 ].map(item=>(
                   <div key={item.l} style={{ background: dark?"rgba(0,0,0,0.3)":t.bg, padding:"10px 12px", borderRadius:4, borderTop:`3px solid ${item.c}` }}>
                     <div style={{ fontSize:9, color:t.textMuted, marginBottom:4 }}>{item.l}</div>
@@ -2340,7 +2397,7 @@ export default function SentinelaRS() {
         {!loading && activeTab==="alertas" && (
           <div>
             <div style={{ marginBottom:12, padding:"10px 14px", background: dark?"rgba(249,115,22,0.08)":"rgba(249,115,22,0.05)", border:"1px solid rgba(249,115,22,0.3)", borderRadius:5, fontSize:10, color: dark?"#fdba74":"#c2410c" }}>
-              🌡️ <strong>ENSO — contexto climático:</strong> {ensoObservedAvailable ? `${ensoClass.label} · Niño 3.4 ${formatSignedCelsius(activeENSO.nino34)}.` : "leitura NOAA/CPC indisponível."} {ensoProbabilityAvailable ? `Probabilidade El Niño: ${formatProbability(activeENSO.prob?.elNino)} (IRI/CCSR).` : "Probabilidade IRI/CCSR indisponível."} ENSO é contexto climático e não aciona alerta local sozinho.
+              🌡️ <strong>ENSO — contexto climático:</strong> {ensoObservedAvailable ? `${ensoClass.label} · Niño 3.4 ${formatSignedCelsius(activeENSO.nino34)}.` : "leitura NOAA/CPC indisponível."} {ensoDominantProb ? `${ensoDominantProb.label}: ${formatProbability(ensoDominantProb.value)} (IRI/CCSR).` : "Probabilidade IRI/CCSR indisponível."} ENSO é contexto climático e não aciona alerta local sozinho.
             </div>
             {alerts.length===0 ? (
               <div style={{ textAlign:"center", padding:50, border:"1px solid rgba(34,197,94,0.3)", borderRadius:5, background:"rgba(34,197,94,0.05)" }}>
@@ -2355,12 +2412,20 @@ export default function SentinelaRS() {
                   const rColor=getRiskColor(alert.risk_level);
                   const rBg=getRiskBg(alert.risk_level);
                   return (
-                    <div key={i} style={{ padding:"12px 14px", background:rBg, border:`1px solid ${rColor}55`, borderLeft:`4px solid ${rColor}`, borderRadius:5 }}>
+                    <div
+                      key={i}
+                      onClick={() => alert.explain && setRiskExplain(alert.explain)}
+                      title={alert.explain ? "Clique para ver os parâmetros deste alerta" : "Alerta oficial ou externo"}
+                      style={{ padding:"12px 14px", background:rBg, border:`1px solid ${rColor}55`, borderLeft:`4px solid ${rColor}`, borderRadius:5, cursor:alert.explain?"pointer":"default" }}
+                    >
                       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:5 }}>
                         <div style={{ fontSize:12, fontWeight:700, color:rColor }}>{r.icon} {r.label.toUpperCase()} — {alert.station}</div>
                         <div style={{ fontSize:9, color:t.textMuted }}>detectado {new Date(alert.at).toLocaleString("pt-BR")}</div>
                       </div>
                       <div style={{ fontSize:11, color:t.textMuted }}>{alert.message}</div>
+                      {alert.explain && (
+                        <div style={{ marginTop:6, fontSize:8, color:t.accent, textAlign:"right", opacity:0.75 }}>ver parâmetros →</div>
+                      )}
                     </div>
                   );
                 })}
@@ -2372,12 +2437,12 @@ export default function SentinelaRS() {
               <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:10 }}>CANAIS DE NOTIFICAÇÃO</div>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))", gap:8 }}>
                 {[
-                  { i:"📱", n:"Push nativo (PWA)",  s:"Requer permissão do browser",  ok:false, h:"Se aparecer 'negado' no celular:\n• Android: Configurações do browser → Notificações → Permitir para o site\n• iOS 16.4+: Primeiro adicione o app à tela inicial (Compartilhar → Adicionar à Tela de Início), depois abra e autorize as notificações\n• Após liberar, clique novamente em 🔔 Push no cabeçalho" },
+                  { i:"📱", n:"Push nativo (PWA)",  s:"Ativo quando VAPID estiver configurado",  ok:true, h:"Front-end registra o Service Worker e salva a assinatura em push_subscriptions. A Edge Function send-alerts envia via Web Push usando VAPID_PRIVATE_JWK. Se o navegador negar permissão, reative nas configurações do site e recarregue." },
                   { i:"🔔", n:"Alertas na tela",    s:"Ativo — 30min",            ok:true,  h:null },
-                  { i:"📧", n:"E-mail (Resend)",    s:"Configurar",               ok:false, h:"1. resend.com → API key\n2. RESEND_API_KEY nos secrets Supabase\n3. Chamar resend.emails.send() no send-alerts" },
+                  { i:"📧", n:"E-mail (Resend)",    s:"Ativo se secrets existirem", ok:true, h:"Secrets esperados no Supabase: RESEND_API_KEY, ALERT_EMAIL_TO e opcionalmente ALERT_EMAIL_FROM. Sem esses secrets, o canal fica skipped e não simula envio." },
                   { i:"📢", n:"Defesa Civil RS",    s:"Ativo — RSS oficial",      ok:true,  h:"Fonte oficial conectada via Supabase Edge Function. RSS: www.defesacivil.rs.gov.br/rss" },
-                  { i:"📲", n:"SMS (Twilio)",       s:"Configurar",               ok:false, h:"1. twilio.com → Account SID + Token\n2. Secrets no Supabase\n3. SMS só para EMERGENCIA/CRITICO" },
-                  { i:"🔊", n:"Sirene IoT",         s:"Requer hardware",          ok:false, h:"1. ESP32 + relê\n2. Webhook Supabase → POST /trigger\n3. Ativa em CRITICO" },
+                  { i:"📲", n:"SMS (Twilio)",       s:"Emergência/crítico", ok:true, h:"Secrets esperados no Supabase: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM e ALERT_SMS_TO. O envio só roda para EMERGENCIA ou CRITICO." },
+                  { i:"🔊", n:"Sirene IoT",         s:"Crítico com webhook", ok:true, h:"Secrets esperados no Supabase: SIRENE_WEBHOOK_URL e opcionalmente SIRENE_WEBHOOK_TOKEN. A sirene só recebe POST quando o alerta é CRITICO e houver hardware pronto para receber /trigger." },
                 ].map(c=>(
                   <div key={c.n} style={{ background: dark?"rgba(0,0,0,0.3)":t.bg, borderRadius:4, border:`1px solid ${t.border}`, overflow:"hidden" }}>
                     <div style={{ display:"flex", alignItems:"center", gap:8, padding:"9px 11px" }}>
@@ -2403,6 +2468,7 @@ export default function SentinelaRS() {
             <div style={{ ...s.card, border:"1px solid rgba(34,211,238,0.35)" }}>
               <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:8 }}>POLÍTICA OPERACIONAL — FONTE REAL E FALLBACK</div>
               <div style={{ display:"grid", gap:6, fontSize:10, color:t.textMuted, lineHeight:1.55 }}>
+                <div><strong style={{ color:t.text }}>O Sentinela·RS utiliza fontes reais ativas e indicadores derivados identificados.</strong> Alertas operacionais dependem de fontes oficiais, dados observados e regras explícitas. Camadas climáticas, satelitais, históricas e complementares não disparam alerta automático sozinhas.</div>
                 <div>✅ Dado operacional só é exibido como atual quando vem de endpoint real ativo, com fonte e horário.</div>
                 <div>⚠️ Fallback só é permitido quando já existe endpoint real configurado e a fonte primária falha.</div>
                 <div>📌 Quando fallback aparecer, o card deve informar que é última leitura válida salva e orientar verificação junto ao órgão responsável.</div>
@@ -2455,7 +2521,7 @@ export default function SentinelaRS() {
             {[
               { n:"Open-Meteo",               st:"ATIVO",     c:"#22c55e", d:"Previsão meteorológica 14 dias — temperatura, precipitação, vento. Atualização automática.", a:"Gratuita, sem chave", h:null },
               { n:"ANA HidroWeb (Telemetria)", st:"AGUARDANDO CREDENCIAL", c:"#eab308", d:"Uso atual: complementar/histórico. Integração operacional automatizada depende do acesso oficial à API solicitado à ANA. Não aciona alerta automático.", a:"Aguardando credencial oficial", h:"Solicitação enviada para telemetria@ana.gov.br. Até a liberação, a ANA permanece como fonte complementar; dados manuais/CSV não entram como leitura operacional." },
-              { n:"NOAA/CPC + IRI — ENSO",   st:"ATIVO",  c:"#eab308", d:"El Niño/La Niña: Niño 3.4, ONI, probabilidades 8 meses. Niño 3.4, ONI e probabilidades ENSO atualizados via Edge Functions.", a:"Dados públicos, atualização mensal", h:"1. iri.columbia.edu/our-expertise/climate/forecasts/enso/current/\n2. Atualizar valores activeENSO.nino34, oni3m, prob e forecast no código\n3. Publicação NOAA/IRI: primeira semana de cada mês" },
+              { n:"NOAA/CPC + IRI — ENSO",   st:"ATIVO",  c:"#eab308", d:"ENSO: Niño 3.4, ONI e cenário probabilístico dominante. Índices observados e probabilidades atualizados via Edge Functions.", a:"Dados públicos, atualização mensal", h:"1. iri.columbia.edu/our-expertise/climate/forecasts/enso/current/\n2. Atualizar valores activeENSO.nino34, oni3m, prob e forecast no código\n3. Publicação NOAA/IRI: primeira semana de cada mês" },
               { n:"INPE BDQueimadas",          st:"ATIVO",     c:"#22c55e", d:"Focos de queimada últimas 48h no RS — API pública. Exibe histórico de referência quando API indisponível.", a:"Sem chave", h:null },
               { n:"Copernicus Water / Sentinel-2", st:"ATIVO", c:"#22c55e", d:"Indicador real de água superficial por Sentinel-2 L2A/NDWI para a Lagoa dos Patos. Contexto hidrológico por satélite; não aciona alerta sozinho.", a:"Copernicus Data Space / Sentinel Hub", h:"Endpoint: copernicus-water. Produto óptico: depende de baixa nebulosidade. Usar como contexto junto com Defesa Civil, CEMADEN, RADAR Lagoa e HidroSens." },
               { n:"Copernicus Sentinel-1 SAR", st:"ATIVO", c:"#22c55e", d:"Indicador real SAR de água/alagamento sob nuvens/noite. Contexto remoto por radar; não é alerta oficial nem máscara validada de inundação.", a:"Copernicus Data Space / Sentinel Hub", h:"Endpoint: copernicus-sentinel1-water. Método: Sentinel-1 GRD IW/DV. Pode falhar em áreas urbanas, vegetação inundada, vento forte sobre água e sombras de relevo. Confirmar com órgãos responsáveis." },
