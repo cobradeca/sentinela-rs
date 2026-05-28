@@ -105,21 +105,10 @@ const ENSO_UNAVAILABLE = {
   forecast: [],
 };
 
-// Copernicus — indicadores de referência (dados históricos/publicados, NÃO tempo real)
-// Cada indicator está marcado com a data de referência da publicação.
+// Copernicus histórico foi removido da superfície principal.
+// A aba Copernicus deve mostrar apenas endpoints reais ativos ou mensagens de integração pendente.
 const COPERNICUS_REFERENCE = {
-  lastUpdate: "mai 2026",
-  referenceNote: "Referência histórica/contextual. Não é SITREP operacional em tempo real.",
-  themes: [
-    { id:"enchentes",   icon:"🌊", name:"Enchentes / Inundações",     status:"CRITICO",  color:"#ef4444", rsHistory:"Maio 2024: 2,4 milhões afetados, 478 municípios, 154 mortes. Maior desastre climático gaúcho.", current:"contexto histórico; não é dado operacional atual.", copSource:"Copernicus EMS — EMSR728 (RS 2024)", indicator:"Área inundada 2024: ~540 km² · Fonte: Copernicus EMS EMSR728", indicatorIsRealtime: false },
-    { id:"queimadas",   icon:"🔥", name:"Queimadas / Incêndios",      status:"ALERTA",   color:"#f97316", rsHistory:"Referência histórica de queimadas no RS. Não é dado operacional atual.", current:"El Niño aumenta risco de seca e queimadas no verão 2026/27.", copSource:"Copernicus EFFIS + INPE BDQueimadas", indicator:"Quando a API INPE estiver disponível, consultar focos em tempo real na aba Queimadas", indicatorIsRealtime: true },
-    { id:"desmatamento",icon:"🌳", name:"Desmatamento / Vegetação",   status:"ATENCAO",  color:"#eab308", rsHistory:"Pampa: bioma com maior taxa de perda no BR. Mata Atlântica RS: <12% da cobertura original.", current:"Sentinel-2 monitora NDVI mensal. Alertas automáticos de supressão.", copSource:"Copernicus Land — Sentinel-2 MSI", indicator:"NDVI RS médio: 0.48 · Referência: MapBiomas RS 2024", indicatorIsRealtime: false },
-    { id:"clima",       icon:"🌡️", name:"Clima / Temperatura",       status:"ALERTA",   color:"#f97316", rsHistory:"RS registrou +1,8°C acima da média no verão 2023/24. Ondas de calor mais frequentes.", current:"Anomalia TSM Atlântico Sul: +0,6°C. El Niño potencializa aquecimento.", copSource:"Copernicus C3S — ERA5 Reanalysis", indicator:"Anomalia +0,4°C acima da média · Ref: ERA5 mai/2026", indicatorIsRealtime: false },
-    { id:"oceanos",     icon:"🌊", name:"Oceanos / Nível do Mar",    status:"ATENCAO",  color:"#eab308", rsHistory:"Nível médio em Rio Grande subiu ~3,2mm/ano (1993–2023). Surtos de maré associados a El Niño.", current:"Maré meteorológica + El Niño = risco costeiro elevado.", copSource:"Copernicus Marine — CMEMS", indicator:"Anomalia +12cm vs 1993-2023 · Ref: CMEMS Altimetry 2023", indicatorIsRealtime: false },
-    { id:"poluicao",    icon:"💨", name:"Poluição / Qualidade do Ar", status:"ATENCAO",  color:"#eab308", rsHistory:"POA: episódios de qualidade do ar ruim por queimadas (2020, 2022).", current:"Sentinel-5P TROPOMI monitora NO₂, CO, aerossóis diariamente.", copSource:"Copernicus Atmosphere — CAMS + Sentinel-5P", indicator:"IQA POA: ref. histórica — integrar QUALAR/IBAMA para dado em tempo real", indicatorIsRealtime: false },
-    { id:"uso_solo",    icon:"🗺️", name:"Uso do Solo",               status:"NORMAL",   color:"#22c55e", rsHistory:"RS: 60% agropecuária, 12% vegetação nativa, 28% outros. Expansão da soja pressiona Pampa.", current:"Mapeamento anual via Sentinel-2 + MapBiomas RS.", copSource:"Copernicus Land — CORINE adapted + MapBiomas", indicator:"Área agrícola RS 2025: 14,8 milhões ha · Fonte: MapBiomas 2025", indicatorIsRealtime: false },
-    { id:"seca",        icon:"🏜️", name:"Seca / Estiagem",          status:"ATENCAO",  color:"#eab308", rsHistory:"2021/22: pior seca em 91 anos no RS. Prejuízo de R$ 19 bilhões.", current:"Índice SPI-3: -0,4 (próximo da normalidade). El Niño deve aumentar chuvas no RS.", copSource:"Copernicus Emergency — EDO (European Drought Observatory)", indicator:"SPI-3 RS: -0,4 · Ref: EDO mai/2026 — integrar SPI dinâmico via CHIRPS para atualização", indicatorIsRealtime: false },
-  ],
+  themes: [],
 };
 
 // ─── UTILS ───────────────────────────────────────────────────────────────────
@@ -1345,7 +1334,7 @@ export default function SentinelaRS() {
   };
   const ensoClass = classifyENSO(activeENSO.nino34);
   const ensoObservedAvailable = typeof activeENSO.nino34 === "number" && Number.isFinite(activeENSO.nino34);
-  const ensoProbabilityAvailable = typeof activeENSO.prob?.elNino === "number" && Number.isFinite(activeENSO.prob.elNino);
+  const ensoProbabilityAvailable = Boolean(getDominantEnsoPhase(activeENSO.prob));
   const ensoFirstForecast = safeEnsoForecast(activeENSO.forecast)[0] || null;
   const ensoDominantProb = getDominantEnsoPhase(activeENSO.prob);
   const ensoObservedText = ensoObservedAvailable
@@ -1354,6 +1343,8 @@ export default function SentinelaRS() {
   const ensoProbabilityText = ensoProbabilityAvailable
     ? `IRI/CCSR: ${formatDominantEnsoProbability(activeENSO.prob, ensoFirstForecast?.p || "")}`
     : "Probabilidade IRI/CCSR indisponível";
+  const ensoBannerActive = ensoObservedAvailable || ensoProbabilityAvailable;
+  const ensoBannerColor = ensoObservedAvailable ? ensoClass.color : (ensoDominantProb?.color || t.textMuted);
   const selData   = stationData[selStation.id];
   const lagoaSummary = getLagoaSummary(stationData);
 
@@ -1488,7 +1479,7 @@ export default function SentinelaRS() {
           </div>
 
           {/* Banner ENSO */}
-          <div style={{ marginTop:10, padding:"9px 14px", background: dark?"rgba(220,38,38,0.08)":"rgba(220,38,38,0.06)", border:"1px solid rgba(220,38,38,0.3)", borderRadius:4, fontSize:11, color: dark?"#fca5a5":"#b91c1c", display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
+          <div style={{ marginTop:10, padding:"9px 14px", background: ensoBannerActive ? `${ensoBannerColor}12` : (dark?"rgba(100,116,139,0.10)":"rgba(100,116,139,0.08)"), border:`1px solid ${ensoBannerActive ? `${ensoBannerColor}55` : t.border}`, borderRadius:4, fontSize:11, color: ensoBannerActive ? ensoBannerColor : t.textMuted, display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
             ⚠️ <strong>ENSO — leitura observada e probabilidade</strong> — {ensoObservedText}. {ensoProbabilityText}.
             <button onClick={()=>setActiveTab("enso")} style={{ background:"none", border:"none", color:t.accent, cursor:"pointer", fontSize:11, padding:0, fontFamily:"inherit" }}>Ver dados completos →</button>
           </div>
@@ -2251,12 +2242,14 @@ export default function SentinelaRS() {
               )}
             </div>
 
-            <div style={{ padding:"8px 14px", background: dark?"rgba(234,179,8,0.07)":"rgba(234,179,8,0.06)", border:"1px solid rgba(234,179,8,0.25)", borderRadius:4, fontSize:9, color: dark?"#fef08a":"#854d0e" }}>
-              🗓 <strong>Referências históricas:</strong> os cartões abaixo não são SITREP operacional. São contexto técnico/histórico separado da leitura Copernicus Water acima.
-            </div>
+            {COPERNICUS_REFERENCE.themes.length > 0 && (
+              <>
+              <div style={{ padding:"8px 14px", background: dark?"rgba(234,179,8,0.07)":"rgba(234,179,8,0.06)", border:"1px solid rgba(234,179,8,0.25)", borderRadius:4, fontSize:9, color: dark?"#fef08a":"#854d0e" }}>
+                🗓 <strong>Referências históricas:</strong> os cartões abaixo não são SITREP operacional. São contexto técnico/histórico separado da leitura Copernicus Water acima.
+              </div>
 
-            <div style={{ display:"grid", gap:8 }}>
-              {COPERNICUS_REFERENCE.themes.map(theme=>(
+              <div style={{ display:"grid", gap:8 }}>
+                {COPERNICUS_REFERENCE.themes.map(theme=>(
                 <div key={theme.id} style={{ background:t.cardBg, border:`1px solid ${theme.color}44`, borderLeft:`4px solid ${theme.color}`, borderRadius:5, overflow:"hidden", boxShadow:t.shadowCard }}>
                   <div style={{ padding:"13px 16px", display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:11 }}>
                     <div style={{ flex:1 }}>
@@ -2274,8 +2267,10 @@ export default function SentinelaRS() {
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
+                ))}
+              </div>
+              </>
+            )}
           </div>
         )}
 
@@ -2521,7 +2516,7 @@ export default function SentinelaRS() {
             {[
               { n:"Open-Meteo",               st:"ATIVO",     c:"#22c55e", d:"Previsão meteorológica 14 dias — temperatura, precipitação, vento. Atualização automática.", a:"Gratuita, sem chave", h:null },
               { n:"ANA HidroWeb (Telemetria)", st:"AGUARDANDO CREDENCIAL", c:"#eab308", d:"Uso atual: complementar/histórico. Integração operacional automatizada depende do acesso oficial à API solicitado à ANA. Não aciona alerta automático.", a:"Aguardando credencial oficial", h:"Solicitação enviada para telemetria@ana.gov.br. Até a liberação, a ANA permanece como fonte complementar; dados manuais/CSV não entram como leitura operacional." },
-              { n:"NOAA/CPC + IRI — ENSO",   st:"ATIVO",  c:"#eab308", d:"ENSO: Niño 3.4, ONI e cenário probabilístico dominante. Índices observados e probabilidades atualizados via Edge Functions.", a:"Dados públicos, atualização mensal", h:"1. iri.columbia.edu/our-expertise/climate/forecasts/enso/current/\n2. Atualizar valores activeENSO.nino34, oni3m, prob e forecast no código\n3. Publicação NOAA/IRI: primeira semana de cada mês" },
+              { n:"NOAA/CPC + IRI — ENSO",   st:"ATIVO",  c:"#22c55e", d:"ENSO: Niño 3.4, ONI e cenário probabilístico dominante. Índices observados e probabilidades atualizados via Edge Functions.", a:"Dados públicos, atualização mensal", h:"1. iri.columbia.edu/our-expertise/climate/forecasts/enso/current/\n2. Atualizar valores activeENSO.nino34, oni3m, prob e forecast no código\n3. Publicação NOAA/IRI: primeira semana de cada mês" },
               { n:"INPE BDQueimadas",          st:"ATIVO",     c:"#22c55e", d:"Focos de queimada últimas 48h no RS — API pública. Exibe histórico de referência quando API indisponível.", a:"Sem chave", h:null },
               { n:"Copernicus Water / Sentinel-2", st:"ATIVO", c:"#22c55e", d:"Indicador real de água superficial por Sentinel-2 L2A/NDWI para a Lagoa dos Patos. Contexto hidrológico por satélite; não aciona alerta sozinho.", a:"Copernicus Data Space / Sentinel Hub", h:"Endpoint: copernicus-water. Produto óptico: depende de baixa nebulosidade. Usar como contexto junto com Defesa Civil, CEMADEN, RADAR Lagoa e HidroSens." },
               { n:"Copernicus Sentinel-1 SAR", st:"ATIVO", c:"#22c55e", d:"Indicador real SAR de água/alagamento sob nuvens/noite. Contexto remoto por radar; não é alerta oficial nem máscara validada de inundação.", a:"Copernicus Data Space / Sentinel Hub", h:"Endpoint: copernicus-sentinel1-water. Método: Sentinel-1 GRD IW/DV. Pode falhar em áreas urbanas, vegetação inundada, vento forte sobre água e sombras de relevo. Confirmar com órgãos responsáveis." },
@@ -2551,10 +2546,8 @@ export default function SentinelaRS() {
                   </div>
                   <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:5, flexShrink:0 }}>
                     <div style={{ fontSize:8, padding:"2px 7px", border:`1px solid ${api.c}`, color:api.c, borderRadius:3, letterSpacing:2 }}>{api.st}</div>
-                    {api.h && <button onClick={()=>setExpanded(expanded===api.n?null:api.n)} style={{ background:"none", border:`1px solid ${t.accent}44`, color:t.accent, cursor:"pointer", fontSize:8, padding:"2px 6px", borderRadius:3, fontFamily:"inherit" }}>{expanded===api.n?"▲ fechar":"▼ como"}</button>}
                   </div>
                 </div>
-                {api.h && expanded===api.n && <div style={{ padding:"10px 14px", borderTop:`1px solid ${t.border}`, background: dark?"rgba(0,0,0,0.2)":t.bg, fontSize:10, color:t.textMuted, lineHeight:1.8, whiteSpace:"pre-line" }}>{api.h}</div>}
               </div>
             ))}
             </div>
