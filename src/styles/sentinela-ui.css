@@ -423,3 +423,117 @@ div[style*="grid-template-columns: repeat(7"] {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+.sr-city-grid {
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
+}
+
+.sr-city-card,
+.sr-lagoa-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sr-city-card {
+  min-height: 302px;
+}
+
+.sr-city-card-head,
+.sr-lagoa-card-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.sr-city-card-title,
+.sr-lagoa-title {
+  min-width: 0;
+}
+
+.sr-city-card-title > div,
+.sr-lagoa-title > div,
+.sr-city-source-line {
+  overflow-wrap: anywhere;
+}
+
+.sr-status-button {
+  min-width: 84px;
+  max-width: 96px;
+  line-height: 1.35;
+  text-align: center;
+  white-space: normal;
+}
+
+.sr-city-metrics {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+  margin-top: auto;
+}
+
+.sr-metric-tile {
+  min-height: 72px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  overflow: hidden;
+}
+
+.sr-metric-tile > div:last-child {
+  line-height: 1.18;
+  overflow-wrap: anywhere;
+}
+
+.sr-lagoa-grid {
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)) !important;
+}
+
+.sr-lagoa-card {
+  min-height: 360px;
+}
+
+.sr-lagoa-metrics {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+
+.sr-lagoa-tile {
+  min-width: 0;
+  min-height: 92px;
+  overflow: hidden;
+}
+
+.sr-lagoa-current div:nth-child(2) {
+  font-size: clamp(1.45rem, 3vw, 2.05rem) !important;
+  line-height: 1.05;
+  white-space: nowrap;
+}
+
+.sr-lagoa-source-name {
+  font-size: clamp(0.98rem, 1.8vw, 1.18rem) !important;
+  line-height: 1.22;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 920px) {
+  .sr-city-grid,
+  .sr-lagoa-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .sr-city-card-head,
+  .sr-lagoa-card-head {
+    grid-template-columns: 1fr;
+  }
+
+  .sr-status-button {
+    max-width: none;
+    width: 100%;
+  }
+
+  .sr-lagoa-metrics {
+    grid-template-columns: 1fr !important;
+  }
+}

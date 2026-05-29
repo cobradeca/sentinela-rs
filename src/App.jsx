@@ -1704,7 +1704,7 @@ export default function SentinelaRS() {
               <div style={{ marginTop:8, fontSize:8, color:t.accent, textAlign:"right", opacity:0.75 }}>abrir aba Lagoa dos Patos →</div>
             </div>
 
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(275px,1fr))", gap:11 }}>
+            <div className="sr-city-grid" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(275px,1fr))", gap:11 }}>
             {STATIONS.map(station => {
               const d = stationData[station.id];
               if (!d) return null;
@@ -1712,42 +1712,44 @@ export default function SentinelaRS() {
               const rColor = getRiskColor(d.risk);
               return (
                 <div key={station.id}
+                  className="sr-city-card"
                   onClick={()=>setExpandedCard(station)}
                   style={{ ...s.card, border:`1px solid ${d.risk!=="NORMAL"?rColor+"55":t.border}`, cursor:"pointer", position:"relative", overflow:"hidden", transition:"transform 0.15s,box-shadow 0.15s" }}
                   onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow=`0 6px 20px ${rColor}22`;}}
                   onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.boxShadow=t.shadowCard;}}>
                   {d.risk!=="NORMAL" && <div style={{ position:"absolute", top:0, right:0, width:3, height:"100%", background:rColor, opacity:0.8 }} />}
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8 }}>
-                    <div>
+                  <div className="sr-city-card-head" style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8 }}>
+                    <div className="sr-city-card-title">
                       <div style={{ fontSize:9, color:t.textMuted, letterSpacing:2 }}>{station.type.toUpperCase()}</div>
                       <div style={{ fontSize:14, fontWeight:700, color:t.text }}>{station.name}</div>
                       {station.rioRef && <div style={{ fontSize:8, color:t.textFaint, marginTop:1 }}>{station.rioRef}</div>}
                       {d.inmet && (
-                        <div style={{ fontSize:8, color:t.accent, marginTop:3 }}>
+                        <div className="sr-city-source-line" style={{ fontSize:8, color:t.accent, marginTop:3 }}>
                           ● INMET: {d.inmet.resumo}
                         </div>
                       )}
-                      <div title={CEMADEN_ATTRIBUTION} style={{ fontSize:8, color:d.cemaden ? "#22c55e" : t.textFaint, marginTop:3 }}>
+                      <div className="sr-city-source-line" title={CEMADEN_ATTRIBUTION} style={{ fontSize:8, color:d.cemaden ? "#22c55e" : t.textFaint, marginTop:3 }}>
                         ● CEMADEN: {d.cemaden ? formatCemadenRain(d.cemaden) : "sem estação/acumulado validado"}
                       </div>
                     </div>
                     <button
                       onClick={(e)=>{ e.stopPropagation(); setRiskExplain(explainCityRisk(station, d, ensoProbabilityText)); }}
                       title="Clique para entender este status"
+                      className="sr-status-button"
                       style={{ background:"none", fontSize:9, fontWeight:700, padding:"2px 7px", border:`1px solid ${rColor}`, color:rColor, borderRadius:3, cursor:"pointer", fontFamily:"inherit" }}
                     >
                       {risk.icon} {risk.label} ⓘ
                     </button>
                   </div>
                   {d.error ? <div style={{ fontSize:10, color:"#ef4444" }}>Erro ao carregar</div> : (
-                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:5 }}>
+                    <div className="sr-city-metrics" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:5 }}>
                       {[
                         { l:"Precip. 14d", v:`${d.precip?.toFixed(0)}mm` },
                         { l:"Temp. mín.",  v:`${d.tempMin?.toFixed(1)}°C` },
                         { l:"Vento",       v:`${d.windMax?.toFixed(0)}km/h` },
                         { l:"Contexto climático", v: ensoObservedAvailable ? `${ensoClass.icon} ${ensoClass.label}` : (ensoDominantProb ? `${ensoDominantProb.label} ${formatProbability(ensoDominantProb.value)}` : "ENSO indisponível"), highlight: ensoProbabilityAvailable || ensoObservedAvailable },
                       ].map(item => (
-                        <div key={item.l} style={{ background: dark?"rgba(0,0,0,0.3)":t.bg, padding:"5px 7px", borderRadius:3 }}>
+                        <div className="sr-metric-tile" key={item.l} style={{ background: dark?"rgba(0,0,0,0.3)":t.bg, padding:"5px 7px", borderRadius:3 }}>
                           <div style={{ fontSize:9, fontWeight:600, color:t.textMuted }}>{item.l}</div>
                           <div style={{ fontSize:13, fontWeight:700, color:item.highlight?"#f97316":t.text }}>{item.v}</div>
                         </div>
@@ -1906,7 +1908,7 @@ export default function SentinelaRS() {
               </div>
             </div>
 
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(418px,1fr))", gap:11 }}>
+            <div className="sr-lagoa-grid" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(418px,1fr))", gap:11 }}>
               {STATIONS_LAGOA.map((point) => {
                 const d = getLagoaPointData(point, stationData);
                 const lagoa = d?.lagoa;
@@ -1920,9 +1922,9 @@ export default function SentinelaRS() {
                 const progress = hasLevel ? Math.min(100, (lagoa.atual / progressBase) * 100) : 0;
 
                 return (
-                  <div key={point.id} style={{ ...s.card, border:`1px solid ${hasLevel ? rColor+"55" : t.border}` }}>
-                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:8, marginBottom:10 }}>
-                      <div>
+                  <div className="sr-lagoa-card" key={point.id} style={{ ...s.card, border:`1px solid ${hasLevel ? rColor+"55" : t.border}` }}>
+                    <div className="sr-lagoa-card-head" style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:8, marginBottom:10 }}>
+                      <div className="sr-lagoa-title">
                         <div style={{ fontSize:9, color:t.textMuted, letterSpacing:2 }}>PONTO {point.ordemEscoamento} · ESTAÇÃO</div>
                         <div style={{ fontSize:20, fontWeight:900, color:t.text }}>{point.name}</div>
                         <div style={{ fontSize:8, color:t.textFaint, marginTop:2 }}>{point.displayName}</div>
@@ -1930,6 +1932,7 @@ export default function SentinelaRS() {
                       <button
                          onClick={()=>setRiskExplain(explainLagoaRisk(point, lagoa))}
                          title="Clique para entender este status"
+                         className="sr-status-button"
                          style={{ background:"none", fontSize:9, fontWeight:800, padding:"3px 7px", border:`1px solid ${rColor}`, color:rColor, borderRadius:4, cursor:"pointer", fontFamily:"inherit" }}
                        >
                          {lagoaStatusLabel(lagoa?.levelStatus)} ⓘ
@@ -1938,15 +1941,15 @@ export default function SentinelaRS() {
 
                     {hasLevel ? (
                       <>
-                        <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:8, marginBottom:10 }}>
-                          <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
+                        <div className="sr-lagoa-metrics" style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:8, marginBottom:10 }}>
+                          <div className="sr-lagoa-tile sr-lagoa-current" style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
                             <div style={{ fontSize:8, color:t.textMuted }}>Cota atual</div>
                             <div style={{ fontSize:33, fontWeight:900, color:rColor }}>{(lagoa.atual*100).toFixed(1)} cm</div>
                             <div style={{ fontSize:8, color:t.textMuted }}>{lagoa.atual.toFixed(3)} m</div>
                           </div>
-                          <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
+                          <div className="sr-lagoa-tile sr-lagoa-source" style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
                             <div style={{ fontSize:8, color:t.textMuted }}>Fonte</div>
-                            <div style={{ fontSize:17, fontWeight:900, color:t.text }}>{sourceText}</div>
+                            <div className="sr-lagoa-source-name" style={{ fontSize:17, fontWeight:900, color:t.text }}>{sourceText}</div>
                             <div style={{ fontSize:8, color:t.textMuted }}>{measuredAt ? formatDateTimeBR(measuredAt) : "horário não informado"}</div>
                             {lagoa?.isFallback && (
                               <div style={{ fontSize:8, color:"#eab308", marginTop:3 }}>
@@ -1959,14 +1962,14 @@ export default function SentinelaRS() {
                               </div>
                             )}
                           </div>
-                          <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
+                          <div className="sr-lagoa-tile" style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
                             <div style={{ fontSize:8, color:t.textMuted }}>Cota de alerta</div>
                             <div style={{ fontSize:20, fontWeight:900, color:threshold ? "#f97316" : t.textFaint }}>
                               {threshold ? `${(threshold*100).toFixed(0)} cm` : "não validada"}
                             </div>
                             <div style={{ fontSize:8, color:t.textMuted }}>{threshold ? `${threshold.toFixed(2)} m` : "alerta automático conforme limiar"}</div>
                           </div>
-                          <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
+                          <div className="sr-lagoa-tile" style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
                             <div style={{ fontSize:8, color:t.textMuted }}>Máx. maio/2024</div>
                             <div style={{ fontSize:20, fontWeight:900, color:max2024 ? "#60a5fa" : t.textFaint }}>
                               {max2024 ? `${(max2024*100).toFixed(0)} cm` : "–"}
@@ -2072,7 +2075,7 @@ export default function SentinelaRS() {
               </div>
               {safeEnsoForecast(activeENSO.forecast).length >= 2 ? (() => {
                 const pts = safeEnsoForecast(activeENSO.forecast);
-                const W = 520, H = 160, padL = 36, padR = 12, padT = 10, padB = 28;
+                const W = 620, H = 178, padL = 42, padR = 86, padT = 16, padB = 38;
                 const innerW = W - padL - padR;
                 const innerH = H - padT - padB;
                 const xOf = (i) => padL + (i / (pts.length - 1)) * innerW;
@@ -2092,7 +2095,7 @@ export default function SentinelaRS() {
                 const yGridVals = [0, 0.25, 0.5, 0.75, 1.0];
                 return (
                   <div>
-                    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ overflow:"visible", display:"block" }}>
+                    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ overflow:"hidden", display:"block" }}>
                       {/* grid horizontal */}
                       {yGridVals.map(v => (
                         <g key={v}>
@@ -2117,7 +2120,7 @@ export default function SentinelaRS() {
                             <circle key={i} cx={xOf(i)} cy={yOf(f[ln.key])} r="3" fill={ln.color} opacity="0.85"/>
                           ))}
                           {/* label no final */}
-                          <text x={ln.lastX + 6} y={ln.lastY + 3} fontSize="8" fill={ln.color} fontWeight="700">{ln.label} {typeof ln.lastV === "number" ? Math.round(ln.lastV*100)+"%" : ""}</text>
+                          <text x={Math.min(W - padR + 8, ln.lastX + 6)} y={Math.max(padT + 6, Math.min(H - padB - 4, ln.lastY + 3))} fontSize="8" fill={ln.color} fontWeight="700">{ln.label} {typeof ln.lastV === "number" ? Math.round(ln.lastV*100)+"%" : ""}</text>
                         </g>
                       ))}
                     </svg>
