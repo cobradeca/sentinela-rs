@@ -748,6 +748,26 @@ async function fetchNotificationHealth() {
 
 // CEMADEN — chuva observada por acumulados recentes.
 // O token fica no Supabase Secret CEMADEN_PED_TOKEN, nunca no App.jsx.
+async function mapWithConcurrency(items, limit, worker) {
+  const results = [];
+  let nextIndex = 0;
+
+  async function runWorker() {
+    while (nextIndex < items.length) {
+      const currentIndex = nextIndex++;
+      try {
+        results[currentIndex] = { status: "fulfilled", value: await worker(items[currentIndex], currentIndex) };
+      } catch (reason) {
+        results[currentIndex] = { status: "rejected", reason };
+      }
+    }
+  }
+
+  const workers = Array.from({ length: Math.min(limit, items.length) }, runWorker);
+  await Promise.allSettled(workers);
+  return results;
+}
+
 async function fetchCemadenAccumulations() {
   try {
     const res = await fetch(CEMADEN_RS_FUNCTION_URL, { signal: AbortSignal.timeout(15000) });
@@ -1206,15 +1226,16 @@ export default function SentinelaRS() {
       }
     }
 
-    const [cemadenByCityId, lagoaRadarByStationId, hidrosensLaranjal] = await Promise.all([
+    const [cemadenResult, lagoaRadarResult, hidrosensResult] = await Promise.allSettled([
       tracked("CEMADEN", fetchCemadenAccumulations),
       tracked("RADAR Lagoa", fetchLagoaRadarLevels),
       tracked("HidroSens", fetchHidroSensLaranjalLevel),
     ]);
-    const cemadenMap = cemadenByCityId || {};
-    const lagoaRadarMap = lagoaRadarByStationId || {};
+    const cemadenMap = cemadenResult.status === "fulfilled" ? (cemadenResult.value || {}) : {};
+    const lagoaRadarMap = lagoaRadarResult.status === "fulfilled" ? (lagoaRadarResult.value || {}) : {};
+    const hidrosensLaranjal = hidrosensResult.status === "fulfilled" ? hidrosensResult.value : null;
 
-    await Promise.all(ALL_STATIONS.map(async (st) => {
+    await mapWithConcurrency(ALL_STATIONS, 4, async (st) => {
       try {
         const weather = await (async () => {
           const start = Date.now();
@@ -1300,7 +1321,7 @@ export default function SentinelaRS() {
           });
         }
       } catch { results[st.id]={ error:true, risk:"NORMAL" }; }
-    }));
+    });
     const defesaStart = Date.now();
     const officialAlerts = await fetchDefesaCivilAlerts();
     health["Defesa Civil RS"] = { ok: Array.isArray(officialAlerts), lastOk: Array.isArray(officialAlerts) ? new Date().toISOString() : health["Defesa Civil RS"]?.lastOk || null, latencyMs: Date.now()-defesaStart, error: null };

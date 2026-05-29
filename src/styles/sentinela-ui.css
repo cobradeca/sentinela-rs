@@ -196,7 +196,7 @@ div[style*="font-size: 7px"],
 span[style*="font-size: 7px"],
 button[style*="font-size: 7px"],
 a[style*="font-size: 7px"] {
-  font-size: 15px !important;
+  font-size: 16px !important;
 }
 
 div[style*="font-size: 8px"],
@@ -204,7 +204,7 @@ span[style*="font-size: 8px"],
 button[style*="font-size: 8px"],
 a[style*="font-size: 8px"],
 text[style*="font-size: 8px"] {
-  font-size: 16px !important;
+  font-size: 17px !important;
 }
 
 div[style*="font-size: 9px"],
@@ -212,7 +212,7 @@ span[style*="font-size: 9px"],
 button[style*="font-size: 9px"],
 a[style*="font-size: 9px"],
 text[style*="font-size: 9px"] {
-  font-size: 18px !important;
+  font-size: 19px !important;
 }
 
 div[style*="font-size: 10px"],
@@ -220,49 +220,49 @@ span[style*="font-size: 10px"],
 button[style*="font-size: 10px"],
 a[style*="font-size: 10px"],
 text[style*="font-size: 10px"] {
-  font-size: 19px !important;
+  font-size: 20px !important;
 }
 
 div[style*="font-size: 11px"],
 span[style*="font-size: 11px"],
 button[style*="font-size: 11px"],
 a[style*="font-size: 11px"] {
-  font-size: 20px !important;
+  font-size: 22px !important;
 }
 
 div[style*="font-size: 12px"],
 span[style*="font-size: 12px"],
 button[style*="font-size: 12px"],
 a[style*="font-size: 12px"] {
-  font-size: 21px !important;
+  font-size: 22px !important;
 }
 
 div[style*="font-size: 13px"],
 span[style*="font-size: 13px"],
 button[style*="font-size: 13px"],
 a[style*="font-size: 13px"] {
-  font-size: 23px !important;
+  font-size: 27px !important;
 }
 
 div[style*="font-size: 14px"],
 span[style*="font-size: 14px"],
 button[style*="font-size: 14px"],
 a[style*="font-size: 14px"] {
-  font-size: 24px !important;
+  font-size: 27px !important;
 }
 
 div[style*="font-size: 15px"],
 span[style*="font-size: 15px"],
 button[style*="font-size: 15px"],
 a[style*="font-size: 15px"] {
-  font-size: 25px !important;
+  font-size: 27px !important;
 }
 
 div[style*="font-size: 16px"],
 span[style*="font-size: 16px"],
 button[style*="font-size: 16px"],
 a[style*="font-size: 16px"] {
-  font-size: 26px !important;
+  font-size: 27px !important;
 }
 
 div[style*="font-size: 17px"],
