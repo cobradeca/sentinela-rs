@@ -100,6 +100,7 @@ const NOAA_ENSO_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functio
 const IRI_ENSO_PROB_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/iri-enso-probabilidades";
 const CPTEC_INPE_PRODUCTS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/cptec-inpe-produtos";
 const INPE_QUEIMADAS_RS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/inpe-queimadas-rs";
+const ICMBIO_UCS_RS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/icmbio-ucs-rs";
 const NOTIFICATION_HEALTH_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/notification-health";
 const COPERNICUS_WATER_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/copernicus-water";
 const COPERNICUS_SENTINEL1_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/copernicus-sentinel1-water";
@@ -719,6 +720,18 @@ async function fetchQueimadas() {
   } catch { return null; }
 }
 
+async function fetchIcmbioUcsRs() {
+  try {
+    const res = await fetch(`${ICMBIO_UCS_RS_FUNCTION_URL}?priority=true&limit=30`, {
+      signal: AbortSignal.timeout(15000),
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch { return null; }
+}
+
 async function fetchNotificationHealth() {
   try {
     const res = await fetch(NOTIFICATION_HEALTH_FUNCTION_URL, {
@@ -1049,6 +1062,7 @@ export default function SentinelaRS() {
   const [activeTab, setActiveTab]       = useState("dashboard");
   const [alerts, setAlerts]             = useState([]);
   const [queimadas, setQueimadas]       = useState(null);
+  const [icmbioUcs, setIcmbioUcs]       = useState(null);
   const [qLoading, setQLoading]         = useState(false);
   const [expanded, setExpanded]         = useState(null);
   const [dark, setDark]                 = useState(true);
@@ -1302,9 +1316,11 @@ export default function SentinelaRS() {
   const loadQueimadas = useCallback(async () => {
     setQLoading(true);
     const startedAt = Date.now();
-    const data = await fetchQueimadas();
+    const [data, ucs] = await Promise.all([fetchQueimadas(), fetchIcmbioUcsRs()]);
     markSourceHealth("INPE BDQueimadas", Boolean(data?.ok), startedAt, data?.ok ? null : data?.error || "sem resposta operacional");
+    markSourceHealth("ICMBio/MMA CNUC", Boolean(ucs?.ok), startedAt, ucs?.ok ? null : ucs?.error || "sem cadastro validado");
     setQueimadas(data);
+    setIcmbioUcs(ucs);
     setQLoading(false);
   }, []);
 
@@ -2618,27 +2634,26 @@ export default function SentinelaRS() {
 
             {/* APAs */}
             <div style={{ ...s.card }}>
-              <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:4 }}>UNIDADES DE CONSERVAÇÃO — RS</div>
+              <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:4 }}>UNIDADES DE CONSERVACAO - RS</div>
               <div style={{ fontSize:9, color: dark?"#eab308":"#a16207", marginBottom:12, padding:"6px 10px", background: dark?"rgba(234,179,8,0.07)":"rgba(234,179,8,0.06)", border:"1px solid rgba(234,179,8,0.2)", borderRadius:4 }}>
-                ⚠ Risco por UC não disponível nesta versão — exigiria integração com API ICMBio (tempo real de focos por UC). Os dados abaixo são de cadastro georreferenciado oficial.
+                Cadastro oficial CNUC/MMA conectado. E camada complementar de contexto; risco por UC em tempo real ainda exige cruzar foco INPE com geocerca/poligono validado.
               </div>
               <div style={{ display:"grid", gap:7 }}>
-                {APAS_RS.map(apa=>(
-                  <div key={apa.id} style={{ display:"grid", gridTemplateColumns:"1fr auto auto", gap:10, alignItems:"center", padding:"9px 12px", background: dark?"rgba(0,0,0,0.2)":t.bg, border:`1px solid ${t.border}`, borderRadius:4 }}>
+                {(icmbioUcs?.ok ? icmbioUcs.records : APAS_RS).map((apa)=>(
+                  <div key={apa.id || apa.name} style={{ display:"grid", gridTemplateColumns:"1fr auto auto", gap:10, alignItems:"center", padding:"9px 12px", background: dark?"rgba(0,0,0,0.2)":t.bg, border:`1px solid ${t.border}`, borderRadius:4 }}>
                     <div>
                       <div style={{ fontSize:11, fontWeight:600, color:t.text }}>{apa.name}</div>
-                      <div style={{ fontSize:9, color:t.textMuted }}>{apa.municipio}</div>
+                      <div style={{ fontSize:9, color:t.textMuted }}>{apa.municipio || apa.municipios || apa.categoria}</div>
                     </div>
-                    <div style={{ fontSize:9, color:t.textFaint }}>{apa.lat.toFixed(2)}°S</div>
-                    <div style={{ fontSize:8, padding:"2px 7px", border:`1px solid ${t.textFaint}`, color:t.textMuted, borderRadius:3 }}>sem dado</div>
+                    <div style={{ fontSize:9, color:t.textFaint }}>{apa.area_ha ? `${Math.round(apa.area_ha).toLocaleString("pt-BR")} ha` : apa.lat ? `${apa.lat.toFixed(2)}S` : "CNUC"}</div>
+                    <div style={{ fontSize:8, padding:"2px 7px", border:`1px solid ${icmbioUcs?.ok ? "#22c55e66" : t.textFaint}`, color:icmbioUcs?.ok ? "#22c55e" : t.textMuted, borderRadius:3 }}>{icmbioUcs?.ok ? "oficial" : "sem dado"}</div>
                   </div>
                 ))}
               </div>
               <div style={{ marginTop:10, padding:"9px 11px", background: dark?"rgba(249,115,22,0.06)":"rgba(249,115,22,0.04)", border:"1px solid rgba(249,115,22,0.15)", borderRadius:4, fontSize:9, color:t.textMuted }}>
-                Para risco em tempo real por UC, integre: <span style={{ color:t.accent }}>geo.icmbio.gov.br/portal</span> (WFS focos) + INPE BDQueimadas filtrado por geocerca.
+                {icmbioUcs?.ok ? `Fonte: MMA/ICMBio CNUC via CKAN Dados Abertos - ${icmbioUcs.total_rs} UCs no RS - exibindo ${icmbioUcs.count} prioritarias.` : "Cadastro local exibido porque a fonte CNUC/MMA nao respondeu agora."}
               </div>
             </div>
-
             {/* EFFIS */}
             <div style={{ ...s.card }}>
               <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:4 }}>COPERNICUS EFFIS — INTEGRAÇÃO COMPLEMENTAR</div>
