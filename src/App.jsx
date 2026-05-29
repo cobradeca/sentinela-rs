@@ -401,7 +401,11 @@ async function fetchHidroSensLaranjalLevel() {
   const cached = readFallbackCache(HIDROSENS_LARANJAL_CACHE_KEY);
 
   try {
-    const res = await fetch(HIDROSENS_LARANJAL_FUNCTION_URL, { signal: AbortSignal.timeout(15000) });
+    const res = await fetch(HIDROSENS_LARANJAL_FUNCTION_URL, {
+      signal: AbortSignal.timeout(15000),
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
     if (!res.ok) return cached || null;
 
     const data = await res.json();
