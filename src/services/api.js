@@ -1,0 +1,428 @@
+const DEFESA_CIVIL_RS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/defesa-civil-rs";
+const INMET_FORECAST_BASE_URL = "https://apiprevmet3.inmet.gov.br/previsao";
+const INMET_PREVISAO_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/inmet-previsao";
+const CEMADEN_RS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/cemaden-rs";
+export const CEMADEN_ATTRIBUTION = "DADOS DA REDE OBSERVACIONAL DO CEMADEN/MCTIC";
+const ANA_RS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/ana-rs";
+const LAGOA_RADAR_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/lagoa-patos-radar";
+const HIDROSENS_LARANJAL_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/hidrosens-laranjal";
+const NOAA_ENSO_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/noaa-enso";
+const IRI_ENSO_PROB_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/iri-enso-probabilidades";
+const CPTEC_INPE_PRODUCTS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/cptec-inpe-produtos";
+const INPE_QUEIMADAS_RS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/inpe-queimadas-rs";
+const ICMBIO_UCS_RS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/icmbio-ucs-rs";
+const NOTIFICATION_HEALTH_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/notification-health";
+const COPERNICUS_WATER_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/copernicus-water";
+const COPERNICUS_SENTINEL1_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/copernicus-sentinel1-water";
+const COPERNICUS_NDVI_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/copernicus-ndvi";
+const COPERNICUS_EMS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/copernicus-ems";
+const COPERNICUS_EMS_RAPID_INFO_URL = "https://rapidmapping.emergency.copernicus.eu/backend/dashboard-api/public-activations-info/";
+const COPERNICUS_EMS_RAPID_DETAIL_URL = "https://rapidmapping.emergency.copernicus.eu/backend/dashboard-api/public-activations/";
+const COPERNICUS_EMS_RRM_URL = "https://riskandrecovery.emergency.copernicus.eu/api/public-activations/";
+
+export const ENSO_UNAVAILABLE = {
+  nino34: null,
+  oni3m: null,
+  phase: "UNAVAILABLE",
+  referenceDate: null,
+  referenceSource: "NOAA/CPC indisponível",
+  prob: null,
+  superThreshold: 1.5,
+  forecast: [],
+};
+
+export const COPERNICUS_REFERENCE = {
+  themes: [],
+};
+
+export async function fetchNoaaEnso() {
+  try {
+    const res = await fetch(NOAA_ENSO_FUNCTION_URL, { signal: AbortSignal.timeout(15000) });
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    if (!data?.ok || !data?.enso) return null;
+
+    return data.enso;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchCptecInpeProducts() {
+  try {
+    const res = await fetch(CPTEC_INPE_PRODUCTS_FUNCTION_URL, { signal: AbortSignal.timeout(20000) });
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    if (!data?.ok || !Array.isArray(data?.products)) return null;
+
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchCopernicusWater(aoi = "lagoa_patos", days = 30) {
+  try {
+    const url = `${COPERNICUS_WATER_FUNCTION_URL}?aoi=${encodeURIComponent(aoi)}&days=${encodeURIComponent(days)}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(60000) });
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    if (!data || data.ok !== true || typeof data.water_percent !== "number") return data || null;
+
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchCopernicusSentinel1(aoi = "lagoa_patos", days = 18) {
+  try {
+    const url = `${COPERNICUS_SENTINEL1_FUNCTION_URL}?aoi=${encodeURIComponent(aoi)}&days=${encodeURIComponent(days)}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(90000) });
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    if (!data || typeof data.water_like_percent !== "number") return data || null;
+
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchCopernicusNdvi(aoi = "entorno_lagoa_patos", days = 30) {
+  try {
+    const url = `${COPERNICUS_NDVI_FUNCTION_URL}?aoi=${encodeURIComponent(aoi)}&days=${encodeURIComponent(days)}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(90000) });
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    if (!data || typeof data.ndvi_mean !== "number") return data || null;
+
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchCopernicusEms() {
+  try {
+    const res = await fetch(COPERNICUS_EMS_FUNCTION_URL, { signal: AbortSignal.timeout(30000) });
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    return data?.ok ? data : null;
+  } catch {
+    return fetchCopernicusEmsDirect();
+  }
+}
+
+export async function fetchCopernicusEmsDirect() {
+  try {
+    const [infoRes, rapidRes, rrmRes] = await Promise.all([
+      fetch(`${COPERNICUS_EMS_RAPID_INFO_URL}?limit=100`, { signal: AbortSignal.timeout(30000) }),
+      fetch(`${COPERNICUS_EMS_RAPID_DETAIL_URL}?code=EMSR720`, { signal: AbortSignal.timeout(30000) }),
+      fetch(`${COPERNICUS_EMS_RRM_URL}?code=EMSN194`, { signal: AbortSignal.timeout(30000) }),
+    ]);
+    if (!infoRes.ok || !rapidRes.ok || !rrmRes.ok) return null;
+
+    const [info, rapid, rrm] = await Promise.all([infoRes.json(), rapidRes.json(), rrmRes.json()]);
+    const rapidRs = rapid?.results?.[0] || null;
+    const rrmRs = rrm?.results?.[0] || null;
+    const recentBrazilFloods = (info?.results || [])
+      .filter((item) => (item.countries || []).some((c) => String(c?.name || c).toLowerCase() === "brazil") && String(item.category || "").toLowerCase().includes("flood"))
+      .slice(0, 8)
+      .map((item) => ({
+        code:item.code, name:item.name, category:item.category, activationTime:item.activationTime, closed:item.closed,
+        n_aois:item.n_aois ?? item.aois?.length ?? 0, n_products:item.n_products ?? 0,
+        viewerUrl:`https://mapping.emergency.copernicus.eu/activations/${item.code}`,
+      }));
+
+    return {
+      ok: true,
+      source: "Copernicus EMS Mapping public APIs (direto)",
+      fetched_at: new Date().toISOString(),
+      rapid_mapping: {
+        recent_brazil_floods: recentBrazilFloods,
+        rs_2024: rapidRs && {
+          code: rapidRs.code,
+          name: rapidRs.name,
+          category: rapidRs.category,
+          activationTime: rapidRs.activationTime,
+          closed: rapidRs.closed,
+          reportLink: rapidRs.reportLink,
+          productsPath: rapidRs.productsPath,
+          stats: rapidRs.stats,
+          aois: (rapidRs.aois || []).map((a) => ({
+            name: a.name,
+            number: a.number,
+            products: (a.products || []).map((p) => ({ type:p.type, mapsCount:p.mapsCount, downloadPath:p.downloadPath, layers:p.layers || [] })),
+          })),
+        },
+      },
+      risk_recovery: {
+        rs_2024: rrmRs && {
+          code: rrmRs.code,
+          name: rrmRs.name,
+          category: rrmRs.category,
+          activationTime: rrmRs.activationTime,
+          closed: rrmRs.closed,
+          viewerUrl: rrmRs.viewerUrl,
+          storyMapUrl: rrmRs.storyMapUrl,
+          generalArcgisLayers: rrmRs.GeneralArcGISRestAPILayers || [],
+          products: (rrmRs.products || []).map((p) => ({
+            productName:p.productName,
+            productAcronym:p.productAcronym,
+            analysisName:p.analysisName,
+            statusCode:p.statusCode,
+            mapsCount:p.mapsCount,
+            versionDelivery:p.versionDelivery,
+            arcgisLayers:p.ProductArcGISRestAPILayers || [],
+            aois:(p.linkedAois || []).map((a)=>({ aoiNumber:a.aoiNumber, aoiName:a.aoiName, sqkm:a.sqkm })),
+          })),
+        },
+      },
+      operational_use: "CEMS EMSR/EMSN é produto oficial pós-evento. No Sentinela-RS entra como camada de referência e resposta a desastre; não aciona alerta automático sozinho.",
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchIriEnsoProbabilities() {
+  try {
+    const res = await fetch(IRI_ENSO_PROB_FUNCTION_URL, { signal: AbortSignal.timeout(15000) });
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    if (!data?.ok || !data?.prob || !Array.isArray(data?.forecast)) return null;
+
+    return {
+      prob: data.prob,
+      forecast: data.forecast,
+      probabilitySource: data.source,
+      probabilityReferenceDate: data.referenceDate,
+      probabilityDynamic: true,
+      probabilityFetchedAt: data.fetched_at,
+      probabilityParsing: data.parsing,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchWeather14Days(lat, lon) {
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max,weathercode&timezone=America%2FSao_Paulo&forecast_days=14`;
+  const res = await fetch(url, { signal: AbortSignal.timeout(12000) });
+  if (!res.ok) throw new Error("Open-Meteo indisponível");
+  return res.json();
+}
+
+const LAGOA_FALLBACK_MAX_AGE_MS = 6 * 60 * 60 * 1000;
+const LAGOA_RADAR_CACHE_KEY = "sentinela_rs_lagoa_radar_last_valid_v1";
+const HIDROSENS_LARANJAL_CACHE_KEY = "sentinela_rs_hidrosens_laranjal_last_valid_v1";
+
+function saveFallbackCache(key, data) {
+  try {
+    if (typeof window === "undefined" || !window.localStorage) return;
+    window.localStorage.setItem(key, JSON.stringify({
+      saved_at: new Date().toISOString(),
+      data,
+    }));
+  } catch {}
+}
+
+function readFallbackCache(key, maxAgeMs = LAGOA_FALLBACK_MAX_AGE_MS) {
+  try {
+    if (typeof window === "undefined" || !window.localStorage) return null;
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw);
+    const savedAtMs = new Date(parsed.saved_at || 0).getTime();
+    if (!savedAtMs || Date.now() - savedAtMs > maxAgeMs) return null;
+
+    return {
+      ...parsed.data,
+      fallback: true,
+      fallback_saved_at: parsed.saved_at,
+      fallback_age_minutes: Math.round((Date.now() - savedAtMs) / 60000),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function markRadarFallback(map) {
+  if (!map || typeof map !== "object") return {};
+  return Object.fromEntries(
+    Object.entries(map).map(([id, sensor]) => [
+      id,
+      {
+        ...sensor,
+        fallback: true,
+        fallback_saved_at: map.fallback_saved_at || sensor?.fallback_saved_at || null,
+        fallback_age_minutes: map.fallback_age_minutes ?? sensor?.fallback_age_minutes ?? null,
+      },
+    ])
+  );
+}
+
+export async function fetchHidroSensLaranjalLevel() {
+  const cached = readFallbackCache(HIDROSENS_LARANJAL_CACHE_KEY);
+
+  try {
+    const res = await fetch(HIDROSENS_LARANJAL_FUNCTION_URL, {
+      signal: AbortSignal.timeout(15000),
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) return cached || null;
+
+    const data = await res.json();
+    if (!data?.ok || typeof data.level_m !== "number") return cached || null;
+
+    const ageMinutes = typeof data.age_minutes === "number"
+      ? data.age_minutes
+      : data.measured_at
+      ? Math.round((Date.now() - new Date(data.measured_at).getTime()) / 60000)
+      : null;
+    const readingOlderThan24h = typeof ageMinutes === "number" && ageMinutes > 1440;
+    const live = {
+      ok: true,
+      station_id: data.station_id,
+      name: data.name,
+      source_label: "HidroSens/UFPel",
+      measured_at: data.measured_at,
+      received_at: data.fetched_at,
+      level_m: data.level_m,
+      level_cm: data.level_cm,
+      distance_m: data.distance_m,
+      sensor_height_m: data.sensor_height_m,
+      operational: !readingOlderThan24h,
+      stale: readingOlderThan24h,
+      age_minutes: ageMinutes,
+      threshold_m: data.threshold_m ?? 1.20,
+      threshold_cm: data.threshold_cm ?? 120,
+      critical_threshold_m: data.critical_threshold_m ?? 1.40,
+      critical_threshold_cm: data.critical_threshold_cm ?? 140,
+      max_may_2024_m: data.max_may_2024_m ?? 2.40,
+      max_may_2024_cm: data.max_may_2024_cm ?? 240,
+      status: readingOlderThan24h ? "SEM_LEITURA" : (data.level_m >= 1.40 ? "ALERTA" : data.level_m >= 1.20 ? "ATENCAO" : "NORMAL"),
+      note: data.note,
+    };
+
+    if (live.operational) saveFallbackCache(HIDROSENS_LARANJAL_CACHE_KEY, live);
+    return live;
+  } catch {
+    return cached || null;
+  }
+}
+
+export async function fetchLagoaRadarLevels() {
+  const cached = readFallbackCache(LAGOA_RADAR_CACHE_KEY);
+
+  try {
+    const res = await fetch(LAGOA_RADAR_FUNCTION_URL, { signal: AbortSignal.timeout(15000) });
+    if (!res.ok) return cached ? markRadarFallback(cached) : {};
+
+    const data = await res.json();
+    if (!data?.ok || !Array.isArray(data.sensors)) {
+      return cached ? markRadarFallback(cached) : {};
+    }
+
+    const live = Object.fromEntries(
+      data.sensors
+        .filter((sensor) => sensor?.ok && sensor?.station_id)
+        .map((sensor) => [sensor.station_id, sensor])
+    );
+
+    if (Object.keys(live).length > 0) {
+      saveFallbackCache(LAGOA_RADAR_CACHE_KEY, live);
+      return live;
+    }
+
+    return cached ? markRadarFallback(cached) : {};
+  } catch {
+    return cached ? markRadarFallback(cached) : {};
+  }
+}
+
+export async function fetchAnaLevel(anaCode) {
+  try {
+    const res = await fetch(`${ANA_RS_FUNCTION_URL}?codEstacao=${encodeURIComponent(anaCode)}`, {
+      signal: AbortSignal.timeout(12000),
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+
+    if (!res.ok) return null;
+
+    const data = await res.json();
+
+    if (!data?.ok || typeof data?.latest?.level_m !== "number") {
+      return null;
+    }
+
+    return data.latest.level_m;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchQueimadas() {
+  try {
+    const res = await fetch(`${INPE_QUEIMADAS_RS_FUNCTION_URL}?days=2&limit=100`, {
+      signal: AbortSignal.timeout(15000),
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch { return null; }
+}
+
+export async function fetchIcmbioUcsRs() {
+  try {
+    const res = await fetch(`${ICMBIO_UCS_RS_FUNCTION_URL}?priority=true&limit=30`, {
+      signal: AbortSignal.timeout(15000),
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch { return null; }
+}
+
+export async function fetchNotificationHealth() {
+  try {
+    const res = await fetch(NOTIFICATION_HEALTH_FUNCTION_URL, {
+      signal: AbortSignal.timeout(8000),
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch { return null; }
+}
+
+export async function fetchCemadenAccumulations() {
+  try {
+    const res = await fetch(CEMADEN_RS_FUNCTION_URL, { signal: AbortSignal.timeout(15000) });
+    if (!res.ok) return {};
+
+    const data = await res.json();
+    if (!data?.ok || !Array.isArray(data.cities)) return {};
+
+    return Object.fromEntries(
+      data.cities
+        .filter((city) => city?.ok && city?.city_id)
+        .map((city) => [city.city_id, city])
+    );
+  } catch {
+    return {};
+  }
+}
