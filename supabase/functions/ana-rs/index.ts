@@ -251,10 +251,11 @@ function parseAnaRecords(payload: unknown, codEstacao: string) {
   const rawRecords = findRecordArray(payload);
 
   return rawRecords.map((record) => {
-    const station = getByAliases(record, ["codEstacao", "codigoEstacao", "CodigoEstacao", "Código da Estação"]) ?? codEstacao;
+    const station = getByAliases(record, ["codEstacao", "codigoEstacao", "CodigoEstacao", "codigoestacao", "Código da Estação"]) ?? codEstacao;
     const measuredAt = asDate(getByAliases(record, [
       "dataHora",
       "dataHoraMedicao",
+      "Data_Hora_Medicao",
       "dataLeitura",
       "DataHora",
       "Data Leitura",
@@ -270,11 +271,12 @@ function parseAnaRecords(payload: unknown, codEstacao: string) {
       "NivelAdotado",
       "cota",
       "Cota",
+      "Cota_Adotada",
       "cotaAdotada",
       "CotaAdotada",
     ]);
-    const rainRaw = getByAliases(record, ["chuva", "Chuva", "chuvaAdotada", "ChuvaAdotada"]);
-    const flowRaw = getByAliases(record, ["vazao", "Vazao", "vazaoAdotada", "VazaoAdotada"]);
+    const rainRaw = getByAliases(record, ["chuva", "Chuva", "Chuva_Adotada", "chuvaAdotada", "ChuvaAdotada"]);
+    const flowRaw = getByAliases(record, ["vazao", "Vazao", "Vazao_Adotada", "vazaoAdotada", "VazaoAdotada"]);
 
     const levelCm = asNumber(levelRaw);
     const rainMm = asNumber(rainRaw);
