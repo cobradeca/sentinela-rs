@@ -100,6 +100,7 @@ const NOAA_ENSO_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functio
 const IRI_ENSO_PROB_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/iri-enso-probabilidades";
 const CPTEC_INPE_PRODUCTS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/cptec-inpe-produtos";
 const INPE_QUEIMADAS_RS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/inpe-queimadas-rs";
+const NOTIFICATION_HEALTH_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/notification-health";
 const COPERNICUS_WATER_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/copernicus-water";
 const COPERNICUS_SENTINEL1_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/copernicus-sentinel1-water";
 const COPERNICUS_NDVI_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/copernicus-ndvi";
@@ -718,6 +719,18 @@ async function fetchQueimadas() {
   } catch { return null; }
 }
 
+async function fetchNotificationHealth() {
+  try {
+    const res = await fetch(NOTIFICATION_HEALTH_FUNCTION_URL, {
+      signal: AbortSignal.timeout(8000),
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch { return null; }
+}
+
 
 
 // CEMADEN — chuva observada por acumulados recentes.
@@ -1046,6 +1059,7 @@ export default function SentinelaRS() {
   const [copernicusS1, setCopernicusS1] = useState(null);
   const [copernicusNdvi, setCopernicusNdvi] = useState(null);
   const [copernicusEms, setCopernicusEms] = useState(null);
+  const [notificationHealth, setNotificationHealth] = useState(null);
   const [expandedCard, setExpandedCard] = useState(null); // para detalhe do card
   const [riskExplain, setRiskExplain] = useState(null);
   // BLOCO D — saúde das fontes
@@ -1302,6 +1316,24 @@ export default function SentinelaRS() {
 
 
 
+
+  useEffect(() => {
+    let alive = true;
+
+    async function loadNotificationHealth() {
+      const data = await fetchNotificationHealth();
+      if (!alive) return;
+      setNotificationHealth(data);
+    }
+
+    loadNotificationHealth();
+    const iv = setInterval(loadNotificationHealth, 5 * 60 * 1000);
+
+    return () => {
+      alive = false;
+      clearInterval(iv);
+    };
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -1567,6 +1599,22 @@ export default function SentinelaRS() {
   }
 
   // ─── RENDER ──────────────────────────────────────────────────────────────
+  const notifyChannels = notificationHealth?.channels || {};
+  const channelStatus = (channel, fallbackReady = false) => {
+    const info = notifyChannels[channel];
+    if (!notificationHealth) return { ok: fallbackReady, label: fallbackReady ? "Ativo" : "Verificando", color: fallbackReady ? "#22c55e" : "#eab308" };
+    if (info?.configured) return { ok: true, label: "Ativo", color: "#22c55e" };
+    return { ok: false, label: "Configurar", color: "#eab308" };
+  };
+  const notificationCards = [
+    { i:"📱", n:"Push nativo (PWA)", status:channelStatus("push"), s: notifyChannels.push?.configured ? `Servidor pronto${Number.isFinite(notifyChannels.push?.subscriptions) ? ` · ${notifyChannels.push.subscriptions} inscrição(ões)` : ""}` : "Configurar VAPID", h: notifyChannels.push?.note || "Front-end registra o Service Worker e salva a assinatura em push_subscriptions. A Edge Function send-alerts envia via Web Push usando VAPID_PRIVATE_JWK." },
+    { i:"🔔", n:"Alertas na tela", status:channelStatus("screen", true), s:"Ativo — cálculo local", h:"Canal local do app. Exibe alertas calculados na tela e não depende de provedor externo." },
+    { i:"📧", n:"E-mail (Resend)", status:channelStatus("email"), s: notifyChannels.email?.configured ? "Secrets OK" : "Configurar secrets", h: notifyChannels.email?.note || "Secrets esperados no Supabase: RESEND_API_KEY, ALERT_EMAIL_TO e opcionalmente ALERT_EMAIL_FROM." },
+    { i:"📢", n:"Defesa Civil RS", status:channelStatus("defesa_civil", Boolean(getValidatedSourceHealth("Defesa Civil RS")?.ok)), s: getValidatedSourceHealth("Defesa Civil RS")?.ok ? "RSS oficial OK" : "Verificando RSS", h:"Fonte oficial conectada via Supabase Edge Function. RSS: www.defesacivil.rs.gov.br/rss" },
+    { i:"📲", n:"SMS (Twilio)", status:channelStatus("sms"), s: notifyChannels.sms?.configured ? "Emergência/crítico" : "Configurar Twilio", h: notifyChannels.sms?.note || "Secrets esperados no Supabase: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM e ALERT_SMS_TO. O envio só roda para EMERGENCIA ou CRITICO." },
+    { i:"🔊", n:"Sirene IoT", status:channelStatus("sirene"), s: notifyChannels.sirene?.configured ? "Crítico com webhook" : "Aguardando hardware/webhook", h: notifyChannels.sirene?.note || "Secrets esperados no Supabase: SIRENE_WEBHOOK_URL e opcionalmente SIRENE_WEBHOOK_TOKEN. A sirene só recebe POST quando o alerta é CRITICO e houver hardware pronto." },
+  ];
+
   return (
     <div style={{ minHeight:"100vh", background:t.bg, color:t.text, fontFamily:"'IBM Plex Mono','Courier New',monospace", transition:"background 0.3s,color 0.3s" }}>
       {/* Grid bg */}
@@ -2661,20 +2709,13 @@ export default function SentinelaRS() {
             <div style={{ marginTop:16, ...s.card }}>
               <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:10 }}>CANAIS DE NOTIFICAÇÃO</div>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))", gap:8 }}>
-                {[
-                  { i:"📱", n:"Push nativo (PWA)",  s:"Ativo quando VAPID estiver configurado",  ok:true, h:"Front-end registra o Service Worker e salva a assinatura em push_subscriptions. A Edge Function send-alerts envia via Web Push usando VAPID_PRIVATE_JWK. Se o navegador negar permissão, reative nas configurações do site e recarregue." },
-                  { i:"🔔", n:"Alertas na tela",    s:"Ativo — 30min",            ok:true,  h:null },
-                  { i:"📧", n:"E-mail (Resend)",    s:"Ativo se secrets existirem", ok:true, h:"Secrets esperados no Supabase: RESEND_API_KEY, ALERT_EMAIL_TO e opcionalmente ALERT_EMAIL_FROM. Sem esses secrets, o canal fica skipped e não simula envio." },
-                  { i:"📢", n:"Defesa Civil RS",    s:"Ativo — RSS oficial",      ok:true,  h:"Fonte oficial conectada via Supabase Edge Function. RSS: www.defesacivil.rs.gov.br/rss" },
-                  { i:"📲", n:"SMS (Twilio)",       s:"Emergência/crítico", ok:true, h:"Secrets esperados no Supabase: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM e ALERT_SMS_TO. O envio só roda para EMERGENCIA ou CRITICO." },
-                  { i:"🔊", n:"Sirene IoT",         s:"Crítico com webhook", ok:true, h:"Secrets esperados no Supabase: SIRENE_WEBHOOK_URL e opcionalmente SIRENE_WEBHOOK_TOKEN. A sirene só recebe POST quando o alerta é CRITICO e houver hardware pronto para receber /trigger." },
-                ].map(c=>(
+                {notificationCards.map(c=>(
                   <div key={c.n} style={{ background: dark?"rgba(0,0,0,0.3)":t.bg, borderRadius:4, border:`1px solid ${t.border}`, overflow:"hidden" }}>
                     <div style={{ display:"flex", alignItems:"center", gap:8, padding:"9px 11px" }}>
                       <span style={{ fontSize:18 }}>{c.i}</span>
                       <div style={{ flex:1 }}>
                         <div style={{ fontSize:10, color:t.text }}>{c.n}</div>
-                        <div style={{ fontSize:9, color:c.ok?"#22c55e":t.textFaint }}>{c.s}</div>
+                        <div style={{ fontSize:9, color:c.status.ok ? c.status.color : c.status.color }}>{c.status.label} · {c.s}</div>
                       </div>
                       {c.h && <button onClick={()=>setExpanded(expanded===c.n?null:c.n)} style={{ background:"none", border:`1px solid ${t.accent}44`, color:t.accent, cursor:"pointer", fontSize:8, padding:"2px 6px", borderRadius:3, fontFamily:"inherit" }}>{expanded===c.n?"▲":"▼"}</button>}
                     </div>
