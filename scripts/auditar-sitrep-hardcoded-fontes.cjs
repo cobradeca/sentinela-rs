@@ -73,7 +73,7 @@ const endpoints = [
   ["Copernicus Water", `https://${PROJECT_REF}.supabase.co/functions/v1/copernicus-water?aoi=lagoa_patos&days=30`, (d) => d.ok === true && typeof d.water_percent === "number", "Contexto real: indicador de água por Sentinel-2/NDWI"],
   ["Copernicus Sentinel-1", `https://${PROJECT_REF}.supabase.co/functions/v1/copernicus-sentinel1-water?aoi=lagoa_patos&days=18`, (d) => (d.ok === true || d.status === "BAIXA_COBERTURA") && typeof d.water_like_percent === "number", "Contexto real: indicador SAR de água/alagamento sob nuvens"],
   ["Copernicus NDVI", `https://${PROJECT_REF}.supabase.co/functions/v1/copernicus-ndvi?aoi=entorno_lagoa_patos&days=30`, (d) => d.ok === true && typeof d.ndvi_mean === "number", "Contexto real: indicador de vegetação/estiagem por Sentinel-2/NDVI"],
-  ["ANA HidroWeb", `https://${PROJECT_REF}.supabase.co/functions/v1/ana-rs`, (d) => typeof d === "object", "Complementar: pode estar sem leitura validada"],
+  ["ANA HidroWeb", `https://${PROJECT_REF}.supabase.co/functions/v1/ana-rs?codEstacao=87540000`, (d) => typeof d === "object" && d.source === "ANA HidroWeb REST", "Complementar: pode estar sem leitura validada"],
 ];
 
 async function fetchTextWithWindowsFallback(url, timeoutMs) {

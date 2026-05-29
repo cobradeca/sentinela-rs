@@ -686,6 +686,8 @@ async function fetchAnaLevel(anaCode) {
   try {
     const res = await fetch(`${ANA_RS_FUNCTION_URL}?codEstacao=${encodeURIComponent(anaCode)}`, {
       signal: AbortSignal.timeout(12000),
+      cache: "no-store",
+      headers: { Accept: "application/json" },
     });
 
     if (!res.ok) return null;
@@ -2693,7 +2695,7 @@ export default function SentinelaRS() {
                   const never = !h;
                   const anaComplementar = name === "ANA HidroWeb" && (!h || !ok);
                   const color = never ? (anaComplementar ? "#eab308" : "#64748b") : anaComplementar ? "#eab308" : ok ? "#22c55e" : "#ef4444";
-                  const label = anaComplementar ? "Aguardando API" : never ? "Carregando" : ok ? "OK" : "Falhou";
+                  const label = anaComplementar ? "Configurar/sem leitura" : never ? "Carregando" : ok ? "OK" : "Falhou";
                   return (
                     <div key={name} style={{ padding:"9px 12px", background:dark?"rgba(0,0,0,0.25)":t.bg, borderRadius:5, border:`1px solid ${color}33`, borderLeft:`3px solid ${color}` }}>
                       <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
@@ -2706,7 +2708,7 @@ export default function SentinelaRS() {
                           {h.lastOk && <div style={{ fontSize:8, color:t.textFaint }}>Último OK: {formatDateTimeBR(h.lastOk)}</div>}
                           {h.error && !ok && (
                             <div style={{ fontSize:8, color:anaComplementar ? "#eab308" : "#ef4444", marginTop:2 }}>
-                              {anaComplementar ? "aguardando credencial oficial da ANA" : h.error}
+                              {anaComplementar ? "sem leitura operacional validada da ANA" : h.error}
                             </div>
                           )}
                         </>
@@ -2716,7 +2718,7 @@ export default function SentinelaRS() {
                 })}
               </div>
               <div style={{ marginTop:8, fontSize:8, color:t.textFaint }}>
-                Atualizado junto com os dados de cada fonte. Latência medida no navegador. Fontes complementares/aguardando credencial não reprovam o SITREP operacional.
+                Atualizado junto com os dados de cada fonte. Latência medida no navegador. Fontes complementares ou sem leitura validada não reprovam o SITREP operacional.
               </div>
             </div>
 
@@ -2724,7 +2726,18 @@ export default function SentinelaRS() {
             <div style={{ display:"grid", gap:8 }}>
             {[
               { n:"Open-Meteo",               st:"ATIVO",     c:"#22c55e", d:"Previsão meteorológica 14 dias — temperatura, precipitação, vento. Atualização automática.", a:"Gratuita, sem chave", h:null },
-              { n:"ANA HidroWeb (Telemetria)", st:"AGUARDANDO CREDENCIAL", c:"#eab308", d:"Uso atual: complementar/histórico. Integração operacional automatizada depende do acesso oficial à API solicitado à ANA. Não aciona alerta automático.", a:"Aguardando credencial oficial", h:"Solicitação enviada para telemetria@ana.gov.br. Até a liberação, a ANA permanece como fonte complementar; dados manuais/CSV não entram como leitura operacional." },
+              (() => {
+                const hAna = getValidatedSourceHealth("ANA HidroWeb");
+                const anaOk = Boolean(hAna?.ok);
+                return {
+                  n:"ANA HidroWeb (Telemetria)",
+                  st: anaOk ? "ATIVO" : "AGUARDANDO CONFIGURACAO",
+                  c: anaOk ? "#22c55e" : "#eab308",
+                  d:"API oficial Hidro Webservice REST da ANA para série telemétrica adotada de nível, chuva e vazão. Uso complementar quando houver estação validada; não aciona alerta automático sozinho.",
+                  a:"Requer secrets ANA_HIDROWEB_IDENTIFICADOR e ANA_HIDROWEB_SENHA no Supabase",
+                  h:"Endpoint: ana-rs. A função autentica no Hidro Webservice, consulta HidroinfoanaSerieTelemetricaAdotada e considera operacional apenas leitura real com horário, fonte e menos de 24h."
+                };
+              })(),
               { n:"NOAA/CPC + IRI — ENSO",   st:"ATIVO",  c:"#22c55e", d:"ENSO: Niño 3.4, ONI e cenário probabilístico dominante. Índices observados e probabilidades atualizados via Edge Functions.", a:"Dados públicos, atualização mensal", h:"1. iri.columbia.edu/our-expertise/climate/forecasts/enso/current/\n2. Atualizar valores activeENSO.nino34, oni3m, prob e forecast no código\n3. Publicação NOAA/IRI: primeira semana de cada mês" },
               { n:"INPE BDQueimadas",          st:"ATIVO",     c:"#22c55e", d:"Focos de queimada últimas 48h no RS — API pública. Exibe histórico de referência quando API indisponível.", a:"Sem chave", h:null },
               { n:"Copernicus Water / Sentinel-2", st:"ATIVO", c:"#22c55e", d:"Indicador real de água superficial por Sentinel-2 L2A/NDWI para a Lagoa dos Patos. Contexto hidrológico por satélite; não aciona alerta sozinho.", a:"Copernicus Data Space / Sentinel Hub", h:"Endpoint: copernicus-water. Produto óptico: depende de baixa nebulosidade. Usar como contexto junto com Defesa Civil, CEMADEN, RADAR Lagoa e HidroSens." },
