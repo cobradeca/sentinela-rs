@@ -84,6 +84,7 @@ const IRI_ENSO_PROB_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/fun
 const CPTEC_INPE_PRODUCTS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/cptec-inpe-produtos";
 const INPE_QUEIMADAS_RS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/inpe-queimadas-rs";
 const ICMBIO_UCS_RS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/icmbio-ucs-rs";
+const EFFIS_WMS_HEALTH_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/effis-wms-health";
 const NOTIFICATION_HEALTH_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/notification-health";
 const COPERNICUS_WATER_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/copernicus-water";
 const COPERNICUS_SENTINEL1_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/copernicus-sentinel1-water";
@@ -667,6 +668,18 @@ async function fetchIcmbioUcsRs() {
   } catch { return null; }
 }
 
+async function fetchEffisWmsHealth() {
+  try {
+    const res = await fetch(EFFIS_WMS_HEALTH_FUNCTION_URL, {
+      signal: AbortSignal.timeout(15000),
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch { return null; }
+}
+
 async function fetchNotificationHealth() {
   try {
     const res = await fetch(NOTIFICATION_HEALTH_FUNCTION_URL, {
@@ -1020,6 +1033,7 @@ export default function SentinelaRS() {
   const [alerts, setAlerts]             = useState([]);
   const [queimadas, setQueimadas]       = useState(null);
   const [icmbioUcs, setIcmbioUcs]       = useState(null);
+  const [effisHealth, setEffisHealth]   = useState(null);
   const [qLoading, setQLoading]         = useState(false);
   const [expanded, setExpanded]         = useState(null);
   const [dark, setDark]                 = useState(true);
@@ -1282,11 +1296,13 @@ export default function SentinelaRS() {
   const loadQueimadas = useCallback(async () => {
     setQLoading(true);
     const startedAt = Date.now();
-    const [data, ucs] = await Promise.all([fetchQueimadas(), fetchIcmbioUcsRs()]);
+    const [data, ucs, effis] = await Promise.all([fetchQueimadas(), fetchIcmbioUcsRs(), fetchEffisWmsHealth()]);
     markSourceHealth("INPE BDQueimadas", Boolean(data?.ok), startedAt, data?.ok ? null : data?.error || "sem resposta operacional");
     markSourceHealth("ICMBio/MMA CNUC", Boolean(ucs?.ok), startedAt, ucs?.ok ? null : ucs?.error || "sem cadastro validado");
+    markSourceHealth("Copernicus EFFIS", Boolean(effis?.ok), startedAt, effis?.ok ? null : effis?.error || "WMS EFFIS sem resposta validada");
     setQueimadas(data);
     setIcmbioUcs(ucs);
+    setEffisHealth(effis);
     setQLoading(false);
   }, []);
 
@@ -1881,15 +1897,6 @@ export default function SentinelaRS() {
                 <div>
                   <div style={{ fontSize:9, color:t.textMuted, letterSpacing:2 }}>LAGOA DOS PATOS</div>
                   <div style={{ fontSize:24, fontWeight:900, color:t.text, marginTop:2 }}>Monitoramento em ordem de escoamento</div>
-                  <div style={{ fontSize:10, color:t.textMuted, marginTop:5 }}>
-                    Organização visual: Itapuã → Arambaré → São Lourenço do Sul → Pelotas / Laranjal → São José do Norte → Rio Grande.
-                  </div>
-                  <div style={{ fontSize:9, color:t.textMuted, marginTop:4 }}>
-                    Limiares validados: {lagoaSummary.thresholdValidated ?? 0}/{lagoaSummary.monitored} · sem limiar: {lagoaSummary.withoutThreshold ?? 0}
-                  </div>
-                  <div style={{ fontSize:9, color:t.textMuted, marginTop:4, lineHeight:1.6, wordBreak:"break-word" }}>
-                    APIs em uso: RADAR Lagoa dos Patos ({LAGOA_RADAR_FUNCTION_URL}) · HidroSens/UFPel ({HIDROSENS_LARANJAL_FUNCTION_URL}) · ANA HidroWeb complementar quando houver código de estação.
-                  </div>
                 </div>
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(3, minmax(90px, 1fr))", gap:8 }}>
                   <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
@@ -2022,7 +2029,7 @@ export default function SentinelaRS() {
               <div>
                 <div style={{ fontSize:12, fontWeight:700, color:t.text, marginBottom:3 }}>ENSO — SITREP OBSERVADO + PROBABILÍSTICO</div>
                 <div style={{ fontSize:10, color:t.textMuted, lineHeight:1.6 }}>
-                  {ensoObservedText}. {ensoProbabilityText}. Sem valores simulados: quando a fonte não responde, o dado fica indisponível.
+                  {ensoObservedText}. {ensoProbabilityText}.
                 </div>
               </div>
             </div>
@@ -2035,10 +2042,10 @@ export default function SentinelaRS() {
               {[
                 { l:"Fase observada", v: ensoObservedAvailable ? `${ensoClass.icon} ${ensoClass.label}` : "indisponível", s: ensoObservedAvailable ? `Niño 3.4: ${formatSignedCelsius(activeENSO.nino34)}` : "NOAA/CPC sem leitura", c:ensoClass.color },
                 { l:"ONI trimestral", v: formatSignedCelsius(activeENSO.oni3m), s:"NOAA/CPC observado", c: ensoObservedAvailable ? "#f97316" : "#64748b" },
-                { l:"Prob. El Niño", v: formatProbability(activeENSO.prob?.elNino), s: ensoFirstForecast?.p ? `IRI/CCSR · ${ensoFirstForecast.p}` : "IRI/CCSR", c:"#f97316" },
+                { l:"Prob. El Niño (próx.)", v: formatProbability(activeENSO.prob?.elNino), s: ensoFirstForecast?.p ? `IRI/CCSR · ${ensoFirstForecast.p}` : "IRI/CCSR", c:"#f97316" },
                 { l:"Prob. Neutro", v: formatProbability(activeENSO.prob?.neutral), s:"IRI/CCSR", c:"#22c55e" },
                 { l:"Prob. La Niña", v: formatProbability(activeENSO.prob?.laNina), s:"IRI/CCSR", c:"#3b82f6" },
-                { l:"Tipo de uso", v:"Contexto climático", s:"não dispara alerta sozinho", c:"#eab308" },
+                { l:"Tipo de uso", v:"Contexto climático", s:"iminência de formação de El Niño", c:"#eab308" },
               ].map(item=>(
                 <div key={item.l} style={{ padding:"12px 14px", background:t.cardBg, border:`1px solid ${item.c}44`, borderTop:`3px solid ${item.c}`, borderRadius:5, boxShadow:t.shadowCard }}>
                   <div style={{ fontSize:8, color:t.textMuted, letterSpacing:2, marginBottom:5 }}>{item.l.toUpperCase()}</div>
@@ -2088,9 +2095,9 @@ export default function SentinelaRS() {
                   return { d, color, lastV, lastX, lastY };
                 };
                 const lines = [
-                  { key:"en", label:"El Niño",  ...mkLine("en","#f97316") },
-                  { key:"nu", label:"Neutro",   ...mkLine("nu","#22c55e") },
-                  { key:"ln", label:"La Niña",  ...mkLine("ln","#3b82f6") },
+                  { key:"en", label:"El Niño",  labelOffset:-8, ...mkLine("en","#f97316") },
+                  { key:"nu", label:"Neutro",   labelOffset:0, ...mkLine("nu","#22c55e") },
+                  { key:"ln", label:"La Niña",  labelOffset:10, ...mkLine("ln","#3b82f6") },
                 ];
                 const yGridVals = [0, 0.25, 0.5, 0.75, 1.0];
                 return (
@@ -2120,7 +2127,7 @@ export default function SentinelaRS() {
                             <circle key={i} cx={xOf(i)} cy={yOf(f[ln.key])} r="3" fill={ln.color} opacity="0.85"/>
                           ))}
                           {/* label no final */}
-                          <text x={Math.min(W - padR + 8, ln.lastX + 6)} y={Math.max(padT + 6, Math.min(H - padB - 4, ln.lastY + 3))} fontSize="8" fill={ln.color} fontWeight="700">{ln.label} {typeof ln.lastV === "number" ? Math.round(ln.lastV*100)+"%" : ""}</text>
+                          <text x={Math.min(W - padR + 8, ln.lastX + 6)} y={Math.max(padT + 8, Math.min(H - padB - 6, ln.lastY + 3 + ln.labelOffset))} fontSize="8" fill={ln.color} fontWeight="700">{ln.label} {typeof ln.lastV === "number" ? Math.round(ln.lastV*100)+"%" : ""}</text>
                         </g>
                       ))}
                     </svg>
@@ -2198,16 +2205,16 @@ export default function SentinelaRS() {
                   </div>
                   {/* Rodapé explicativo por tipo de produto */}
                   <div style={{ marginTop:6, padding:"7px 10px", background: dark?"rgba(34,211,238,0.04)":"rgba(8,145,178,0.03)", border:`1px solid ${t.border}`, borderRadius:4, fontSize:8, color:t.textMuted, lineHeight:1.6 }}>
-                    {p.group?.toLowerCase().includes("precipitacao") || p.group?.toLowerCase().includes("chuva") ? (
+                    {p.group?.toLowerCase().includes("subsaz") || p.title?.toLowerCase().includes("semana") || p.id?.toLowerCase().includes("week") ? (
+                      <span>📆 <strong style={{color:t.text}}>Subsazonal semanal:</strong> mostra tendência para a semana indicada, geralmente de 1 a 4 semanas à frente. Não é previsão diária por município.</span>
+                    ) : p.group?.toLowerCase().includes("saz") || p.title?.toLowerCase().includes("sazonal") || p.id?.toLowerCase().includes("seas") ? (
+                      <span>📅 <strong style={{color:t.text}}>Sazonal:</strong> resume a tendência provável para cerca de 3 meses, usando modelos climáticos e condições dos oceanos. Não informa o tempo de um dia específico.</span>
+                    ) : p.group?.toLowerCase().includes("precipitacao") || p.group?.toLowerCase().includes("chuva") ? (
                       <span>🌧 <strong style={{color:t.text}}>Chuva:</strong> indica onde o modelo espera mais ou menos chuva no período do mapa. Serve para tendência regional, não para decidir chuva diária por município.</span>
                     ) : p.group?.toLowerCase().includes("temperatura") || p.group?.toLowerCase().includes("temp") ? (
                       <span>🌡 <strong style={{color:t.text}}>Temperatura:</strong> compara a temperatura esperada com o padrão histórico. Vermelho costuma indicar mais quente que o normal; azul, mais frio que o normal.</span>
                     ) : p.group?.toLowerCase().includes("enso") || p.group?.toLowerCase().includes("el ni") ? (
                       <span>🌊 <strong style={{color:t.text}}>ENSO:</strong> mostra como El Niño, La Niña ou neutralidade podem influenciar chuva e temperatura. É contexto climático, não alerta local.</span>
-                    ) : p.group?.toLowerCase().includes("saz") || p.title?.toLowerCase().includes("sazonal") ? (
-                      <span>📅 <strong style={{color:t.text}}>Sazonal:</strong> resume a tendência provável para cerca de 3 meses, usando modelos climáticos e condições dos oceanos. Não informa o tempo de um dia específico.</span>
-                    ) : p.title?.toLowerCase().includes("subsaz") || p.group?.toLowerCase().includes("subsaz") ? (
-                      <span>📆 <strong style={{color:t.text}}>Subsazonal:</strong> olha as próximas semanas. É mais próximo que a sazonal, mas a incerteza aumenta quanto mais distante estiver a semana analisada.</span>
                     ) : (
                       <span>🛰 <strong style={{color:t.text}}>Produto CPTEC/INPE:</strong> imagem oficial de previsão ou monitoramento climático. Clique para ampliar. Use como contexto regional, sem acionar alerta sozinho.</span>
                     )}
@@ -2506,7 +2513,7 @@ export default function SentinelaRS() {
         {activeTab==="queimadas" && (
           <div style={{ display:"grid", gap:12 }}>
             <div style={{ padding:"10px 14px", background: dark?"rgba(249,115,22,0.08)":"rgba(249,115,22,0.05)", border:"1px solid rgba(249,115,22,0.3)", borderRadius:5, fontSize:10, color: dark?"#fdba74":"#c2410c", display:"flex", justifyContent:"space-between", alignItems:"center", gap:12, flexWrap:"wrap" }}>
-              <span>🔥 Focos via <strong>INPE BDQueimadas</strong> (48h). <strong>EFFIS/Copernicus</strong> fica como integração complementar possível para perigo de fogo, focos ativos e área queimada, sem acionar alerta enquanto não houver endpoint validado.</span>
+              <span>🔥 Focos via <strong>INPE BDQueimadas</strong> (48h). <strong>EFFIS/Copernicus</strong> conectado como WMS complementar; alerta operacional continua dependente de foco real georreferenciado no RS.</span>
               <button onClick={loadQueimadas} disabled={qLoading} style={{ background:"none", border:"1px solid rgba(249,115,22,0.5)", color:"#fdba74", padding:"5px 12px", borderRadius:4, cursor:"pointer", fontFamily:"inherit", fontSize:9, letterSpacing:1 }}>{qLoading ? "⏳ Consultando..." : "↻ Atualizar"}</button>
             </div>
             {!queimadas && !qLoading && (
@@ -2518,7 +2525,7 @@ export default function SentinelaRS() {
             <div style={{ ...s.card }}>
               <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:4 }}>ÁREAS MONITORADAS — PORTO ALEGRE AO CHUÍ</div>
               <div style={{ fontSize:9, color:t.textMuted, marginBottom:12, lineHeight:1.5 }}>
-                Corredor costeiro e lagunar para cruzar focos INPE, unidades de conservação, fumaça e camadas futuras EFFIS. Estes cards indicam área de monitoramento; só viram alerta quando houver foco real ou endpoint de risco validado.
+                Corredor costeiro e lagunar para cruzar focos INPE, unidades de conservação, fumaça e camadas complementares EFFIS/GWIS. Estes cards indicam área de monitoramento; só viram alerta quando houver foco real ou endpoint de risco validado.
               </div>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))", gap:8 }}>
                 {FIRE_MONITORED_AREAS_RS.map((area, idx)=>(
@@ -2531,7 +2538,7 @@ export default function SentinelaRS() {
                       <div style={{ fontSize:8, color:"#eab308", border:"1px solid rgba(234,179,8,0.45)", borderRadius:3, padding:"2px 6px" }}>monitorar</div>
                     </div>
                     <div style={{ fontSize:9, color:t.textMuted, lineHeight:1.45, marginTop:6 }}>{area.focus}</div>
-                    <div style={{ fontSize:8, color:t.textFaint, marginTop:7 }}>{area.lat.toFixed(2)}°, {area.lon.toFixed(2)}° · INPE/EFFIS quando integrado</div>
+                    <div style={{ fontSize:8, color:t.textFaint, marginTop:7 }}>{area.lat.toFixed(2)}°, {area.lon.toFixed(2)}° · INPE + EFFIS/GWIS complementar</div>
                   </div>
                 ))}
               </div>
@@ -2551,15 +2558,12 @@ export default function SentinelaRS() {
                     detectados no RS nas últimas 48h · INPE BDQueimadas
                     {queimadas?.latest ? ` · último foco: ${formatDateTimeBR(queimadas.latest)}` : ""}
                   </div>
-                  {queimadas?.files && (
-                    <div style={{ marginTop:8, fontSize:8, color:t.textFaint }}>
-                      Fonte consultada via Supabase: CSV diário INPE/Dados Abertos · arquivos OK: {queimadas.files.filter(f=>f.ok).length}/{queimadas.files.length}
+                  {/* EFFIS WMS complementar */}
+                  {effisHealth?.ok && (
+                    <div style={{ marginTop:10, padding:"8px 12px", background: dark?"rgba(34,197,94,0.07)":"rgba(34,197,94,0.06)", border:"1px solid rgba(34,197,94,0.22)", borderRadius:4, fontSize:9, color:t.textMuted }}>
+                      EFFIS WMS respondeu OK. Uso complementar: perigo meteorológico de fogo, focos ativos e área queimada. Não aciona alerta automático para RS sem cruzamento espacial validado.
                     </div>
                   )}
-                  {/* Nota sobre probabilidades queimadas */}
-                  <div style={{ marginTop:10, padding:"8px 12px", background: dark?"rgba(249,115,22,0.08)":"rgba(249,115,22,0.05)", border:"1px solid rgba(249,115,22,0.25)", borderRadius:4, fontSize:9, color:dark?"#fdba74":"#c2410c" }}>
-                    ℹ️ <strong>EFFIS nesta versão:</strong> integração complementar ainda não operacional. O alerta de queimadas só considera foco real retornado pelo INPE ou outro endpoint validado, com fonte e horário.
-                  </div>
                   {(Array.isArray(queimadas) ? queimadas : queimadas?.records)?.length > 0 && (
                     <div style={{ marginTop:10, display:"grid", gap:5, maxHeight:200, overflowY:"auto" }}>
                       {(Array.isArray(queimadas) ? queimadas : queimadas.records).slice(0,10).map((f,i)=>(
@@ -2592,7 +2596,7 @@ export default function SentinelaRS() {
                     </div>
                   </div>
                   <div style={{ marginTop:10, padding:"8px 12px", background: dark?"rgba(249,115,22,0.06)":"rgba(249,115,22,0.04)", border:"1px solid rgba(249,115,22,0.2)", borderRadius:4, fontSize:9, color:t.textMuted }}>
-                    ℹ️ EFFIS não está conectado em tempo real nesta versão. Não usar camada complementar como alerta operacional até existir endpoint validado.
+                    EFFIS WMS será verificado pela função complementar. Sem foco INPE validado, esta aba não aciona alerta operacional.
                   </div>
                   <button onClick={loadQueimadas} style={{ marginTop:10, background: dark?"rgba(249,115,22,0.1)":"rgba(249,115,22,0.08)", border:"1px solid rgba(249,115,22,0.4)", color:"#fdba74", padding:"7px 14px", borderRadius:4, cursor:"pointer", fontFamily:"inherit", fontSize:10 }}>
                     ↻ Tentar novamente
@@ -2608,16 +2612,24 @@ export default function SentinelaRS() {
                 Cadastro oficial CNUC/MMA conectado. E camada complementar de contexto; risco por UC em tempo real ainda exige cruzar foco INPE com geocerca/poligono validado.
               </div>
               <div style={{ display:"grid", gap:7 }}>
-                {(icmbioUcs?.ok ? icmbioUcs.records : APAS_RS).map((apa)=>(
+                {(icmbioUcs?.ok ? icmbioUcs.records : APAS_RS).map((apa)=>{
+                  const fireRecords = Array.isArray(queimadas) ? queimadas : (queimadas?.records || []);
+                  const areaText = `${apa.name || ""} ${apa.municipio || ""} ${apa.municipios || ""}`.toLowerCase();
+                  const hasFire = fireRecords.some((focus) => {
+                    const city = String(focus.municipio || focus.properties?.municipio || "").toLowerCase();
+                    return city && areaText.includes(city);
+                  });
+                  return (
                   <div key={apa.id || apa.name} style={{ display:"grid", gridTemplateColumns:"1fr auto auto", gap:10, alignItems:"center", padding:"9px 12px", background: dark?"rgba(0,0,0,0.2)":t.bg, border:`1px solid ${t.border}`, borderRadius:4 }}>
                     <div>
                       <div style={{ fontSize:11, fontWeight:600, color:t.text }}>{apa.name}</div>
                       <div style={{ fontSize:9, color:t.textMuted }}>{apa.municipio || apa.municipios || apa.categoria}</div>
                     </div>
                     <div style={{ fontSize:9, color:t.textFaint }}>{apa.area_ha ? `${Math.round(apa.area_ha).toLocaleString("pt-BR")} ha` : apa.lat ? `${apa.lat.toFixed(2)}S` : "CNUC"}</div>
-                    <div style={{ fontSize:8, padding:"2px 7px", border:`1px solid ${icmbioUcs?.ok ? "#22c55e66" : t.textFaint}`, color:icmbioUcs?.ok ? "#22c55e" : t.textMuted, borderRadius:3 }}>{icmbioUcs?.ok ? "oficial" : "sem dado"}</div>
+                    <div style={{ fontSize:8, padding:"2px 7px", border:`1px solid ${hasFire ? "#f97316" : "#22c55e66"}`, color:hasFire ? "#f97316" : "#22c55e", borderRadius:3 }}>{hasFire ? "Alerta" : "Normal"}</div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
               <div style={{ marginTop:10, padding:"9px 11px", background: dark?"rgba(249,115,22,0.06)":"rgba(249,115,22,0.04)", border:"1px solid rgba(249,115,22,0.15)", borderRadius:4, fontSize:9, color:t.textMuted }}>
                 {icmbioUcs?.ok ? `Fonte: MMA/ICMBio CNUC via CKAN Dados Abertos - ${icmbioUcs.total_rs} UCs no RS - exibindo ${icmbioUcs.count} prioritarias.` : "Cadastro local exibido porque a fonte CNUC/MMA nao respondeu agora."}
@@ -2625,16 +2637,16 @@ export default function SentinelaRS() {
             </div>
             {/* EFFIS */}
             <div style={{ ...s.card }}>
-              <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:4 }}>COPERNICUS EFFIS — INTEGRAÇÃO COMPLEMENTAR</div>
+              <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:4 }}>COPERNICUS EFFIS/GWIS — INTEGRAÇÃO COMPLEMENTAR</div>
               <div style={{ fontSize:9, color: dark?"#fef08a":"#854d0e", marginBottom:10, padding:"5px 10px", background: dark?"rgba(234,179,8,0.07)":"rgba(234,179,8,0.05)", border:"1px solid rgba(234,179,8,0.2)", borderRadius:4 }}>
-                🗓 EFFIS não está conectado em tempo real nesta versão. Não aciona alerta operacional.
+                {effisHealth?.ok ? "EFFIS WMS conectado. Uso complementar; não aciona alerta para RS sem geocerca/foco validado." : "EFFIS WMS ainda não respondeu nesta sessão. Para alerta global no RS, próxima etapa é integrar GWIS/FIRMS."}
               </div>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))", gap:8 }}>
                 {[
-                  { l:"Fire Danger Forecast",  v:"1 a 10 dias", c:"#f97316", d:"Perigo meteorológico de fogo. É previsão de condição favorável, não confirmação de incêndio." },
-                  { l:"Active Fires",  v:"MODIS/VIIRS", c:"#eab308", d:"Focos ativos detectados por satélite. Pode complementar o INPE após endpoint validado." },
-                  { l:"Burnt Areas",    v:"Área queimada", c:"#22c55e", d:"Perímetros/áreas queimadas para análise pós-evento." },
-                  { l:"Data request",       v:"Sob demanda", c:"#8b5cf6", d:"Produtos históricos ou brutos podem exigir solicitação específica ao EFFIS." },
+                  { l:"Previsão de perigo de fogo",  v:"1 a 10 dias", c:"#f97316", d:"Perigo meteorológico de fogo. É previsão de condição favorável, não confirmação de incêndio." },
+                  { l:"Focos ativos",  v:"MODIS/VIIRS", c:"#eab308", d:"Focos ativos detectados por satélite. Complementa o INPE após geocerca validada." },
+                  { l:"Áreas queimadas",    v:"Área queimada", c:"#22c55e", d:"Perímetros/áreas queimadas para análise pós-evento." },
+                  { l:"Solicitação de dados",       v:"Sob demanda", c:"#8b5cf6", d:"Produtos históricos ou brutos podem exigir solicitação específica ao EFFIS/GWIS." },
                 ].map(item=>(
                   <div key={item.l} style={{ background: dark?"rgba(0,0,0,0.3)":t.bg, padding:"10px 12px", borderRadius:4, borderTop:`3px solid ${item.c}` }}>
                     <div style={{ fontSize:9, color:t.textMuted, marginBottom:4 }}>{item.l}</div>
@@ -2644,7 +2656,7 @@ export default function SentinelaRS() {
                 ))}
               </div>
               <div style={{ fontSize:8, color:t.textFaint, marginTop:8 }}>
-                Copernicus EFFIS — European Forest Fire Information System · Referência estrutural · Para dados em tempo real: <a href="https://effis.jrc.ec.europa.eu/" target="_blank" rel="noreferrer" style={{ color:t.accent }}>effis.jrc.ec.europa.eu</a>
+                Copernicus EFFIS/GWIS · WMS complementar · endpoint verificado: {effisHealth?.ok ? "OK" : "aguardando resposta"}
               </div>
             </div>
           </div>
@@ -2715,24 +2727,13 @@ export default function SentinelaRS() {
         {activeTab==="apis" && (
           <div style={{ display:"grid", gap:12 }}>
 
-            <div style={{ ...s.card, border:"1px solid rgba(34,211,238,0.35)" }}>
-              <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:8 }}>POLÍTICA OPERACIONAL — FONTE REAL E FALLBACK</div>
-              <div style={{ display:"grid", gap:6, fontSize:10, color:t.textMuted, lineHeight:1.55 }}>
-                <div><strong style={{ color:t.text }}>O Sentinela·RS utiliza fontes reais ativas e indicadores derivados identificados.</strong> Alertas operacionais dependem de fontes oficiais, dados observados e regras explícitas. Camadas climáticas, satelitais, históricas e complementares não disparam alerta automático sozinhas.</div>
-                <div>✅ Dado operacional só é exibido como atual quando vem de endpoint real ativo, com fonte e horário.</div>
-                <div>⚠️ Fallback só é permitido quando já existe endpoint real configurado e a fonte primária falha.</div>
-                <div>📌 Quando fallback aparecer, o card deve informar que é última leitura válida salva e orientar verificação junto ao órgão responsável.</div>
-                <div>🚫 Fallback vencido, CSV manual, referência histórica e dado complementar não disparam novo alerta automático.</div>
-              </div>
-            </div>
-
             {/* BLOCO D — Saúde das fontes em tempo real */}
             <div style={{ ...s.card, border:`1px solid ${t.borderActive}` }}>
               <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:10 }}>SAÚDE DAS FONTES — ÚLTIMA VERIFICAÇÃO</div>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))", gap:8 }}>
                 {[
                   "Open-Meteo","INMET","CEMADEN","RADAR Lagoa","HidroSens","Defesa Civil RS",
-                  "NOAA/CPC ENSO","IRI/CCSR ENSO","CPTEC/INPE","INPE BDQueimadas","Copernicus Water","Copernicus Sentinel-1","Copernicus NDVI","Copernicus EMS","ANA HidroWeb",
+                  "NOAA/CPC ENSO","IRI/CCSR ENSO","CPTEC/INPE","INPE BDQueimadas","Copernicus EFFIS","Copernicus Water","Copernicus Sentinel-1","Copernicus NDVI","Copernicus EMS","ANA HidroWeb",
                 ].map(name => {
                   const h = getValidatedSourceHealth(name);
                   const ok   = h?.ok;
@@ -2784,6 +2785,7 @@ export default function SentinelaRS() {
               })(),
               { n:"NOAA/CPC + IRI — ENSO",   st:"ATIVO",  c:"#22c55e", d:"ENSO: Niño 3.4, ONI e cenário probabilístico dominante. Índices observados e probabilidades atualizados via Edge Functions.", a:"Dados públicos, atualização mensal", h:"1. iri.columbia.edu/our-expertise/climate/forecasts/enso/current/\n2. Atualizar valores activeENSO.nino34, oni3m, prob e forecast no código\n3. Publicação NOAA/IRI: primeira semana de cada mês" },
               { n:"INPE BDQueimadas",          st:"ATIVO",     c:"#22c55e", d:"Focos de fogo ativo no RS via dados abertos CSV do INPE. Consulta últimos 2 dias, filtra RS no Supabase e aceita retorno vazio como operação normal.", a:"Sem chave", h:"Endpoint: inpe-queimadas-rs. Fonte pública: dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil. Vazio significa sem foco no período, não falha." },
+              { n:"Copernicus EFFIS",          st:effisHealth?.ok ? "ATIVO" : "AGUARDANDO", c:effisHealth?.ok ? "#22c55e" : "#eab308", d:"WMS público EFFIS conectado como camada complementar de perigo/focos/área queimada. Para alerta no RS, exige cruzamento espacial validado e/ou integração global GWIS/FIRMS.", a:"WMS público; GWIS/FIRMS pode exigir chave", h:"Endpoint: effis-wms-health. Verifica GetCapabilities do WMS EFFIS. Não aciona alerta automático sozinho." },
               { n:"Copernicus Water / Sentinel-2", st:"ATIVO", c:"#22c55e", d:"Indicador real de água superficial por Sentinel-2 L2A/NDWI para a Lagoa dos Patos. Contexto hidrológico por satélite; não aciona alerta sozinho.", a:"Copernicus Data Space / Sentinel Hub", h:"Endpoint: copernicus-water. Produto óptico: depende de baixa nebulosidade. Usar como contexto junto com Defesa Civil, CEMADEN, RADAR Lagoa e HidroSens." },
               { n:"Copernicus Sentinel-1 SAR", st:"ATIVO", c:"#22c55e", d:"Indicador real SAR de água/alagamento sob nuvens/noite. Contexto remoto por radar; não é alerta oficial nem máscara validada de inundação.", a:"Copernicus Data Space / Sentinel Hub", h:"Endpoint: copernicus-sentinel1-water. Método: Sentinel-1 GRD IW/DV. Pode falhar em áreas urbanas, vegetação inundada, vento forte sobre água e sombras de relevo. Confirmar com órgãos responsáveis." },
               { n:"Copernicus NDVI / Vegetação", st:"ATIVO", c:"#22c55e", d:"Indicador real de vegetação/estiagem por Sentinel-2 L2A/NDVI. Contexto ambiental; não aciona alerta sozinho.", a:"Copernicus Data Space / Sentinel Hub", h:"Endpoint: copernicus-ndvi. Produto óptico: depende de baixa nebulosidade. Usar como contexto, não como alerta automático." },
@@ -2800,12 +2802,6 @@ export default function SentinelaRS() {
                   <div style={{ flex:1 }}>
                     <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:3 }}>
                       <div style={{ fontSize:12, fontWeight:600, color:t.text }}>{api.n}</div>
-                      {/* badge de saúde ao vivo */}
-                      {sourceHealth[api.n] !== undefined && (
-                        <span style={{ fontSize:7, padding:"1px 5px", borderRadius:3, border:`1px solid ${sourceHealth[api.n].ok?"#22c55e":"#ef4444"}`, color:sourceHealth[api.n].ok?"#22c55e":"#ef4444" }}>
-                          {sourceHealth[api.n].ok ? "● LIVE OK" : "○ FALHOU"}
-                        </span>
-                      )}
                     </div>
                     <div style={{ fontSize:10, color:t.textMuted, marginBottom:3 }}>{api.d}</div>
                     <div style={{ fontSize:9, color:t.textFaint }}>🔑 {api.a}</div>
@@ -2856,7 +2852,6 @@ export default function SentinelaRS() {
 
         <div style={{ marginTop:28, borderTop:`1px solid ${t.border}`, paddingTop:12, display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:6 }}>
           <div style={{ fontSize:9, color:t.textFaint }}>SENTINELA·RS v2.2 · Open-Meteo + INMET + CEMADEN + Lagoa RADAR + HidroSens + ANA complementar/aguardando API + NOAA ENSO + INPE + Copernicus · Fonte CEMADEN: {CEMADEN_ATTRIBUTION}</div>
-          <div style={{ fontSize:9, color:t.textFaint }}>Atualização: 30 min · PWA · github.com/cobradeca/sentinela-rs</div>
         </div>
       </div>
 
