@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { usePush } from "./hooks/usePush";
+import { FreshnessBadge } from "./components/FreshnessBadge";
+import { Sparkline as HistorySparkline } from "./components/Sparkline";
+import { appendLagoaHistorySnapshot, loadLagoaHistory } from "./services/lagoaHistory";
 
 // ─── BLOCO C: frescor do dado ─────────────────────────────────────────────────
 function dataStaleness(measuredAt) {
@@ -8,26 +11,6 @@ function dataStaleness(measuredAt) {
   if (ageMin <= 180)  return "fresh";
   if (ageMin <= 1440) return "attention";
   return "stale";
-}
-
-function StaleBadge({ measuredAt, fallback, fallbackAgeMin, t }) {
-  const status = fallback ? "stale" : dataStaleness(measuredAt);
-  const cfg = {
-    fresh:     { label: "Atualizado",    color: "#22c55e", dot: "●" },
-    attention: { label: "Atenção",       color: "#eab308", dot: "◐" },
-    stale:     { label: "Desatualizado", color: "#ef4444", dot: "○" },
-    unknown:   { label: "Sem horário",   color: "#64748b", dot: "–" },
-  }[status];
-  const age = fallback && fallbackAgeMin
-    ? ` · ${fallbackAgeMin}min atrás`
-    : measuredAt
-    ? ` · ${Math.round((Date.now()-new Date(measuredAt).getTime())/60000)}min atrás`
-    : "";
-  return (
-    <span style={{ fontSize:8, color:cfg.color, fontWeight:600 }}>
-      {cfg.dot} {cfg.label}{age}
-    </span>
-  );
 }
 
 // ─── ESTAÇÕES ────────────────────────────────────────────────────────────────
@@ -489,54 +472,6 @@ function radarRiskToLevel(status) {
 const LAGOA_FALLBACK_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 const LAGOA_RADAR_CACHE_KEY = "sentinela_rs_lagoa_radar_last_valid_v1";
 const HIDROSENS_LARANJAL_CACHE_KEY = "sentinela_rs_hidrosens_laranjal_last_valid_v1";
-// BLOCO B — histórico em localStorage (ring buffer 48 pontos ~24h @ 30min)
-const LAGOA_HISTORY_KEY = "sentinela_rs_lagoa_history_v1";
-const HISTORY_MAX_POINTS = 48;
-
-function loadHistory() {
-  try { return JSON.parse(localStorage.getItem(LAGOA_HISTORY_KEY) || "{}"); } catch { return {}; }
-}
-
-function appendHistory(stationId, level_m, measuredAt) {
-  if (typeof level_m !== "number") return;
-  const all = loadHistory();
-  const arr = all[stationId] || [];
-  const last = arr[arr.length - 1];
-  // evita duplicatas de mesmo horário
-  if (last && last.t === measuredAt) return;
-  arr.push({ t: measuredAt || new Date().toISOString(), v: level_m });
-  if (arr.length > HISTORY_MAX_POINTS) arr.splice(0, arr.length - HISTORY_MAX_POINTS);
-  all[stationId] = arr;
-  try { localStorage.setItem(LAGOA_HISTORY_KEY, JSON.stringify(all)); } catch {}
-}
-
-function Sparkline({ points, color, t }) {
-  if (!points || points.length < 2) return <div style={{ fontSize:8, color:t.textFaint }}>sem histórico</div>;
-  const vals = points.map(p => p.v);
-  const min = Math.min(...vals);
-  const max = Math.max(...vals);
-  const range = max - min || 0.01;
-  const W = 180, H = 36;
-  const xs = points.map((_, i) => (i / (points.length - 1)) * W);
-  const ys = points.map(p => H - ((p.v - min) / range) * H);
-  const d = xs.map((x, i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)},${ys[i].toFixed(1)}`).join(" ");
-  const lastV = points[points.length - 1].v;
-  return (
-    <div style={{ marginTop:8 }}>
-      <div style={{ fontSize:8, color:t.textMuted, marginBottom:3 }}>HISTÓRICO ~24h ({points.length} leituras)</div>
-      <svg width={W} height={H + 4} style={{ display:"block" }}>
-        <polyline points={xs.map((x,i)=>`${x},${ys[i]}`).join(" ")} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" opacity="0.85"/>
-        <circle cx={xs[xs.length-1]} cy={ys[ys.length-1]} r="2.5" fill={color}/>
-      </svg>
-      <div style={{ display:"flex", justifyContent:"space-between", fontSize:7, color:t.textFaint, marginTop:2 }}>
-        <span>mín {min.toFixed(2)}m</span>
-        <span style={{ color }}>{lastV.toFixed(2)}m agora</span>
-        <span>máx {max.toFixed(2)}m</span>
-      </div>
-    </div>
-  );
-}
-
 function saveFallbackCache(key, data) {
   try {
     if (typeof window === "undefined" || !window.localStorage) return;
@@ -1078,6 +1013,8 @@ export default function SentinelaRS() {
   const [stationData, setStationData]   = useState({});
   const [loading, setLoading]           = useState(true);
   const [lastUpdate, setLastUpdate]     = useState(null);
+  const [lagoaHistory, setLagoaHistory] = useState({});
+  const [lagoaHistoryMeta, setLagoaHistoryMeta] = useState({ source: "sessão atual", persistent: false });
   const [selStation, setSelStation]     = useState(STATIONS_CIDADES[0]); // POA default
   const [activeTab, setActiveTab]       = useState("dashboard");
   const [alerts, setAlerts]             = useState([]);
@@ -1211,6 +1148,8 @@ export default function SentinelaRS() {
     const newAlerts = [];
     const health = { ...sourceHealthRef.current };
     const t0 = Date.now();
+    const historyResult = await loadLagoaHistory(STATIONS_LAGOA.map((station) => station.id));
+    let nextLagoaHistory = historyResult.history || {};
 
     // ── fetch com rastreio de saúde ──────────────────────────────────────────
     async function tracked(key, fn) {
@@ -1289,9 +1228,9 @@ export default function SentinelaRS() {
         } : null;
 
         // Não usa limiar único de 0,8m. Risco de nível só entra quando a fonte traz limiar próprio validado.
-        // BLOCO B — registra histórico local
+        // Registra o ponto atual na série exibida e mescla com histórico persistido do Supabase.
         if (lagoa?.isReal && lagoa.atual !== null) {
-          appendHistory(st.id, lagoa.atual, getLagoaMeasuredAt(lagoa));
+          nextLagoaHistory = appendLagoaHistorySnapshot(nextLagoaHistory, st.id, lagoa.atual, getLagoaMeasuredAt(lagoa));
         }
 
         const baseRisk = getRiskLevel(precip, tempMin, windMax, null);
@@ -1329,6 +1268,12 @@ export default function SentinelaRS() {
     sourceHealthRef.current = health;
     setSourceHealth({ ...health });
     setStationData(results);
+    setLagoaHistory(nextLagoaHistory);
+    setLagoaHistoryMeta({
+      source: historyResult.source,
+      persistent: historyResult.persistent,
+      error: historyResult.error || null,
+    });
     setAlerts([...officialAlerts, ...newAlerts]);
     setLastUpdate(new Date());
     setLoading(false);
@@ -2039,7 +1984,7 @@ export default function SentinelaRS() {
                         </div>
                         {/* BLOCO C — frescor do dado */}
                         <div style={{ marginTop:6 }}>
-                          <StaleBadge
+                          <FreshnessBadge
                             measuredAt={getLagoaMeasuredAt(lagoa)}
                             fallback={lagoa?.isFallback}
                             fallbackAgeMin={lagoa?.fallback_age_minutes}
@@ -2048,9 +1993,9 @@ export default function SentinelaRS() {
                         </div>
                         {/* BLOCO B — sparkline histórico */}
                         {(() => {
-                          const hist = loadHistory()[point.id] || [];
+                          const hist = lagoaHistory[point.id] || [];
                           return hist.length >= 2 ? (
-                            <Sparkline points={hist} color={rColor} t={t} />
+                            <HistorySparkline points={hist} color={rColor} t={t} sourceLabel={lagoaHistoryMeta.source} />
                           ) : null;
                         })()}
                       </>
