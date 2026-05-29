@@ -1613,6 +1613,29 @@ export default function SentinelaRS() {
     { i:"🔊", n:"Sirene IoT", status:channelStatus("sirene"), s: notifyChannels.sirene?.configured ? "Crítico com webhook" : "Aguardando hardware/webhook", h: notifyChannels.sirene?.note || "Secrets esperados no Supabase: SIRENE_WEBHOOK_URL e opcionalmente SIRENE_WEBHOOK_TOKEN. A sirene só recebe POST quando o alerta é CRITICO e houver hardware pronto." },
   ];
 
+  const renderNavButton = (tab, compact = false) => (
+    <button
+      key={tab.key}
+      onClick={() => setActiveTab(tab.key)}
+      className={compact ? "sr-mobile-tab-button" : "sr-side-tab-button"}
+      style={{
+        padding: compact ? "8px 12px" : "10px 12px",
+        fontSize: 12,
+        fontFamily: "inherit",
+        letterSpacing: 1,
+        cursor: "pointer",
+        borderRadius: 6,
+        textAlign: "left",
+        background: activeTab === tab.key ? t.tabActiveBg : "transparent",
+        border: activeTab === tab.key ? `1px solid ${t.borderActive}` : `1px solid ${t.border}`,
+        color: activeTab === tab.key ? t.tabActive : t.tabInactive,
+        transition: "all 0.2s",
+      }}
+    >
+      {tab.label}
+    </button>
+  );
+
   return (
     <div style={{ minHeight:"100vh", background:t.bg, color:t.text, fontFamily:"'IBM Plex Mono','Courier New',monospace", transition:"background 0.3s,color 0.3s" }}>
       {/* Grid bg */}
@@ -1623,7 +1646,7 @@ export default function SentinelaRS() {
         <CardDetail station={expandedCard} d={stationData[expandedCard.id]} onClose={()=>setExpandedCard(null)} />
       )}
 
-      <div style={{ position:"relative", zIndex:2, maxWidth:1320, margin:"0 auto", padding:"0 16px 40px" }}>
+      <div style={{ position:"relative", zIndex:2, maxWidth:1420, margin:"0 auto", padding:"0 16px 40px" }}>
 
         {/* ── HEADER ── */}
         <header style={{ borderBottom:`1px solid ${dark?"rgba(34,211,238,0.2)":t.border}`, paddingBottom:14, marginBottom:20, paddingTop:18 }}>
@@ -1666,18 +1689,19 @@ export default function SentinelaRS() {
           </div>
         </header>
 
-        {/* ── TABS ── */}
-        <div style={{ display:"flex", gap:2, marginBottom:20, flexWrap:"wrap" }}>
-          {TABS.map(tab => (
-            <button key={tab.key} onClick={()=>setActiveTab(tab.key)} style={{
-              padding:"7px 13px", fontSize:11, fontFamily:"inherit", letterSpacing:1, cursor:"pointer", borderRadius:4,
-              background: activeTab===tab.key ? t.tabActiveBg : "transparent",
-              border: activeTab===tab.key ? `1px solid ${t.borderActive}` : `1px solid ${t.border}`,
-              color: activeTab===tab.key ? t.tabActive : t.tabInactive,
-              transition:"all 0.2s",
-            }}>{tab.label}</button>
-          ))}
-        </div>
+        <div className="sr-shell">
+          <aside className="sr-sidebar" style={{ border:`1px solid ${t.border}`, background:t.cardBg, boxShadow:t.shadowCard }}>
+            <div style={{ fontSize:9, color:t.textMuted, letterSpacing:2, margin:"0 0 10px 2px" }}>NAVEGAÇÃO</div>
+            <nav className="sr-sidebar-nav">
+              {TABS.map((tab) => renderNavButton(tab))}
+            </nav>
+          </aside>
+
+          <div className="sr-mobile-tabs" style={{ display:"none", gap:6, marginBottom:16, overflowX:"auto", paddingBottom:4 }}>
+            {TABS.map((tab) => renderNavButton(tab, true))}
+          </div>
+
+          <main className="sr-content">
 
         {loading && activeTab!=="copernicus" && activeTab!=="enso" && activeTab!=="apis" && (
           <div style={{ textAlign:"center", padding:50, color:t.accent }}>
@@ -2815,6 +2839,9 @@ export default function SentinelaRS() {
             </div>
           </div>
         )}
+
+          </main>
+        </div>
 
         {riskExplain && (
           <div

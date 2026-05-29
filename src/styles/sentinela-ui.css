@@ -428,6 +428,38 @@ div[style*="grid-template-columns: repeat(7"] {
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
 }
 
+.sr-shell {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.sr-sidebar {
+  position: sticky;
+  top: 14px;
+  border-radius: 10px;
+  padding: 12px;
+  max-height: calc(100vh - 28px);
+  overflow: auto;
+}
+
+.sr-sidebar-nav {
+  display: grid;
+  gap: 7px;
+}
+
+.sr-side-tab-button {
+  width: 100%;
+  text-align: left;
+  min-height: 42px;
+  line-height: 1.25;
+}
+
+.sr-content {
+  min-width: 0;
+}
+
 .sr-city-card,
 .sr-lagoa-card {
   display: flex;
@@ -516,6 +548,23 @@ div[style*="grid-template-columns: repeat(7"] {
 }
 
 @media (max-width: 920px) {
+  .sr-shell {
+    display: block;
+  }
+
+  .sr-sidebar {
+    display: none;
+  }
+
+  .sr-mobile-tabs {
+    display: flex !important;
+  }
+
+  .sr-mobile-tab-button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
   .sr-city-grid,
   .sr-lagoa-grid {
     grid-template-columns: 1fr !important;
