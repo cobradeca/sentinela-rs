@@ -99,6 +99,7 @@ const HIDROSENS_LARANJAL_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.c
 const NOAA_ENSO_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/noaa-enso";
 const IRI_ENSO_PROB_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/iri-enso-probabilidades";
 const CPTEC_INPE_PRODUCTS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/cptec-inpe-produtos";
+const INPE_QUEIMADAS_RS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/inpe-queimadas-rs";
 const COPERNICUS_WATER_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/copernicus-water";
 const COPERNICUS_SENTINEL1_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/copernicus-sentinel1-water";
 const COPERNICUS_NDVI_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/copernicus-ndvi";
@@ -707,8 +708,11 @@ async function fetchAnaLevel(anaCode) {
 // INPE BDQueimadas
 async function fetchQueimadas() {
   try {
-    const url = "https://queimadas.dgi.inpe.br/api/focos/?pais_id=33&estado_id=43&quantidade=100";
-    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    const res = await fetch(`${INPE_QUEIMADAS_RS_FUNCTION_URL}?days=2&limit=100`, {
+      signal: AbortSignal.timeout(15000),
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
     if (!res.ok) return null;
     return res.json();
   } catch { return null; }
@@ -1283,7 +1287,9 @@ export default function SentinelaRS() {
 
   const loadQueimadas = useCallback(async () => {
     setQLoading(true);
+    const startedAt = Date.now();
     const data = await fetchQueimadas();
+    markSourceHealth("INPE BDQueimadas", Boolean(data?.ok), startedAt, data?.ok ? null : data?.error || "sem resposta operacional");
     setQueimadas(data);
     setQLoading(false);
   }, []);
@@ -2506,21 +2512,34 @@ export default function SentinelaRS() {
               ) : queimadas ? (
                 <div>
                   <div style={{ fontSize:22, fontWeight:700, color:"#f97316", marginBottom:4 }}>
-                    {Array.isArray(queimadas)?queimadas.length:queimadas?.count||"–"} focos
+                    {Array.isArray(queimadas)?queimadas.length:queimadas?.count ?? "–"} focos
                   </div>
-                  <div style={{ fontSize:10, color:t.textMuted }}>detectados no RS nas últimas 48h · INPE BDQueimadas</div>
+                  <div style={{ fontSize:10, color:t.textMuted }}>
+                    detectados no RS nas últimas 48h · INPE BDQueimadas
+                    {queimadas?.latest ? ` · último foco: ${formatDateTimeBR(queimadas.latest)}` : ""}
+                  </div>
+                  {queimadas?.files && (
+                    <div style={{ marginTop:8, fontSize:8, color:t.textFaint }}>
+                      Fonte consultada via Supabase: CSV diário INPE/Dados Abertos · arquivos OK: {queimadas.files.filter(f=>f.ok).length}/{queimadas.files.length}
+                    </div>
+                  )}
                   {/* Nota sobre probabilidades queimadas */}
                   <div style={{ marginTop:10, padding:"8px 12px", background: dark?"rgba(249,115,22,0.08)":"rgba(249,115,22,0.05)", border:"1px solid rgba(249,115,22,0.25)", borderRadius:4, fontSize:9, color:dark?"#fdba74":"#c2410c" }}>
                     ℹ️ <strong>EFFIS nesta versão:</strong> integração complementar ainda não operacional. O alerta de queimadas só considera foco real retornado pelo INPE ou outro endpoint validado, com fonte e horário.
                   </div>
-                  {Array.isArray(queimadas) && queimadas.length > 0 && (
+                  {(Array.isArray(queimadas) ? queimadas : queimadas?.records)?.length > 0 && (
                     <div style={{ marginTop:10, display:"grid", gap:5, maxHeight:200, overflowY:"auto" }}>
-                      {queimadas.slice(0,10).map((f,i)=>(
+                      {(Array.isArray(queimadas) ? queimadas : queimadas.records).slice(0,10).map((f,i)=>(
                         <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"5px 8px", background: dark?"rgba(0,0,0,0.3)":t.bg, borderRadius:3, fontSize:9, color:t.textMuted }}>
                           <span>🔥 {f.municipio||f.properties?.municipio||"RS"}</span>
                           <span>{f.datahora||f.properties?.datahora||"–"}</span>
                         </div>
                       ))}
+                    </div>
+                  )}
+                  {queimadas?.ok && queimadas?.count === 0 && (
+                    <div style={{ marginTop:10, padding:"8px 12px", background: dark?"rgba(34,197,94,0.07)":"rgba(34,197,94,0.06)", border:"1px solid rgba(34,197,94,0.22)", borderRadius:4, fontSize:9, color:t.textMuted }}>
+                      Consulta operacional OK. Nenhum foco detectado no RS no período consultado.
                     </div>
                   )}
                 </div>
@@ -2688,7 +2707,7 @@ export default function SentinelaRS() {
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))", gap:8 }}>
                 {[
                   "Open-Meteo","INMET","CEMADEN","RADAR Lagoa","HidroSens","Defesa Civil RS",
-                  "NOAA/CPC ENSO","IRI/CCSR ENSO","CPTEC/INPE","Copernicus Water","Copernicus Sentinel-1","Copernicus NDVI","Copernicus EMS","ANA HidroWeb",
+                  "NOAA/CPC ENSO","IRI/CCSR ENSO","CPTEC/INPE","INPE BDQueimadas","Copernicus Water","Copernicus Sentinel-1","Copernicus NDVI","Copernicus EMS","ANA HidroWeb",
                 ].map(name => {
                   const h = getValidatedSourceHealth(name);
                   const ok   = h?.ok;
@@ -2739,7 +2758,7 @@ export default function SentinelaRS() {
                 };
               })(),
               { n:"NOAA/CPC + IRI — ENSO",   st:"ATIVO",  c:"#22c55e", d:"ENSO: Niño 3.4, ONI e cenário probabilístico dominante. Índices observados e probabilidades atualizados via Edge Functions.", a:"Dados públicos, atualização mensal", h:"1. iri.columbia.edu/our-expertise/climate/forecasts/enso/current/\n2. Atualizar valores activeENSO.nino34, oni3m, prob e forecast no código\n3. Publicação NOAA/IRI: primeira semana de cada mês" },
-              { n:"INPE BDQueimadas",          st:"ATIVO",     c:"#22c55e", d:"Focos de queimada últimas 48h no RS — API pública. Exibe histórico de referência quando API indisponível.", a:"Sem chave", h:null },
+              { n:"INPE BDQueimadas",          st:"ATIVO",     c:"#22c55e", d:"Focos de fogo ativo no RS via dados abertos CSV do INPE. Consulta últimos 2 dias, filtra RS no Supabase e aceita retorno vazio como operação normal.", a:"Sem chave", h:"Endpoint: inpe-queimadas-rs. Fonte pública: dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil. Vazio significa sem foco no período, não falha." },
               { n:"Copernicus Water / Sentinel-2", st:"ATIVO", c:"#22c55e", d:"Indicador real de água superficial por Sentinel-2 L2A/NDWI para a Lagoa dos Patos. Contexto hidrológico por satélite; não aciona alerta sozinho.", a:"Copernicus Data Space / Sentinel Hub", h:"Endpoint: copernicus-water. Produto óptico: depende de baixa nebulosidade. Usar como contexto junto com Defesa Civil, CEMADEN, RADAR Lagoa e HidroSens." },
               { n:"Copernicus Sentinel-1 SAR", st:"ATIVO", c:"#22c55e", d:"Indicador real SAR de água/alagamento sob nuvens/noite. Contexto remoto por radar; não é alerta oficial nem máscara validada de inundação.", a:"Copernicus Data Space / Sentinel Hub", h:"Endpoint: copernicus-sentinel1-water. Método: Sentinel-1 GRD IW/DV. Pode falhar em áreas urbanas, vegetação inundada, vento forte sobre água e sombras de relevo. Confirmar com órgãos responsáveis." },
               { n:"Copernicus NDVI / Vegetação", st:"ATIVO", c:"#22c55e", d:"Indicador real de vegetação/estiagem por Sentinel-2 L2A/NDVI. Contexto ambiental; não aciona alerta sozinho.", a:"Copernicus Data Space / Sentinel Hub", h:"Endpoint: copernicus-ndvi. Produto óptico: depende de baixa nebulosidade. Usar como contexto, não como alerta automático." },
