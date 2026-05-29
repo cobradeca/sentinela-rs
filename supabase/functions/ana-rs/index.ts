@@ -9,6 +9,8 @@ const corsHeaders = {
 
 type JsonRecord = Record<string, unknown>;
 
+let anaAuthCache: { token: string; clientId: string | null; expiresAt: number } | null = null;
+
 function jsonResponse(body: JsonRecord, status = 200, cacheControl = "no-store") {
   return new Response(JSON.stringify(body), {
     status,
@@ -114,49 +116,75 @@ function normalizeBearerToken(token: string): string {
   return token.replace(/^Bearer\s+/i, "").trim();
 }
 
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function getAnaAuth(): Promise<{ token: string; clientId: string | null }> {
+  if (anaAuthCache && anaAuthCache.expiresAt > Date.now()) {
+    return { token: anaAuthCache.token, clientId: anaAuthCache.clientId };
+  }
+
   const credentials = getAnaCredentials();
 
   if (!credentials.identificador || !credentials.senha) {
     throw new Error("ANA HidroWeb REST nao configurado: defina ANA_HIDROWEB_IDENTIFICADOR e ANA_HIDROWEB_SENHA nos secrets do Supabase.");
   }
 
-  const authUrl = `${ANA_REST_BASE_URL}/EstacoesTelemetricas/OAUth/v1`;
-  const response = await fetch(authUrl, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      Identificador: credentials.identificador,
-      Senha: credentials.senha,
-      "User-Agent": "SentinelaRS/1.0",
-    },
-  });
+  let payload: unknown = null;
+  let lastStatus = 0;
+  let lastText = "";
 
-  const text = await response.text();
-  let payload: unknown = text;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const authUrl = `${ANA_REST_BASE_URL}/EstacoesTelemetricas/OAUth/v1`;
+    const response = await fetch(authUrl, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        Identificador: credentials.identificador,
+        Senha: credentials.senha,
+        "User-Agent": "SentinelaRS/1.0",
+      },
+    });
 
-  try {
-    payload = JSON.parse(text);
-  } catch {
-    // Mantem o texto bruto para extracao defensiva do token.
-  }
+    lastStatus = response.status;
+    lastText = await response.text();
+    payload = lastText;
 
-  if (!response.ok) {
+    try {
+      payload = JSON.parse(lastText);
+    } catch {
+      // Mantem o texto bruto para extracao defensiva do token.
+    }
+
+    if (response.ok) break;
+    if (attempt < 3 && (response.status === 417 || response.status === 429 || response.status >= 500)) {
+      await sleep(500 * attempt);
+      continue;
+    }
+
     const message = typeof payload === "object" && payload && "message" in payload
       ? String((payload as JsonRecord).message)
-      : text.slice(0, 180);
+      : lastText.slice(0, 180);
     throw new Error(`ANA auth HTTP ${response.status}: ${message}`);
   }
 
   const token = findToken(payload);
   if (!token) {
-    throw new Error("ANA auth respondeu, mas nenhum access token foi encontrado no payload.");
+    throw new Error(`ANA auth HTTP ${lastStatus}: token nao encontrado no payload.`);
   }
 
-  return {
+  const auth = {
     token: normalizeBearerToken(token),
     clientId: credentials.clientId || findStringByKeys(payload, ["clientid", "clientId", "client_id", "idCliente", "identificador"]),
   };
+
+  anaAuthCache = {
+    ...auth,
+    expiresAt: Date.now() + 50 * 60 * 1000,
+  };
+
+  return auth;
 }
 
 function asNumber(value: unknown): number | null {
@@ -271,12 +299,20 @@ function getAgeMinutes(isoDate: string | null): number | null {
   return Number.isFinite(age) ? Math.max(0, Math.round(age)) : null;
 }
 
+function extractAnaMessage(payload: unknown, fallback: string): string {
+  if (!payload || typeof payload !== "object") return fallback;
+  const raw = (payload as JsonRecord).message;
+  const message = raw === null || raw === undefined ? "" : String(raw).trim();
+  if (!message || /^sucesso$/i.test(message)) return fallback;
+  return message;
+}
+
 async function fetchAnaStation(codEstacao: string) {
   const auth = await getAnaAuth();
   const url = new URL(`${ANA_REST_BASE_URL}/EstacoesTelemetricas/HidroinfoanaSerieTelemetricaAdotada/v1`);
   url.searchParams.set("Código da Estação", codEstacao);
   url.searchParams.set("Tipo Filtro Data", "DATA_LEITURA");
-  url.searchParams.set("Range Intervalo de busca", "DIAS_2");
+  url.searchParams.set("Range Intervalo de busca", "DIAS_30");
   url.searchParams.set("Data de Busca (yyyy-MM-dd)", new Date().toISOString().slice(0, 10));
 
   const apiHeaders: Record<string, string> = {
@@ -318,9 +354,7 @@ async function fetchAnaStation(codEstacao: string) {
   const stale = ageMinutes === null || ageMinutes > MAX_OPERATIONAL_AGE_MINUTES;
 
   if (!latest) {
-    const message = typeof payload === "object" && payload && "message" in payload
-      ? String((payload as JsonRecord).message)
-      : "Sem dado de nivel adotado no periodo consultado.";
+    const anaMessage = extractAnaMessage(payload, "");
 
     return {
       ok: false,
@@ -328,7 +362,8 @@ async function fetchAnaStation(codEstacao: string) {
       codEstacao,
       operational: false,
       stale: true,
-      error: message,
+      error: "Sem registros de nivel adotado para esta estacao no periodo consultado.",
+      ana_message: anaMessage || null,
       latest: null,
       records: [],
       raw_status: typeof payload === "object" && payload ? (payload as JsonRecord).status ?? null : null,
