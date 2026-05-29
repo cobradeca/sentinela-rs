@@ -32,21 +32,14 @@ function getAnaCredentials() {
   return {
     identificador: getEnv(["ANA_HIDROWEB_IDENTIFICADOR", "ANA_HIDROWEB_USER", "ANA_HIDROWEB_USUARIO"]),
     senha: getEnv(["ANA_HIDROWEB_SENHA", "ANA_HIDROWEB_PASSWORD"]),
+    clientId: getEnv(["ANA_HIDROWEB_CLIENT_ID", "ANA_HIDROWEB_CLIENTID", "ANA_HIDROWEB_CLIENT"]),
   };
-}
-
-function flattenValues(value: unknown): unknown[] {
-  if (Array.isArray(value)) return value.flatMap(flattenValues);
-  if (value && typeof value === "object") {
-    return Object.values(value as JsonRecord).flatMap(flattenValues);
-  }
-  return [value];
 }
 
 function findToken(value: unknown): string | null {
   if (typeof value === "string") {
     const trimmed = value.trim();
-    return trimmed.length > 20 ? trimmed : null;
+    return /^[A-Za-z0-9._~+/=-]{20,}$/.test(trimmed) ? trimmed : null;
   }
 
   if (Array.isArray(value)) {
@@ -60,6 +53,9 @@ function findToken(value: unknown): string | null {
   if (value && typeof value === "object") {
     const record = value as JsonRecord;
     const preferredKeys = [
+      "tokenautenticacao",
+      "tokenAutenticacao",
+      "token_autenticacao",
       "access_token",
       "accessToken",
       "accesstoken",
@@ -85,7 +81,40 @@ function findToken(value: unknown): string | null {
   return null;
 }
 
-async function getAnaAccessToken(): Promise<string> {
+function findStringByKeys(value: unknown, keys: string[]): string | null {
+  if (!value || typeof value !== "object") return null;
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = findStringByKeys(item, keys);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  const record = value as JsonRecord;
+  const normalizedKeys = keys.map((key) => key.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase());
+
+  for (const [key, item] of Object.entries(record)) {
+    const normalized = key.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    if (normalizedKeys.includes(normalized) && item !== null && item !== undefined && String(item).trim()) {
+      return String(item).trim();
+    }
+  }
+
+  for (const item of Object.values(record)) {
+    const found = findStringByKeys(item, keys);
+    if (found) return found;
+  }
+
+  return null;
+}
+
+function normalizeBearerToken(token: string): string {
+  return token.replace(/^Bearer\s+/i, "").trim();
+}
+
+async function getAnaAuth(): Promise<{ token: string; clientId: string | null }> {
   const credentials = getAnaCredentials();
 
   if (!credentials.identificador || !credentials.senha) {
@@ -124,7 +153,10 @@ async function getAnaAccessToken(): Promise<string> {
     throw new Error("ANA auth respondeu, mas nenhum access token foi encontrado no payload.");
   }
 
-  return token;
+  return {
+    token: normalizeBearerToken(token),
+    clientId: credentials.clientId || findStringByKeys(payload, ["clientid", "clientId", "client_id", "idCliente", "identificador"]),
+  };
 }
 
 function asNumber(value: unknown): number | null {
@@ -240,19 +272,28 @@ function getAgeMinutes(isoDate: string | null): number | null {
 }
 
 async function fetchAnaStation(codEstacao: string) {
-  const token = await getAnaAccessToken();
+  const auth = await getAnaAuth();
   const url = new URL(`${ANA_REST_BASE_URL}/EstacoesTelemetricas/HidroinfoanaSerieTelemetricaAdotada/v1`);
   url.searchParams.set("Código da Estação", codEstacao);
   url.searchParams.set("Tipo Filtro Data", "DATA_LEITURA");
   url.searchParams.set("Range Intervalo de busca", "DIAS_2");
   url.searchParams.set("Data de Busca (yyyy-MM-dd)", new Date().toISOString().slice(0, 10));
 
+  const apiHeaders: Record<string, string> = {
+    Accept: "application/json",
+    Authorization: `Bearer ${auth.token}`,
+    accesstoken: auth.token,
+    accessToken: auth.token,
+    "User-Agent": "SentinelaRS/1.0",
+  };
+
+  if (auth.clientId) {
+    apiHeaders.clientid = auth.clientId;
+    apiHeaders.clientId = auth.clientId;
+  }
+
   const response = await fetch(url, {
-    headers: {
-      Accept: "application/json",
-      Authorization: `Bearer ${token}`,
-      "User-Agent": "SentinelaRS/1.0",
-    },
+    headers: apiHeaders,
   });
 
   const text = await response.text();
