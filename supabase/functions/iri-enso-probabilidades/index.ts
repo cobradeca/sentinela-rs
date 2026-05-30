@@ -208,14 +208,22 @@ Deno.serve(async (req) => {
       },
     });
   } catch (error) {
+    const msg = error instanceof Error ? error.message : "Unknown error";
+    const isParseError = msg.includes("extrair") || msg.includes("probabilidades") || msg.includes("parse");
     return new Response(JSON.stringify({
       ok: false,
       source: "IRI/CCSR ENSO Forecast",
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: msg,
+      // Distingue erro de parsing (estrutura da página mudou) de erro de rede/HTTP
+      error_type: isParseError ? "parse_failure" : "fetch_failure",
+      // Instrução clara para o frontend exibir ao usuário
+      ui_message: isParseError
+        ? "O IRI/CCSR atualizou o formato da página de previsão ENSO. O parser precisa ser revisado. Fonte indisponível temporariamente."
+        : "Não foi possível acessar o IRI/CCSR. Verifique a conexão ou tente novamente em alguns minutos.",
       fetched_at: new Date().toISOString(),
     }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json; charset=utf-8" },
+      status: 200, // 200 para o frontend conseguir ler o payload de erro
+      headers: { ...corsHeaders, "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" },
     });
   }
 });

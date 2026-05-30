@@ -46,6 +46,9 @@ body[data-theme="light"] {
     radial-gradient(circle at 86% 10%, rgba(249, 115, 22, 0.08), transparent 30rem),
     linear-gradient(135deg, #f8fafc 0%, #e2e8f0 52%, #f1f5f9 100%) !important;
   color: #0f172a;
+  /* Tokens de contraste melhorados para WCAG AA no modo claro */
+  --sr-muted: #374151;
+  --sr-text: #0f172a;
 }
 
 body::before {
@@ -833,5 +836,40 @@ div[style*="grid-template-columns: repeat(7"] {
 
   .sr-lagoa-metrics {
     grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Acessibilidade ──────────────────────────────────────────── */
+/* Foco visível para navegação por teclado */
+:focus-visible {
+  outline: 2px solid var(--sr-cyan);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* Tamanho mínimo de toque (WCAG 2.5.5) */
+button, a, [role="button"] {
+  min-height: 36px;
+  min-width: 36px;
+}
+
+/* Não remover outline para usuários de teclado */
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Texto mínimo legível em mobile */
+@media (max-width: 480px) {
+  body {
+    font-size: 13px;
+  }
+}
+
+/* Reduz motion para quem prefere */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }
