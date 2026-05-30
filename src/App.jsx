@@ -1,8 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { usePush } from "./hooks/usePush";
-import { FreshnessBadge } from "./components/FreshnessBadge";
-import { Sparkline as HistorySparkline } from "./components/Sparkline";
-import { appendLagoaHistorySnapshot, loadLagoaHistory } from "./services/lagoaHistory";
 
 // ─── BLOCO C: frescor do dado ─────────────────────────────────────────────────
 function dataStaleness(measuredAt) {
@@ -11,6 +8,26 @@ function dataStaleness(measuredAt) {
   if (ageMin <= 180)  return "fresh";
   if (ageMin <= 1440) return "attention";
   return "stale";
+}
+
+function StaleBadge({ measuredAt, fallback, fallbackAgeMin, t }) {
+  const status = fallback ? "stale" : dataStaleness(measuredAt);
+  const cfg = {
+    fresh:     { label: "Atualizado",    color: "#22c55e", dot: "●" },
+    attention: { label: "Atenção",       color: "#eab308", dot: "◐" },
+    stale:     { label: "Desatualizado", color: "#ef4444", dot: "○" },
+    unknown:   { label: "Sem horário",   color: "#64748b", dot: "–" },
+  }[status];
+  const age = fallback && fallbackAgeMin
+    ? ` · ${fallbackAgeMin}min atrás`
+    : measuredAt
+    ? ` · ${Math.round((Date.now()-new Date(measuredAt).getTime())/60000)}min atrás`
+    : "";
+  return (
+    <span style={{ fontSize:8, color:cfg.color, fontWeight:600 }}>
+      {cfg.dot} {cfg.label}{age}
+    </span>
+  );
 }
 
 // ─── ESTAÇÕES ────────────────────────────────────────────────────────────────
@@ -84,7 +101,6 @@ const IRI_ENSO_PROB_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/fun
 const CPTEC_INPE_PRODUCTS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/cptec-inpe-produtos";
 const INPE_QUEIMADAS_RS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/inpe-queimadas-rs";
 const ICMBIO_UCS_RS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/icmbio-ucs-rs";
-const EFFIS_WMS_HEALTH_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/effis-wms-health";
 const NOTIFICATION_HEALTH_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/notification-health";
 const COPERNICUS_WATER_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/copernicus-water";
 const COPERNICUS_SENTINEL1_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/copernicus-sentinel1-water";
@@ -473,6 +489,54 @@ function radarRiskToLevel(status) {
 const LAGOA_FALLBACK_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 const LAGOA_RADAR_CACHE_KEY = "sentinela_rs_lagoa_radar_last_valid_v1";
 const HIDROSENS_LARANJAL_CACHE_KEY = "sentinela_rs_hidrosens_laranjal_last_valid_v1";
+// BLOCO B — histórico em localStorage (ring buffer 48 pontos ~24h @ 30min)
+const LAGOA_HISTORY_KEY = "sentinela_rs_lagoa_history_v1";
+const HISTORY_MAX_POINTS = 48;
+
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(LAGOA_HISTORY_KEY) || "{}"); } catch { return {}; }
+}
+
+function appendHistory(stationId, level_m, measuredAt) {
+  if (typeof level_m !== "number") return;
+  const all = loadHistory();
+  const arr = all[stationId] || [];
+  const last = arr[arr.length - 1];
+  // evita duplicatas de mesmo horário
+  if (last && last.t === measuredAt) return;
+  arr.push({ t: measuredAt || new Date().toISOString(), v: level_m });
+  if (arr.length > HISTORY_MAX_POINTS) arr.splice(0, arr.length - HISTORY_MAX_POINTS);
+  all[stationId] = arr;
+  try { localStorage.setItem(LAGOA_HISTORY_KEY, JSON.stringify(all)); } catch {}
+}
+
+function Sparkline({ points, color, t }) {
+  if (!points || points.length < 2) return <div style={{ fontSize:8, color:t.textFaint }}>sem histórico</div>;
+  const vals = points.map(p => p.v);
+  const min = Math.min(...vals);
+  const max = Math.max(...vals);
+  const range = max - min || 0.01;
+  const W = 180, H = 36;
+  const xs = points.map((_, i) => (i / (points.length - 1)) * W);
+  const ys = points.map(p => H - ((p.v - min) / range) * H);
+  const d = xs.map((x, i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)},${ys[i].toFixed(1)}`).join(" ");
+  const lastV = points[points.length - 1].v;
+  return (
+    <div style={{ marginTop:8 }}>
+      <div style={{ fontSize:8, color:t.textMuted, marginBottom:3 }}>HISTÓRICO ~24h ({points.length} leituras)</div>
+      <svg width={W} height={H + 4} style={{ display:"block" }}>
+        <polyline points={xs.map((x,i)=>`${x},${ys[i]}`).join(" ")} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" opacity="0.85"/>
+        <circle cx={xs[xs.length-1]} cy={ys[ys.length-1]} r="2.5" fill={color}/>
+      </svg>
+      <div style={{ display:"flex", justifyContent:"space-between", fontSize:7, color:t.textFaint, marginTop:2 }}>
+        <span>mín {min.toFixed(2)}m</span>
+        <span style={{ color }}>{lastV.toFixed(2)}m agora</span>
+        <span>máx {max.toFixed(2)}m</span>
+      </div>
+    </div>
+  );
+}
+
 function saveFallbackCache(key, data) {
   try {
     if (typeof window === "undefined" || !window.localStorage) return;
@@ -668,18 +732,6 @@ async function fetchIcmbioUcsRs() {
   } catch { return null; }
 }
 
-async function fetchEffisWmsHealth() {
-  try {
-    const res = await fetch(EFFIS_WMS_HEALTH_FUNCTION_URL, {
-      signal: AbortSignal.timeout(15000),
-      cache: "no-store",
-      headers: { Accept: "application/json" },
-    });
-    if (!res.ok) return null;
-    return res.json();
-  } catch { return null; }
-}
-
 async function fetchNotificationHealth() {
   try {
     const res = await fetch(NOTIFICATION_HEALTH_FUNCTION_URL, {
@@ -696,26 +748,6 @@ async function fetchNotificationHealth() {
 
 // CEMADEN — chuva observada por acumulados recentes.
 // O token fica no Supabase Secret CEMADEN_PED_TOKEN, nunca no App.jsx.
-async function mapWithConcurrency(items, limit, worker) {
-  const results = [];
-  let nextIndex = 0;
-
-  async function runWorker() {
-    while (nextIndex < items.length) {
-      const currentIndex = nextIndex++;
-      try {
-        results[currentIndex] = { status: "fulfilled", value: await worker(items[currentIndex], currentIndex) };
-      } catch (reason) {
-        results[currentIndex] = { status: "rejected", reason };
-      }
-    }
-  }
-
-  const workers = Array.from({ length: Math.min(limit, items.length) }, runWorker);
-  await Promise.allSettled(workers);
-  return results;
-}
-
 async function fetchCemadenAccumulations() {
   try {
     const res = await fetch(CEMADEN_RS_FUNCTION_URL, { signal: AbortSignal.timeout(15000) });
@@ -1026,14 +1058,11 @@ export default function SentinelaRS() {
   const [stationData, setStationData]   = useState({});
   const [loading, setLoading]           = useState(true);
   const [lastUpdate, setLastUpdate]     = useState(null);
-  const [lagoaHistory, setLagoaHistory] = useState({});
-  const [lagoaHistoryMeta, setLagoaHistoryMeta] = useState({ source: "sessão atual", persistent: false });
   const [selStation, setSelStation]     = useState(STATIONS_CIDADES[0]); // POA default
   const [activeTab, setActiveTab]       = useState("dashboard");
   const [alerts, setAlerts]             = useState([]);
   const [queimadas, setQueimadas]       = useState(null);
   const [icmbioUcs, setIcmbioUcs]       = useState(null);
-  const [effisHealth, setEffisHealth]   = useState(null);
   const [qLoading, setQLoading]         = useState(false);
   const [expanded, setExpanded]         = useState(null);
   const [dark, setDark]                 = useState(true);
@@ -1162,8 +1191,6 @@ export default function SentinelaRS() {
     const newAlerts = [];
     const health = { ...sourceHealthRef.current };
     const t0 = Date.now();
-    const historyResult = await loadLagoaHistory(STATIONS_LAGOA.map((station) => station.id));
-    let nextLagoaHistory = historyResult.history || {};
 
     // ── fetch com rastreio de saúde ──────────────────────────────────────────
     async function tracked(key, fn) {
@@ -1179,16 +1206,15 @@ export default function SentinelaRS() {
       }
     }
 
-    const [cemadenResult, lagoaRadarResult, hidrosensResult] = await Promise.allSettled([
+    const [cemadenByCityId, lagoaRadarByStationId, hidrosensLaranjal] = await Promise.all([
       tracked("CEMADEN", fetchCemadenAccumulations),
       tracked("RADAR Lagoa", fetchLagoaRadarLevels),
       tracked("HidroSens", fetchHidroSensLaranjalLevel),
     ]);
-    const cemadenMap = cemadenResult.status === "fulfilled" ? (cemadenResult.value || {}) : {};
-    const lagoaRadarMap = lagoaRadarResult.status === "fulfilled" ? (lagoaRadarResult.value || {}) : {};
-    const hidrosensLaranjal = hidrosensResult.status === "fulfilled" ? hidrosensResult.value : null;
+    const cemadenMap = cemadenByCityId || {};
+    const lagoaRadarMap = lagoaRadarByStationId || {};
 
-    await mapWithConcurrency(ALL_STATIONS, 4, async (st) => {
+    await Promise.all(ALL_STATIONS.map(async (st) => {
       try {
         const weather = await (async () => {
           const start = Date.now();
@@ -1242,9 +1268,9 @@ export default function SentinelaRS() {
         } : null;
 
         // Não usa limiar único de 0,8m. Risco de nível só entra quando a fonte traz limiar próprio validado.
-        // Registra o ponto atual na série exibida e mescla com histórico persistido do Supabase.
+        // BLOCO B — registra histórico local
         if (lagoa?.isReal && lagoa.atual !== null) {
-          nextLagoaHistory = appendLagoaHistorySnapshot(nextLagoaHistory, st.id, lagoa.atual, getLagoaMeasuredAt(lagoa));
+          appendHistory(st.id, lagoa.atual, getLagoaMeasuredAt(lagoa));
         }
 
         const baseRisk = getRiskLevel(precip, tempMin, windMax, null);
@@ -1274,7 +1300,7 @@ export default function SentinelaRS() {
           });
         }
       } catch { results[st.id]={ error:true, risk:"NORMAL" }; }
-    });
+    }));
     const defesaStart = Date.now();
     const officialAlerts = await fetchDefesaCivilAlerts();
     health["Defesa Civil RS"] = { ok: Array.isArray(officialAlerts), lastOk: Array.isArray(officialAlerts) ? new Date().toISOString() : health["Defesa Civil RS"]?.lastOk || null, latencyMs: Date.now()-defesaStart, error: null };
@@ -1282,12 +1308,6 @@ export default function SentinelaRS() {
     sourceHealthRef.current = health;
     setSourceHealth({ ...health });
     setStationData(results);
-    setLagoaHistory(nextLagoaHistory);
-    setLagoaHistoryMeta({
-      source: historyResult.source,
-      persistent: historyResult.persistent,
-      error: historyResult.error || null,
-    });
     setAlerts([...officialAlerts, ...newAlerts]);
     setLastUpdate(new Date());
     setLoading(false);
@@ -1296,13 +1316,11 @@ export default function SentinelaRS() {
   const loadQueimadas = useCallback(async () => {
     setQLoading(true);
     const startedAt = Date.now();
-    const [data, ucs, effis] = await Promise.all([fetchQueimadas(), fetchIcmbioUcsRs(), fetchEffisWmsHealth()]);
+    const [data, ucs] = await Promise.all([fetchQueimadas(), fetchIcmbioUcsRs()]);
     markSourceHealth("INPE BDQueimadas", Boolean(data?.ok), startedAt, data?.ok ? null : data?.error || "sem resposta operacional");
     markSourceHealth("ICMBio/MMA CNUC", Boolean(ucs?.ok), startedAt, ucs?.ok ? null : ucs?.error || "sem cadastro validado");
-    markSourceHealth("Copernicus EFFIS", Boolean(effis?.ok), startedAt, effis?.ok ? null : effis?.error || "WMS EFFIS sem resposta validada");
     setQueimadas(data);
     setIcmbioUcs(ucs);
-    setEffisHealth(effis);
     setQLoading(false);
   }, []);
 
@@ -1613,29 +1631,6 @@ export default function SentinelaRS() {
     { i:"🔊", n:"Sirene IoT", status:channelStatus("sirene"), s: notifyChannels.sirene?.configured ? "Crítico com webhook" : "Aguardando hardware/webhook", h: notifyChannels.sirene?.note || "Secrets esperados no Supabase: SIRENE_WEBHOOK_URL e opcionalmente SIRENE_WEBHOOK_TOKEN. A sirene só recebe POST quando o alerta é CRITICO e houver hardware pronto." },
   ];
 
-  const renderNavButton = (tab, compact = false) => (
-    <button
-      key={tab.key}
-      onClick={() => setActiveTab(tab.key)}
-      className={compact ? "sr-mobile-tab-button" : "sr-side-tab-button"}
-      style={{
-        padding: compact ? "8px 12px" : "10px 12px",
-        fontSize: 12,
-        fontFamily: "inherit",
-        letterSpacing: 1,
-        cursor: "pointer",
-        borderRadius: 6,
-        textAlign: "left",
-        background: activeTab === tab.key ? t.tabActiveBg : "transparent",
-        border: activeTab === tab.key ? `1px solid ${t.borderActive}` : `1px solid ${t.border}`,
-        color: activeTab === tab.key ? t.tabActive : t.tabInactive,
-        transition: "all 0.2s",
-      }}
-    >
-      {tab.label}
-    </button>
-  );
-
   return (
     <div style={{ minHeight:"100vh", background:t.bg, color:t.text, fontFamily:"'IBM Plex Mono','Courier New',monospace", transition:"background 0.3s,color 0.3s" }}>
       {/* Grid bg */}
@@ -1646,7 +1641,7 @@ export default function SentinelaRS() {
         <CardDetail station={expandedCard} d={stationData[expandedCard.id]} onClose={()=>setExpandedCard(null)} />
       )}
 
-      <div style={{ position:"relative", zIndex:2, maxWidth:1420, margin:"0 auto", padding:"0 16px 40px" }}>
+      <div style={{ position:"relative", zIndex:2, maxWidth:1320, margin:"0 auto", padding:"0 16px 40px" }}>
 
         {/* ── HEADER ── */}
         <header style={{ borderBottom:`1px solid ${dark?"rgba(34,211,238,0.2)":t.border}`, paddingBottom:14, marginBottom:20, paddingTop:18 }}>
@@ -1689,19 +1684,18 @@ export default function SentinelaRS() {
           </div>
         </header>
 
-        <div className="sr-shell">
-          <aside className="sr-sidebar" style={{ border:`1px solid ${t.border}`, background:t.cardBg, boxShadow:t.shadowCard }}>
-            <div style={{ fontSize:9, color:t.textMuted, letterSpacing:2, margin:"0 0 10px 2px" }}>NAVEGAÇÃO</div>
-            <nav className="sr-sidebar-nav">
-              {TABS.map((tab) => renderNavButton(tab))}
-            </nav>
-          </aside>
-
-          <div className="sr-mobile-tabs" style={{ display:"none", gap:6, marginBottom:16, overflowX:"auto", paddingBottom:4 }}>
-            {TABS.map((tab) => renderNavButton(tab, true))}
-          </div>
-
-          <main className="sr-content">
+        {/* ── TABS ── */}
+        <div style={{ display:"flex", gap:2, marginBottom:20, flexWrap:"wrap" }}>
+          {TABS.map(tab => (
+            <button key={tab.key} onClick={()=>setActiveTab(tab.key)} style={{
+              padding:"7px 13px", fontSize:11, fontFamily:"inherit", letterSpacing:1, cursor:"pointer", borderRadius:4,
+              background: activeTab===tab.key ? t.tabActiveBg : "transparent",
+              border: activeTab===tab.key ? `1px solid ${t.borderActive}` : `1px solid ${t.border}`,
+              color: activeTab===tab.key ? t.tabActive : t.tabInactive,
+              transition:"all 0.2s",
+            }}>{tab.label}</button>
+          ))}
+        </div>
 
         {loading && activeTab!=="copernicus" && activeTab!=="enso" && activeTab!=="apis" && (
           <div style={{ textAlign:"center", padding:50, color:t.accent }}>
@@ -1744,7 +1738,7 @@ export default function SentinelaRS() {
               <div style={{ marginTop:8, fontSize:8, color:t.accent, textAlign:"right", opacity:0.75 }}>abrir aba Lagoa dos Patos →</div>
             </div>
 
-            <div className="sr-city-grid" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(275px,1fr))", gap:11 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(275px,1fr))", gap:11 }}>
             {STATIONS.map(station => {
               const d = stationData[station.id];
               if (!d) return null;
@@ -1752,44 +1746,42 @@ export default function SentinelaRS() {
               const rColor = getRiskColor(d.risk);
               return (
                 <div key={station.id}
-                  className="sr-city-card"
                   onClick={()=>setExpandedCard(station)}
                   style={{ ...s.card, border:`1px solid ${d.risk!=="NORMAL"?rColor+"55":t.border}`, cursor:"pointer", position:"relative", overflow:"hidden", transition:"transform 0.15s,box-shadow 0.15s" }}
                   onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow=`0 6px 20px ${rColor}22`;}}
                   onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.boxShadow=t.shadowCard;}}>
                   {d.risk!=="NORMAL" && <div style={{ position:"absolute", top:0, right:0, width:3, height:"100%", background:rColor, opacity:0.8 }} />}
-                  <div className="sr-city-card-head" style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8 }}>
-                    <div className="sr-city-card-title">
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8 }}>
+                    <div>
                       <div style={{ fontSize:9, color:t.textMuted, letterSpacing:2 }}>{station.type.toUpperCase()}</div>
                       <div style={{ fontSize:14, fontWeight:700, color:t.text }}>{station.name}</div>
                       {station.rioRef && <div style={{ fontSize:8, color:t.textFaint, marginTop:1 }}>{station.rioRef}</div>}
                       {d.inmet && (
-                        <div className="sr-city-source-line" style={{ fontSize:8, color:t.accent, marginTop:3 }}>
+                        <div style={{ fontSize:8, color:t.accent, marginTop:3 }}>
                           ● INMET: {d.inmet.resumo}
                         </div>
                       )}
-                      <div className="sr-city-source-line" title={CEMADEN_ATTRIBUTION} style={{ fontSize:8, color:d.cemaden ? "#22c55e" : t.textFaint, marginTop:3 }}>
+                      <div title={CEMADEN_ATTRIBUTION} style={{ fontSize:8, color:d.cemaden ? "#22c55e" : t.textFaint, marginTop:3 }}>
                         ● CEMADEN: {d.cemaden ? formatCemadenRain(d.cemaden) : "sem estação/acumulado validado"}
                       </div>
                     </div>
                     <button
                       onClick={(e)=>{ e.stopPropagation(); setRiskExplain(explainCityRisk(station, d, ensoProbabilityText)); }}
                       title="Clique para entender este status"
-                      className="sr-status-button"
                       style={{ background:"none", fontSize:9, fontWeight:700, padding:"2px 7px", border:`1px solid ${rColor}`, color:rColor, borderRadius:3, cursor:"pointer", fontFamily:"inherit" }}
                     >
                       {risk.icon} {risk.label} ⓘ
                     </button>
                   </div>
                   {d.error ? <div style={{ fontSize:10, color:"#ef4444" }}>Erro ao carregar</div> : (
-                    <div className="sr-city-metrics" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:5 }}>
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:5 }}>
                       {[
                         { l:"Precip. 14d", v:`${d.precip?.toFixed(0)}mm` },
                         { l:"Temp. mín.",  v:`${d.tempMin?.toFixed(1)}°C` },
                         { l:"Vento",       v:`${d.windMax?.toFixed(0)}km/h` },
                         { l:"Contexto climático", v: ensoObservedAvailable ? `${ensoClass.icon} ${ensoClass.label}` : (ensoDominantProb ? `${ensoDominantProb.label} ${formatProbability(ensoDominantProb.value)}` : "ENSO indisponível"), highlight: ensoProbabilityAvailable || ensoObservedAvailable },
                       ].map(item => (
-                        <div className="sr-metric-tile" key={item.l} style={{ background: dark?"rgba(0,0,0,0.3)":t.bg, padding:"5px 7px", borderRadius:3 }}>
+                        <div key={item.l} style={{ background: dark?"rgba(0,0,0,0.3)":t.bg, padding:"5px 7px", borderRadius:3 }}>
                           <div style={{ fontSize:9, fontWeight:600, color:t.textMuted }}>{item.l}</div>
                           <div style={{ fontSize:13, fontWeight:700, color:item.highlight?"#f97316":t.text }}>{item.v}</div>
                         </div>
@@ -1921,6 +1913,15 @@ export default function SentinelaRS() {
                 <div>
                   <div style={{ fontSize:9, color:t.textMuted, letterSpacing:2 }}>LAGOA DOS PATOS</div>
                   <div style={{ fontSize:24, fontWeight:900, color:t.text, marginTop:2 }}>Monitoramento em ordem de escoamento</div>
+                  <div style={{ fontSize:10, color:t.textMuted, marginTop:5 }}>
+                    Organização visual: Itapuã → Arambaré → São Lourenço do Sul → Pelotas / Laranjal → São José do Norte → Rio Grande.
+                  </div>
+                  <div style={{ fontSize:9, color:t.textMuted, marginTop:4 }}>
+                    Limiares validados: {lagoaSummary.thresholdValidated ?? 0}/{lagoaSummary.monitored} · sem limiar: {lagoaSummary.withoutThreshold ?? 0}
+                  </div>
+                  <div style={{ fontSize:9, color:t.textMuted, marginTop:4, lineHeight:1.6, wordBreak:"break-word" }}>
+                    APIs em uso: RADAR Lagoa dos Patos ({LAGOA_RADAR_FUNCTION_URL}) · HidroSens/UFPel ({HIDROSENS_LARANJAL_FUNCTION_URL}) · ANA HidroWeb complementar quando houver código de estação.
+                  </div>
                 </div>
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(3, minmax(90px, 1fr))", gap:8 }}>
                   <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
@@ -1939,7 +1940,7 @@ export default function SentinelaRS() {
               </div>
             </div>
 
-            <div className="sr-lagoa-grid" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(418px,1fr))", gap:11 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(418px,1fr))", gap:11 }}>
               {STATIONS_LAGOA.map((point) => {
                 const d = getLagoaPointData(point, stationData);
                 const lagoa = d?.lagoa;
@@ -1953,9 +1954,9 @@ export default function SentinelaRS() {
                 const progress = hasLevel ? Math.min(100, (lagoa.atual / progressBase) * 100) : 0;
 
                 return (
-                  <div className="sr-lagoa-card" key={point.id} style={{ ...s.card, border:`1px solid ${hasLevel ? rColor+"55" : t.border}` }}>
-                    <div className="sr-lagoa-card-head" style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:8, marginBottom:10 }}>
-                      <div className="sr-lagoa-title">
+                  <div key={point.id} style={{ ...s.card, border:`1px solid ${hasLevel ? rColor+"55" : t.border}` }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:8, marginBottom:10 }}>
+                      <div>
                         <div style={{ fontSize:9, color:t.textMuted, letterSpacing:2 }}>PONTO {point.ordemEscoamento} · ESTAÇÃO</div>
                         <div style={{ fontSize:20, fontWeight:900, color:t.text }}>{point.name}</div>
                         <div style={{ fontSize:8, color:t.textFaint, marginTop:2 }}>{point.displayName}</div>
@@ -1963,7 +1964,6 @@ export default function SentinelaRS() {
                       <button
                          onClick={()=>setRiskExplain(explainLagoaRisk(point, lagoa))}
                          title="Clique para entender este status"
-                         className="sr-status-button"
                          style={{ background:"none", fontSize:9, fontWeight:800, padding:"3px 7px", border:`1px solid ${rColor}`, color:rColor, borderRadius:4, cursor:"pointer", fontFamily:"inherit" }}
                        >
                          {lagoaStatusLabel(lagoa?.levelStatus)} ⓘ
@@ -1972,15 +1972,15 @@ export default function SentinelaRS() {
 
                     {hasLevel ? (
                       <>
-                        <div className="sr-lagoa-metrics" style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:8, marginBottom:10 }}>
-                          <div className="sr-lagoa-tile sr-lagoa-current" style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
+                        <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:8, marginBottom:10 }}>
+                          <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
                             <div style={{ fontSize:8, color:t.textMuted }}>Cota atual</div>
                             <div style={{ fontSize:33, fontWeight:900, color:rColor }}>{(lagoa.atual*100).toFixed(1)} cm</div>
                             <div style={{ fontSize:8, color:t.textMuted }}>{lagoa.atual.toFixed(3)} m</div>
                           </div>
-                          <div className="sr-lagoa-tile sr-lagoa-source" style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
+                          <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
                             <div style={{ fontSize:8, color:t.textMuted }}>Fonte</div>
-                            <div className="sr-lagoa-source-name" style={{ fontSize:17, fontWeight:900, color:t.text }}>{sourceText}</div>
+                            <div style={{ fontSize:17, fontWeight:900, color:t.text }}>{sourceText}</div>
                             <div style={{ fontSize:8, color:t.textMuted }}>{measuredAt ? formatDateTimeBR(measuredAt) : "horário não informado"}</div>
                             {lagoa?.isFallback && (
                               <div style={{ fontSize:8, color:"#eab308", marginTop:3 }}>
@@ -1993,14 +1993,14 @@ export default function SentinelaRS() {
                               </div>
                             )}
                           </div>
-                          <div className="sr-lagoa-tile" style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
+                          <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
                             <div style={{ fontSize:8, color:t.textMuted }}>Cota de alerta</div>
                             <div style={{ fontSize:20, fontWeight:900, color:threshold ? "#f97316" : t.textFaint }}>
                               {threshold ? `${(threshold*100).toFixed(0)} cm` : "não validada"}
                             </div>
                             <div style={{ fontSize:8, color:t.textMuted }}>{threshold ? `${threshold.toFixed(2)} m` : "alerta automático conforme limiar"}</div>
                           </div>
-                          <div className="sr-lagoa-tile" style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
+                          <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
                             <div style={{ fontSize:8, color:t.textMuted }}>Máx. maio/2024</div>
                             <div style={{ fontSize:20, fontWeight:900, color:max2024 ? "#60a5fa" : t.textFaint }}>
                               {max2024 ? `${(max2024*100).toFixed(0)} cm` : "–"}
@@ -2018,7 +2018,7 @@ export default function SentinelaRS() {
                         </div>
                         {/* BLOCO C — frescor do dado */}
                         <div style={{ marginTop:6 }}>
-                          <FreshnessBadge
+                          <StaleBadge
                             measuredAt={getLagoaMeasuredAt(lagoa)}
                             fallback={lagoa?.isFallback}
                             fallbackAgeMin={lagoa?.fallback_age_minutes}
@@ -2027,9 +2027,9 @@ export default function SentinelaRS() {
                         </div>
                         {/* BLOCO B — sparkline histórico */}
                         {(() => {
-                          const hist = lagoaHistory[point.id] || [];
+                          const hist = loadHistory()[point.id] || [];
                           return hist.length >= 2 ? (
-                            <HistorySparkline points={hist} color={rColor} t={t} sourceLabel={lagoaHistoryMeta.source} />
+                            <Sparkline points={hist} color={rColor} t={t} />
                           ) : null;
                         })()}
                       </>
@@ -2053,7 +2053,7 @@ export default function SentinelaRS() {
               <div>
                 <div style={{ fontSize:12, fontWeight:700, color:t.text, marginBottom:3 }}>ENSO — SITREP OBSERVADO + PROBABILÍSTICO</div>
                 <div style={{ fontSize:10, color:t.textMuted, lineHeight:1.6 }}>
-                  {ensoObservedText}. {ensoProbabilityText}.
+                  {ensoObservedText}. {ensoProbabilityText}. Sem valores simulados: quando a fonte não responde, o dado fica indisponível.
                 </div>
               </div>
             </div>
@@ -2066,10 +2066,10 @@ export default function SentinelaRS() {
               {[
                 { l:"Fase observada", v: ensoObservedAvailable ? `${ensoClass.icon} ${ensoClass.label}` : "indisponível", s: ensoObservedAvailable ? `Niño 3.4: ${formatSignedCelsius(activeENSO.nino34)}` : "NOAA/CPC sem leitura", c:ensoClass.color },
                 { l:"ONI trimestral", v: formatSignedCelsius(activeENSO.oni3m), s:"NOAA/CPC observado", c: ensoObservedAvailable ? "#f97316" : "#64748b" },
-                { l:"Prob. El Niño (próx.)", v: formatProbability(activeENSO.prob?.elNino), s: ensoFirstForecast?.p ? `IRI/CCSR · ${ensoFirstForecast.p}` : "IRI/CCSR", c:"#f97316" },
+                { l:"Prob. El Niño", v: formatProbability(activeENSO.prob?.elNino), s: ensoFirstForecast?.p ? `IRI/CCSR · ${ensoFirstForecast.p}` : "IRI/CCSR", c:"#f97316" },
                 { l:"Prob. Neutro", v: formatProbability(activeENSO.prob?.neutral), s:"IRI/CCSR", c:"#22c55e" },
                 { l:"Prob. La Niña", v: formatProbability(activeENSO.prob?.laNina), s:"IRI/CCSR", c:"#3b82f6" },
-                { l:"Tipo de uso", v:"Contexto climático", s:"iminência de formação de El Niño", c:"#eab308" },
+                { l:"Tipo de uso", v:"Contexto climático", s:"não dispara alerta sozinho", c:"#eab308" },
               ].map(item=>(
                 <div key={item.l} style={{ padding:"12px 14px", background:t.cardBg, border:`1px solid ${item.c}44`, borderTop:`3px solid ${item.c}`, borderRadius:5, boxShadow:t.shadowCard }}>
                   <div style={{ fontSize:8, color:t.textMuted, letterSpacing:2, marginBottom:5 }}>{item.l.toUpperCase()}</div>
@@ -2106,11 +2106,11 @@ export default function SentinelaRS() {
               </div>
               {safeEnsoForecast(activeENSO.forecast).length >= 2 ? (() => {
                 const pts = safeEnsoForecast(activeENSO.forecast);
-                const W = 620, H = 178, padL = 42, padR = 86, padT = 16, padB = 38;
+                const W = 640, H = 240, padL = 44, padR = 104, padT = 18, padB = 72;
                 const innerW = W - padL - padR;
                 const innerH = H - padT - padB;
-                const xOf = (i) => padL + (i / (pts.length - 1)) * innerW;
-                const yOf = (v) => padT + innerH - (typeof v === "number" && Number.isFinite(v) ? v * innerH : 0);
+                const xOf = (i) => padL + (pts.length > 1 ? (i / (pts.length - 1)) * innerW : innerW / 2);
+                const yOf = (v) => padT + innerH - (typeof v === "number" && Number.isFinite(v) ? Math.max(0, Math.min(1, v)) * innerH : 0);
                 const mkLine = (key, color) => {
                   const d = pts.map((f,i) => `${i===0?"M":"L"}${xOf(i).toFixed(1)},${yOf(f[key]).toFixed(1)}`).join(" ");
                   const lastV = pts[pts.length-1][key];
@@ -2119,39 +2119,66 @@ export default function SentinelaRS() {
                   return { d, color, lastV, lastX, lastY };
                 };
                 const lines = [
-                  { key:"en", label:"El Niño",  labelOffset:-8, ...mkLine("en","#f97316") },
-                  { key:"nu", label:"Neutro",   labelOffset:0, ...mkLine("nu","#22c55e") },
-                  { key:"ln", label:"La Niña",  labelOffset:10, ...mkLine("ln","#3b82f6") },
+                  { key:"en", label:"El Niño", ...mkLine("en","#f97316") },
+                  { key:"nu", label:"Neutro",  ...mkLine("nu","#22c55e") },
+                  { key:"ln", label:"La Niña", ...mkLine("ln","#3b82f6") },
                 ];
+                // Separação mínima de 13px entre labels do lado direito
+                const MIN_GAP = 13;
+                const labelPositions = lines
+                  .map(ln => ({ ...ln, rawY: ln.lastY }))
+                  .sort((a, b) => a.rawY - b.rawY);
+                for (let i = 1; i < labelPositions.length; i++) {
+                  if (labelPositions[i].rawY - labelPositions[i-1].rawY < MIN_GAP) {
+                    labelPositions[i].rawY = labelPositions[i-1].rawY + MIN_GAP;
+                  }
+                }
+                const adjY = Object.fromEntries(labelPositions.map(l => [l.key, l.rawY]));
                 const yGridVals = [0, 0.25, 0.5, 0.75, 1.0];
                 return (
                   <div>
-                    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ overflow:"hidden", display:"block" }}>
+                    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ overflow:"visible", display:"block" }}>
                       {/* grid horizontal */}
                       {yGridVals.map(v => (
                         <g key={v}>
                           <line x1={padL} x2={W-padR} y1={yOf(v)} y2={yOf(v)} stroke={dark?"rgba(255,255,255,0.06)":"rgba(0,0,0,0.07)"} strokeWidth="1"/>
-                          <text x={padL-4} y={yOf(v)+3} textAnchor="end" fontSize="7" fill={dark?"#64748b":"#94a3b8"}>{Math.round(v*100)}%</text>
+                          <text x={padL-5} y={yOf(v)+3} textAnchor="end" fontSize="8" fill={dark?"#64748b":"#94a3b8"}>{Math.round(v*100)}%</text>
                         </g>
                       ))}
-                      {/* grid vertical por período */}
-                      {pts.map((f,i) => (
-                        <g key={i}>
-                          <line x1={xOf(i)} x2={xOf(i)} y1={padT} y2={padT+innerH} stroke={dark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.05)"} strokeWidth="1"/>
-                          <text x={xOf(i)} y={padT+innerH+14} textAnchor="middle" fontSize="7" fill={dark?"#64748b":"#94a3b8"}>{f.p}</text>
-                        </g>
-                      ))}
+                      {/* grid vertical + datas rotacionadas */}
+                      {pts.map((f,i) => {
+                        const cx = xOf(i);
+                        const gy = padT + innerH + 10;
+                        return (
+                          <g key={i}>
+                            <line x1={cx} x2={cx} y1={padT} y2={padT+innerH} stroke={dark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.05)"} strokeWidth="1"/>
+                            <text
+                              x={cx} y={gy}
+                              textAnchor="end"
+                              fontSize="8"
+                              fill={dark?"#64748b":"#94a3b8"}
+                              transform={`rotate(-45 ${cx} ${gy})`}
+                            >{f.p}</text>
+                          </g>
+                        );
+                      })}
                       {/* limiar 50% */}
                       <line x1={padL} x2={W-padR} y1={yOf(0.5)} y2={yOf(0.5)} stroke="#eab30855" strokeWidth="1" strokeDasharray="4 3"/>
                       {/* linhas das fases */}
                       {lines.map(ln => (
                         <g key={ln.key}>
-                          <path d={ln.d} fill="none" stroke={ln.color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" opacity="0.9"/>
+                          <path d={ln.d} fill="none" stroke={ln.color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" opacity="0.9"/>
                           {pts.map((f,i) => (
-                            <circle key={i} cx={xOf(i)} cy={yOf(f[ln.key])} r="3" fill={ln.color} opacity="0.85"/>
+                            <circle key={i} cx={xOf(i)} cy={yOf(f[ln.key])} r="3.5" fill={ln.color} opacity="0.9"/>
                           ))}
-                          {/* label no final */}
-                          <text x={Math.min(W - padR + 8, ln.lastX + 6)} y={Math.max(padT + 8, Math.min(H - padB - 6, ln.lastY + 3 + ln.labelOffset))} fontSize="8" fill={ln.color} fontWeight="700">{ln.label} {typeof ln.lastV === "number" ? Math.round(ln.lastV*100)+"%" : ""}</text>
+                          {/* label separado no lado direito */}
+                          <text
+                            x={W - padR + 8}
+                            y={adjY[ln.key] + 4}
+                            fontSize="8.5"
+                            fill={ln.color}
+                            fontWeight="700"
+                          >{ln.label} {typeof ln.lastV === "number" ? Math.round(ln.lastV*100)+"%" : ""}</text>
                         </g>
                       ))}
                     </svg>
@@ -2229,16 +2256,16 @@ export default function SentinelaRS() {
                   </div>
                   {/* Rodapé explicativo por tipo de produto */}
                   <div style={{ marginTop:6, padding:"7px 10px", background: dark?"rgba(34,211,238,0.04)":"rgba(8,145,178,0.03)", border:`1px solid ${t.border}`, borderRadius:4, fontSize:8, color:t.textMuted, lineHeight:1.6 }}>
-                    {p.group?.toLowerCase().includes("subsaz") || p.title?.toLowerCase().includes("semana") || p.id?.toLowerCase().includes("week") ? (
-                      <span>📆 <strong style={{color:t.text}}>Subsazonal semanal:</strong> mostra tendência para a semana indicada, geralmente de 1 a 4 semanas à frente. Não é previsão diária por município.</span>
-                    ) : p.group?.toLowerCase().includes("saz") || p.title?.toLowerCase().includes("sazonal") || p.id?.toLowerCase().includes("seas") ? (
-                      <span>📅 <strong style={{color:t.text}}>Sazonal:</strong> resume a tendência provável para cerca de 3 meses, usando modelos climáticos e condições dos oceanos. Não informa o tempo de um dia específico.</span>
-                    ) : p.group?.toLowerCase().includes("precipitacao") || p.group?.toLowerCase().includes("chuva") ? (
+                    {p.group?.toLowerCase().includes("precipitacao") || p.group?.toLowerCase().includes("chuva") ? (
                       <span>🌧 <strong style={{color:t.text}}>Chuva:</strong> indica onde o modelo espera mais ou menos chuva no período do mapa. Serve para tendência regional, não para decidir chuva diária por município.</span>
                     ) : p.group?.toLowerCase().includes("temperatura") || p.group?.toLowerCase().includes("temp") ? (
                       <span>🌡 <strong style={{color:t.text}}>Temperatura:</strong> compara a temperatura esperada com o padrão histórico. Vermelho costuma indicar mais quente que o normal; azul, mais frio que o normal.</span>
                     ) : p.group?.toLowerCase().includes("enso") || p.group?.toLowerCase().includes("el ni") ? (
                       <span>🌊 <strong style={{color:t.text}}>ENSO:</strong> mostra como El Niño, La Niña ou neutralidade podem influenciar chuva e temperatura. É contexto climático, não alerta local.</span>
+                    ) : p.group?.toLowerCase().includes("saz") || p.title?.toLowerCase().includes("sazonal") ? (
+                      <span>📅 <strong style={{color:t.text}}>Sazonal:</strong> resume a tendência provável para cerca de 3 meses, usando modelos climáticos e condições dos oceanos. Não informa o tempo de um dia específico.</span>
+                    ) : p.title?.toLowerCase().includes("subsaz") || p.group?.toLowerCase().includes("subsaz") ? (
+                      <span>📆 <strong style={{color:t.text}}>Subsazonal:</strong> olha as próximas semanas. É mais próximo que a sazonal, mas a incerteza aumenta quanto mais distante estiver a semana analisada.</span>
                     ) : (
                       <span>🛰 <strong style={{color:t.text}}>Produto CPTEC/INPE:</strong> imagem oficial de previsão ou monitoramento climático. Clique para ampliar. Use como contexto regional, sem acionar alerta sozinho.</span>
                     )}
@@ -2537,7 +2564,7 @@ export default function SentinelaRS() {
         {activeTab==="queimadas" && (
           <div style={{ display:"grid", gap:12 }}>
             <div style={{ padding:"10px 14px", background: dark?"rgba(249,115,22,0.08)":"rgba(249,115,22,0.05)", border:"1px solid rgba(249,115,22,0.3)", borderRadius:5, fontSize:10, color: dark?"#fdba74":"#c2410c", display:"flex", justifyContent:"space-between", alignItems:"center", gap:12, flexWrap:"wrap" }}>
-              <span>🔥 Focos via <strong>INPE BDQueimadas</strong> (48h). <strong>EFFIS/Copernicus</strong> conectado como WMS complementar; alerta operacional continua dependente de foco real georreferenciado no RS.</span>
+              <span>🔥 Focos via <strong>INPE BDQueimadas</strong> (48h). <strong>EFFIS/Copernicus</strong> fica como integração complementar possível para perigo de fogo, focos ativos e área queimada, sem acionar alerta enquanto não houver endpoint validado.</span>
               <button onClick={loadQueimadas} disabled={qLoading} style={{ background:"none", border:"1px solid rgba(249,115,22,0.5)", color:"#fdba74", padding:"5px 12px", borderRadius:4, cursor:"pointer", fontFamily:"inherit", fontSize:9, letterSpacing:1 }}>{qLoading ? "⏳ Consultando..." : "↻ Atualizar"}</button>
             </div>
             {!queimadas && !qLoading && (
@@ -2549,7 +2576,7 @@ export default function SentinelaRS() {
             <div style={{ ...s.card }}>
               <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:4 }}>ÁREAS MONITORADAS — PORTO ALEGRE AO CHUÍ</div>
               <div style={{ fontSize:9, color:t.textMuted, marginBottom:12, lineHeight:1.5 }}>
-                Corredor costeiro e lagunar para cruzar focos INPE, unidades de conservação, fumaça e camadas complementares EFFIS/GWIS. Estes cards indicam área de monitoramento; só viram alerta quando houver foco real ou endpoint de risco validado.
+                Corredor costeiro e lagunar para cruzar focos INPE, unidades de conservação, fumaça e camadas futuras EFFIS. Estes cards indicam área de monitoramento; só viram alerta quando houver foco real ou endpoint de risco validado.
               </div>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))", gap:8 }}>
                 {FIRE_MONITORED_AREAS_RS.map((area, idx)=>(
@@ -2562,7 +2589,7 @@ export default function SentinelaRS() {
                       <div style={{ fontSize:8, color:"#eab308", border:"1px solid rgba(234,179,8,0.45)", borderRadius:3, padding:"2px 6px" }}>monitorar</div>
                     </div>
                     <div style={{ fontSize:9, color:t.textMuted, lineHeight:1.45, marginTop:6 }}>{area.focus}</div>
-                    <div style={{ fontSize:8, color:t.textFaint, marginTop:7 }}>{area.lat.toFixed(2)}°, {area.lon.toFixed(2)}° · INPE + EFFIS/GWIS complementar</div>
+                    <div style={{ fontSize:8, color:t.textFaint, marginTop:7 }}>{area.lat.toFixed(2)}°, {area.lon.toFixed(2)}° · INPE/EFFIS quando integrado</div>
                   </div>
                 ))}
               </div>
@@ -2582,12 +2609,15 @@ export default function SentinelaRS() {
                     detectados no RS nas últimas 48h · INPE BDQueimadas
                     {queimadas?.latest ? ` · último foco: ${formatDateTimeBR(queimadas.latest)}` : ""}
                   </div>
-                  {/* EFFIS WMS complementar */}
-                  {effisHealth?.ok && (
-                    <div style={{ marginTop:10, padding:"8px 12px", background: dark?"rgba(34,197,94,0.07)":"rgba(34,197,94,0.06)", border:"1px solid rgba(34,197,94,0.22)", borderRadius:4, fontSize:9, color:t.textMuted }}>
-                      EFFIS WMS respondeu OK. Uso complementar: perigo meteorológico de fogo, focos ativos e área queimada. Não aciona alerta automático para RS sem cruzamento espacial validado.
+                  {queimadas?.files && (
+                    <div style={{ marginTop:8, fontSize:8, color:t.textFaint }}>
+                      Fonte consultada via Supabase: CSV diário INPE/Dados Abertos · arquivos OK: {queimadas.files.filter(f=>f.ok).length}/{queimadas.files.length}
                     </div>
                   )}
+                  {/* Nota sobre probabilidades queimadas */}
+                  <div style={{ marginTop:10, padding:"8px 12px", background: dark?"rgba(249,115,22,0.08)":"rgba(249,115,22,0.05)", border:"1px solid rgba(249,115,22,0.25)", borderRadius:4, fontSize:9, color:dark?"#fdba74":"#c2410c" }}>
+                    ℹ️ <strong>EFFIS nesta versão:</strong> integração complementar ainda não operacional. O alerta de queimadas só considera foco real retornado pelo INPE ou outro endpoint validado, com fonte e horário.
+                  </div>
                   {(Array.isArray(queimadas) ? queimadas : queimadas?.records)?.length > 0 && (
                     <div style={{ marginTop:10, display:"grid", gap:5, maxHeight:200, overflowY:"auto" }}>
                       {(Array.isArray(queimadas) ? queimadas : queimadas.records).slice(0,10).map((f,i)=>(
@@ -2620,7 +2650,7 @@ export default function SentinelaRS() {
                     </div>
                   </div>
                   <div style={{ marginTop:10, padding:"8px 12px", background: dark?"rgba(249,115,22,0.06)":"rgba(249,115,22,0.04)", border:"1px solid rgba(249,115,22,0.2)", borderRadius:4, fontSize:9, color:t.textMuted }}>
-                    EFFIS WMS será verificado pela função complementar. Sem foco INPE validado, esta aba não aciona alerta operacional.
+                    ℹ️ EFFIS não está conectado em tempo real nesta versão. Não usar camada complementar como alerta operacional até existir endpoint validado.
                   </div>
                   <button onClick={loadQueimadas} style={{ marginTop:10, background: dark?"rgba(249,115,22,0.1)":"rgba(249,115,22,0.08)", border:"1px solid rgba(249,115,22,0.4)", color:"#fdba74", padding:"7px 14px", borderRadius:4, cursor:"pointer", fontFamily:"inherit", fontSize:10 }}>
                     ↻ Tentar novamente
@@ -2636,24 +2666,16 @@ export default function SentinelaRS() {
                 Cadastro oficial CNUC/MMA conectado. E camada complementar de contexto; risco por UC em tempo real ainda exige cruzar foco INPE com geocerca/poligono validado.
               </div>
               <div style={{ display:"grid", gap:7 }}>
-                {(icmbioUcs?.ok ? icmbioUcs.records : APAS_RS).map((apa)=>{
-                  const fireRecords = Array.isArray(queimadas) ? queimadas : (queimadas?.records || []);
-                  const areaText = `${apa.name || ""} ${apa.municipio || ""} ${apa.municipios || ""}`.toLowerCase();
-                  const hasFire = fireRecords.some((focus) => {
-                    const city = String(focus.municipio || focus.properties?.municipio || "").toLowerCase();
-                    return city && areaText.includes(city);
-                  });
-                  return (
+                {(icmbioUcs?.ok ? icmbioUcs.records : APAS_RS).map((apa)=>(
                   <div key={apa.id || apa.name} style={{ display:"grid", gridTemplateColumns:"1fr auto auto", gap:10, alignItems:"center", padding:"9px 12px", background: dark?"rgba(0,0,0,0.2)":t.bg, border:`1px solid ${t.border}`, borderRadius:4 }}>
                     <div>
                       <div style={{ fontSize:11, fontWeight:600, color:t.text }}>{apa.name}</div>
                       <div style={{ fontSize:9, color:t.textMuted }}>{apa.municipio || apa.municipios || apa.categoria}</div>
                     </div>
                     <div style={{ fontSize:9, color:t.textFaint }}>{apa.area_ha ? `${Math.round(apa.area_ha).toLocaleString("pt-BR")} ha` : apa.lat ? `${apa.lat.toFixed(2)}S` : "CNUC"}</div>
-                    <div style={{ fontSize:8, padding:"2px 7px", border:`1px solid ${hasFire ? "#f97316" : "#22c55e66"}`, color:hasFire ? "#f97316" : "#22c55e", borderRadius:3 }}>{hasFire ? "Alerta" : "Normal"}</div>
+                    <div style={{ fontSize:8, padding:"2px 7px", border:`1px solid ${icmbioUcs?.ok ? "#22c55e66" : t.textFaint}`, color:icmbioUcs?.ok ? "#22c55e" : t.textMuted, borderRadius:3 }}>{icmbioUcs?.ok ? "oficial" : "sem dado"}</div>
                   </div>
-                  );
-                })}
+                ))}
               </div>
               <div style={{ marginTop:10, padding:"9px 11px", background: dark?"rgba(249,115,22,0.06)":"rgba(249,115,22,0.04)", border:"1px solid rgba(249,115,22,0.15)", borderRadius:4, fontSize:9, color:t.textMuted }}>
                 {icmbioUcs?.ok ? `Fonte: MMA/ICMBio CNUC via CKAN Dados Abertos - ${icmbioUcs.total_rs} UCs no RS - exibindo ${icmbioUcs.count} prioritarias.` : "Cadastro local exibido porque a fonte CNUC/MMA nao respondeu agora."}
@@ -2661,16 +2683,16 @@ export default function SentinelaRS() {
             </div>
             {/* EFFIS */}
             <div style={{ ...s.card }}>
-              <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:4 }}>COPERNICUS EFFIS/GWIS — INTEGRAÇÃO COMPLEMENTAR</div>
+              <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:4 }}>COPERNICUS EFFIS — INTEGRAÇÃO COMPLEMENTAR</div>
               <div style={{ fontSize:9, color: dark?"#fef08a":"#854d0e", marginBottom:10, padding:"5px 10px", background: dark?"rgba(234,179,8,0.07)":"rgba(234,179,8,0.05)", border:"1px solid rgba(234,179,8,0.2)", borderRadius:4 }}>
-                {effisHealth?.ok ? "EFFIS WMS conectado. Uso complementar; não aciona alerta para RS sem geocerca/foco validado." : "EFFIS WMS ainda não respondeu nesta sessão. Para alerta global no RS, próxima etapa é integrar GWIS/FIRMS."}
+                🗓 EFFIS não está conectado em tempo real nesta versão. Não aciona alerta operacional.
               </div>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))", gap:8 }}>
                 {[
-                  { l:"Previsão de perigo de fogo",  v:"1 a 10 dias", c:"#f97316", d:"Perigo meteorológico de fogo. É previsão de condição favorável, não confirmação de incêndio." },
-                  { l:"Focos ativos",  v:"MODIS/VIIRS", c:"#eab308", d:"Focos ativos detectados por satélite. Complementa o INPE após geocerca validada." },
-                  { l:"Áreas queimadas",    v:"Área queimada", c:"#22c55e", d:"Perímetros/áreas queimadas para análise pós-evento." },
-                  { l:"Solicitação de dados",       v:"Sob demanda", c:"#8b5cf6", d:"Produtos históricos ou brutos podem exigir solicitação específica ao EFFIS/GWIS." },
+                  { l:"Fire Danger Forecast",  v:"1 a 10 dias", c:"#f97316", d:"Perigo meteorológico de fogo. É previsão de condição favorável, não confirmação de incêndio." },
+                  { l:"Active Fires",  v:"MODIS/VIIRS", c:"#eab308", d:"Focos ativos detectados por satélite. Pode complementar o INPE após endpoint validado." },
+                  { l:"Burnt Areas",    v:"Área queimada", c:"#22c55e", d:"Perímetros/áreas queimadas para análise pós-evento." },
+                  { l:"Data request",       v:"Sob demanda", c:"#8b5cf6", d:"Produtos históricos ou brutos podem exigir solicitação específica ao EFFIS." },
                 ].map(item=>(
                   <div key={item.l} style={{ background: dark?"rgba(0,0,0,0.3)":t.bg, padding:"10px 12px", borderRadius:4, borderTop:`3px solid ${item.c}` }}>
                     <div style={{ fontSize:9, color:t.textMuted, marginBottom:4 }}>{item.l}</div>
@@ -2680,7 +2702,7 @@ export default function SentinelaRS() {
                 ))}
               </div>
               <div style={{ fontSize:8, color:t.textFaint, marginTop:8 }}>
-                Copernicus EFFIS/GWIS · WMS complementar · endpoint verificado: {effisHealth?.ok ? "OK" : "aguardando resposta"}
+                Copernicus EFFIS — European Forest Fire Information System · Referência estrutural · Para dados em tempo real: <a href="https://effis.jrc.ec.europa.eu/" target="_blank" rel="noreferrer" style={{ color:t.accent }}>effis.jrc.ec.europa.eu</a>
               </div>
             </div>
           </div>
@@ -2751,13 +2773,24 @@ export default function SentinelaRS() {
         {activeTab==="apis" && (
           <div style={{ display:"grid", gap:12 }}>
 
+            <div style={{ ...s.card, border:"1px solid rgba(34,211,238,0.35)" }}>
+              <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:8 }}>POLÍTICA OPERACIONAL — FONTE REAL E FALLBACK</div>
+              <div style={{ display:"grid", gap:6, fontSize:10, color:t.textMuted, lineHeight:1.55 }}>
+                <div><strong style={{ color:t.text }}>O Sentinela·RS utiliza fontes reais ativas e indicadores derivados identificados.</strong> Alertas operacionais dependem de fontes oficiais, dados observados e regras explícitas. Camadas climáticas, satelitais, históricas e complementares não disparam alerta automático sozinhas.</div>
+                <div>✅ Dado operacional só é exibido como atual quando vem de endpoint real ativo, com fonte e horário.</div>
+                <div>⚠️ Fallback só é permitido quando já existe endpoint real configurado e a fonte primária falha.</div>
+                <div>📌 Quando fallback aparecer, o card deve informar que é última leitura válida salva e orientar verificação junto ao órgão responsável.</div>
+                <div>🚫 Fallback vencido, CSV manual, referência histórica e dado complementar não disparam novo alerta automático.</div>
+              </div>
+            </div>
+
             {/* BLOCO D — Saúde das fontes em tempo real */}
             <div style={{ ...s.card, border:`1px solid ${t.borderActive}` }}>
               <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:10 }}>SAÚDE DAS FONTES — ÚLTIMA VERIFICAÇÃO</div>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))", gap:8 }}>
                 {[
                   "Open-Meteo","INMET","CEMADEN","RADAR Lagoa","HidroSens","Defesa Civil RS",
-                  "NOAA/CPC ENSO","IRI/CCSR ENSO","CPTEC/INPE","INPE BDQueimadas","Copernicus EFFIS","Copernicus Water","Copernicus Sentinel-1","Copernicus NDVI","Copernicus EMS","ANA HidroWeb",
+                  "NOAA/CPC ENSO","IRI/CCSR ENSO","CPTEC/INPE","INPE BDQueimadas","Copernicus Water","Copernicus Sentinel-1","Copernicus NDVI","Copernicus EMS","ANA HidroWeb",
                 ].map(name => {
                   const h = getValidatedSourceHealth(name);
                   const ok   = h?.ok;
@@ -2809,7 +2842,6 @@ export default function SentinelaRS() {
               })(),
               { n:"NOAA/CPC + IRI — ENSO",   st:"ATIVO",  c:"#22c55e", d:"ENSO: Niño 3.4, ONI e cenário probabilístico dominante. Índices observados e probabilidades atualizados via Edge Functions.", a:"Dados públicos, atualização mensal", h:"1. iri.columbia.edu/our-expertise/climate/forecasts/enso/current/\n2. Atualizar valores activeENSO.nino34, oni3m, prob e forecast no código\n3. Publicação NOAA/IRI: primeira semana de cada mês" },
               { n:"INPE BDQueimadas",          st:"ATIVO",     c:"#22c55e", d:"Focos de fogo ativo no RS via dados abertos CSV do INPE. Consulta últimos 2 dias, filtra RS no Supabase e aceita retorno vazio como operação normal.", a:"Sem chave", h:"Endpoint: inpe-queimadas-rs. Fonte pública: dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil. Vazio significa sem foco no período, não falha." },
-              { n:"Copernicus EFFIS",          st:effisHealth?.ok ? "ATIVO" : "AGUARDANDO", c:effisHealth?.ok ? "#22c55e" : "#eab308", d:"WMS público EFFIS conectado como camada complementar de perigo/focos/área queimada. Para alerta no RS, exige cruzamento espacial validado e/ou integração global GWIS/FIRMS.", a:"WMS público; GWIS/FIRMS pode exigir chave", h:"Endpoint: effis-wms-health. Verifica GetCapabilities do WMS EFFIS. Não aciona alerta automático sozinho." },
               { n:"Copernicus Water / Sentinel-2", st:"ATIVO", c:"#22c55e", d:"Indicador real de água superficial por Sentinel-2 L2A/NDWI para a Lagoa dos Patos. Contexto hidrológico por satélite; não aciona alerta sozinho.", a:"Copernicus Data Space / Sentinel Hub", h:"Endpoint: copernicus-water. Produto óptico: depende de baixa nebulosidade. Usar como contexto junto com Defesa Civil, CEMADEN, RADAR Lagoa e HidroSens." },
               { n:"Copernicus Sentinel-1 SAR", st:"ATIVO", c:"#22c55e", d:"Indicador real SAR de água/alagamento sob nuvens/noite. Contexto remoto por radar; não é alerta oficial nem máscara validada de inundação.", a:"Copernicus Data Space / Sentinel Hub", h:"Endpoint: copernicus-sentinel1-water. Método: Sentinel-1 GRD IW/DV. Pode falhar em áreas urbanas, vegetação inundada, vento forte sobre água e sombras de relevo. Confirmar com órgãos responsáveis." },
               { n:"Copernicus NDVI / Vegetação", st:"ATIVO", c:"#22c55e", d:"Indicador real de vegetação/estiagem por Sentinel-2 L2A/NDVI. Contexto ambiental; não aciona alerta sozinho.", a:"Copernicus Data Space / Sentinel Hub", h:"Endpoint: copernicus-ndvi. Produto óptico: depende de baixa nebulosidade. Usar como contexto, não como alerta automático." },
@@ -2826,6 +2858,12 @@ export default function SentinelaRS() {
                   <div style={{ flex:1 }}>
                     <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:3 }}>
                       <div style={{ fontSize:12, fontWeight:600, color:t.text }}>{api.n}</div>
+                      {/* badge de saúde ao vivo */}
+                      {sourceHealth[api.n] !== undefined && (
+                        <span style={{ fontSize:7, padding:"1px 5px", borderRadius:3, border:`1px solid ${sourceHealth[api.n].ok?"#22c55e":"#ef4444"}`, color:sourceHealth[api.n].ok?"#22c55e":"#ef4444" }}>
+                          {sourceHealth[api.n].ok ? "● LIVE OK" : "○ FALHOU"}
+                        </span>
+                      )}
                     </div>
                     <div style={{ fontSize:10, color:t.textMuted, marginBottom:3 }}>{api.d}</div>
                     <div style={{ fontSize:9, color:t.textFaint }}>🔑 {api.a}</div>
@@ -2839,9 +2877,6 @@ export default function SentinelaRS() {
             </div>
           </div>
         )}
-
-          </main>
-        </div>
 
         {riskExplain && (
           <div
@@ -2879,6 +2914,7 @@ export default function SentinelaRS() {
 
         <div style={{ marginTop:28, borderTop:`1px solid ${t.border}`, paddingTop:12, display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:6 }}>
           <div style={{ fontSize:9, color:t.textFaint }}>SENTINELA·RS v2.2 · Open-Meteo + INMET + CEMADEN + Lagoa RADAR + HidroSens + ANA complementar/aguardando API + NOAA ENSO + INPE + Copernicus · Fonte CEMADEN: {CEMADEN_ATTRIBUTION}</div>
+          <div style={{ fontSize:9, color:t.textFaint }}>Atualização: 30 min · PWA · github.com/cobradeca/sentinela-rs</div>
         </div>
       </div>
 
