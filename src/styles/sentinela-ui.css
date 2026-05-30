@@ -196,7 +196,7 @@ div[style*="font-size: 7px"],
 span[style*="font-size: 7px"],
 button[style*="font-size: 7px"],
 a[style*="font-size: 7px"] {
-  font-size: 13px !important;
+  font-size: 16px !important;
 }
 
 div[style*="font-size: 8px"],
@@ -204,7 +204,7 @@ span[style*="font-size: 8px"],
 button[style*="font-size: 8px"],
 a[style*="font-size: 8px"],
 text[style*="font-size: 8px"] {
-  font-size: 14px !important;
+  font-size: 17px !important;
 }
 
 div[style*="font-size: 9px"],
@@ -212,7 +212,7 @@ span[style*="font-size: 9px"],
 button[style*="font-size: 9px"],
 a[style*="font-size: 9px"],
 text[style*="font-size: 9px"] {
-  font-size: 15px !important;
+  font-size: 19px !important;
 }
 
 div[style*="font-size: 10px"],
@@ -220,91 +220,91 @@ span[style*="font-size: 10px"],
 button[style*="font-size: 10px"],
 a[style*="font-size: 10px"],
 text[style*="font-size: 10px"] {
-  font-size: 16px !important;
+  font-size: 20px !important;
 }
 
 div[style*="font-size: 11px"],
 span[style*="font-size: 11px"],
 button[style*="font-size: 11px"],
 a[style*="font-size: 11px"] {
-  font-size: 18px !important;
+  font-size: 22px !important;
 }
 
 div[style*="font-size: 12px"],
 span[style*="font-size: 12px"],
 button[style*="font-size: 12px"],
 a[style*="font-size: 12px"] {
-  font-size: 18px !important;
+  font-size: 22px !important;
 }
 
 div[style*="font-size: 13px"],
 span[style*="font-size: 13px"],
 button[style*="font-size: 13px"],
 a[style*="font-size: 13px"] {
-  font-size: 22px !important;
+  font-size: 27px !important;
 }
 
 div[style*="font-size: 14px"],
 span[style*="font-size: 14px"],
 button[style*="font-size: 14px"],
 a[style*="font-size: 14px"] {
-  font-size: 22px !important;
+  font-size: 27px !important;
 }
 
 div[style*="font-size: 15px"],
 span[style*="font-size: 15px"],
 button[style*="font-size: 15px"],
 a[style*="font-size: 15px"] {
-  font-size: 22px !important;
+  font-size: 27px !important;
 }
 
 div[style*="font-size: 16px"],
 span[style*="font-size: 16px"],
 button[style*="font-size: 16px"],
 a[style*="font-size: 16px"] {
-  font-size: 22px !important;
+  font-size: 27px !important;
 }
 
 div[style*="font-size: 17px"],
 span[style*="font-size: 17px"],
 button[style*="font-size: 17px"],
 a[style*="font-size: 17px"] {
-  font-size: 23px !important;
+  font-size: 28px !important;
 }
 
 div[style*="font-size: 18px"],
 span[style*="font-size: 18px"],
 button[style*="font-size: 18px"],
 a[style*="font-size: 18px"] {
-  font-size: 23px !important;
+  font-size: 29px !important;
 }
 
 div[style*="font-size: 20px"],
 span[style*="font-size: 20px"],
 button[style*="font-size: 20px"],
 a[style*="font-size: 20px"] {
-  font-size: 25px !important;
+  font-size: 31px !important;
 }
 
 div[style*="font-size: 22px"],
 span[style*="font-size: 22px"],
 button[style*="font-size: 22px"],
 a[style*="font-size: 22px"] {
-  font-size: 27px !important;
+  font-size: 34px !important;
 }
 
 div[style*="font-size: 24px"],
 span[style*="font-size: 24px"],
 button[style*="font-size: 24px"],
 a[style*="font-size: 24px"] {
-  font-size: 29px !important;
+  font-size: 36px !important;
 }
 
 div[style*="font-size: 26px"],
 span[style*="font-size: 26px"],
 button[style*="font-size: 26px"],
 a[style*="font-size: 26px"] {
-  font-size: 31px !important;
+  font-size: 39px !important;
 }
 
 body[data-theme="dark"] div[style*="#64748b"],
@@ -369,8 +369,8 @@ span[style*="letterSpacing: 2"] {
   letter-spacing: 0.16em !important;
 }
 
-div[style*="fontSize:28"],
-h1[style*="fontSize:28"] {
+div[style*="font-size: 28px"],
+h1[style*="font-size: 28px"] {
   font-size: clamp(2.2rem, 6vw, 4.85rem) !important;
 }
 
@@ -422,4 +422,167 @@ div[style*="grid-template-columns: repeat(7"] {
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+.sr-city-grid {
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
+}
+
+.sr-shell {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.sr-sidebar {
+  position: sticky;
+  top: 14px;
+  border-radius: 10px;
+  padding: 12px;
+  max-height: calc(100vh - 28px);
+  overflow: auto;
+}
+
+.sr-sidebar-nav {
+  display: grid;
+  gap: 7px;
+}
+
+.sr-side-tab-button {
+  width: 100%;
+  text-align: left;
+  min-height: 42px;
+  line-height: 1.25;
+}
+
+.sr-content {
+  min-width: 0;
+}
+
+.sr-city-card,
+.sr-lagoa-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sr-city-card {
+  min-height: 302px;
+}
+
+.sr-city-card-head,
+.sr-lagoa-card-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.sr-city-card-title,
+.sr-lagoa-title {
+  min-width: 0;
+}
+
+.sr-city-card-title > div,
+.sr-lagoa-title > div,
+.sr-city-source-line {
+  overflow-wrap: anywhere;
+}
+
+.sr-status-button {
+  min-width: 84px;
+  max-width: 96px;
+  line-height: 1.35;
+  text-align: center;
+  white-space: normal;
+}
+
+.sr-city-metrics {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+  margin-top: auto;
+}
+
+.sr-metric-tile {
+  min-height: 72px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  overflow: hidden;
+}
+
+.sr-metric-tile > div:last-child {
+  line-height: 1.18;
+  overflow-wrap: anywhere;
+}
+
+.sr-lagoa-grid {
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)) !important;
+}
+
+.sr-lagoa-card {
+  min-height: 360px;
+}
+
+.sr-lagoa-metrics {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+
+.sr-lagoa-tile {
+  min-width: 0;
+  min-height: 92px;
+  overflow: hidden;
+}
+
+.sr-lagoa-current div:nth-child(2) {
+  font-size: clamp(1.45rem, 3vw, 2.05rem) !important;
+  line-height: 1.05;
+  white-space: nowrap;
+}
+
+.sr-lagoa-source-name {
+  font-size: clamp(0.98rem, 1.8vw, 1.18rem) !important;
+  line-height: 1.22;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 920px) {
+  .sr-shell {
+    display: block;
+  }
+
+  .sr-sidebar {
+    display: none;
+  }
+
+  .sr-mobile-tabs {
+    display: flex !important;
+  }
+
+  .sr-mobile-tab-button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .sr-city-grid,
+  .sr-lagoa-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .sr-city-card-head,
+  .sr-lagoa-card-head {
+    grid-template-columns: 1fr;
+  }
+
+  .sr-status-button {
+    max-width: none;
+    width: 100%;
+  }
+
+  .sr-lagoa-metrics {
+    grid-template-columns: 1fr !important;
+  }
 }
