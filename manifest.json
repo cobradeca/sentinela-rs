@@ -1,6 +1,7 @@
 {
   "name": "Sentinela RS",
   "short_name": "Sentinela",
+  "id": "/sentinela-rs/",
   "description": "Sistema de monitoramento de catástrofes e eventos extremos — Rio Grande do Sul.",
   "start_url": "/sentinela-rs/",
   "scope": "/sentinela-rs/",
@@ -14,6 +15,8 @@
   "theme_color": "#070b12",
   "orientation": "any",
   "lang": "pt-BR",
+  "dir": "ltr",
+  "prefer_related_applications": false,
   "categories": [
     "utilities",
     "weather",
