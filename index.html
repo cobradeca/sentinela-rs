@@ -21,13 +21,5 @@
   <body>
     <div id="root"></div>
 
-    <script>
-      if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => {
-          navigator.serviceWorker.register("/sentinela-rs/sw.js");
-        });
-      }
-    </script>
-
   </body>
 </html>
