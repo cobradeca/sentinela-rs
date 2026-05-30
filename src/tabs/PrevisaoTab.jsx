@@ -1,3 +1,4 @@
+import { DefesaCivilNotice } from "../components/DefesaCivilNotice";
 export function PrevisaoTab({ ctx }) {
   const {
     APAS_RS,
@@ -11,7 +12,6 @@ export function PrevisaoTab({ ctx }) {
     STATIONS_LAGOA,
     activeENSO,
     alerts,
-    anaComplementar,
     copernicusEms,
     copernicusNdvi,
     copernicusS1,
@@ -70,6 +70,7 @@ export function PrevisaoTab({ ctx }) {
   return (
 
           <div>
+            <DefesaCivilNotice t={t} dark={dark} />
             {/* Select com seta visível, apenas cidades */}
             <div style={{ position:"relative", display:"inline-block", marginBottom:14 }}>
               <select value={selStation.id} onChange={e=>setSelStation(STATIONS_CIDADES.find(st=>st.id===e.target.value)||STATIONS_CIDADES[0])}

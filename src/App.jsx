@@ -1,4 +1,5 @@
-import { Component, Suspense, lazy, useState, useEffect, useCallback, useRef } from "react";
+import { Component, Suspense, lazy, useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { Onboarding } from "./components/Onboarding";
 import { FreshnessBadge } from "./components/FreshnessBadge";
 import { Sparkline as HistorySparkline } from "./components/Sparkline";
 import { appendLagoaHistorySnapshot, loadLagoaHistory } from "./services/lagoaHistory";
@@ -883,14 +884,15 @@ export default function SentinelaRS() {
     );
   }
 
-  const tabCtx = {
+  const tabCtx = useMemo(() => ({
     APAS_RS, CEMADEN_ATTRIBUTION, COPERNICUS_REFERENCE, FIRE_MONITORED_AREAS_RS, FreshnessBadge, HistorySparkline, RISK_LEVELS, STATIONS, STATIONS_CIDADES, STATIONS_LAGOA,
     activeENSO, alerts, copernicusEms, copernicusNdvi, copernicusS1, copernicusWater, cptecProducts, dark, dataStaleness, dayNames, effisHealth,
     ensoClass, ensoDominantProb, ensoFirstForecast, ensoObservedAvailable, ensoObservedText, ensoProbabilityAvailable, ensoProbabilityText, expanded, explainCityRisk, explainDailyRisk, explainLagoaRisk,
     formatCemadenRain, formatDateTimeBR, formatProbability, formatSignedCelsius, getFallbackWarningText, getLagoaMaxMay2024, getLagoaMeasuredAt, getLagoaPointData, getLagoaSourceText,
     getResponsibleAgencyText, getRiskBg, getRiskColor, getRiskLevel, getValidatedSourceHealth, lagoaHistory, lagoaHistoryMeta, lagoaStatusColor, lagoaStatusLabel, lagoaSummary, lastUpdate,
     icmbioUcs, loadAllData, loadQueimadas, percentValue, qLoading, queimadas, s, safeEnsoForecast, selData, selStation, setActiveTab, setExpanded, setExpandedCard, setRiskExplain, setSelStation, sourceHealth, stationData, t, wmoDesc, wmoEmoji,
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [stationData, alerts, dark, activeTab, selStation, selData, loading, lastUpdate, sourceHealth, lagoaHistory, lagoaHistoryMeta, expanded, expandedCard, riskExplain, queimadas, qLoading, copernicusWater, copernicusS1, copernicusNdvi, copernicusEms, cptecProducts, effisHealth, icmbioUcs, activeENSO]);
 
   const renderNavButton = (tab, compact = false) => (
     <button
@@ -919,6 +921,8 @@ export default function SentinelaRS() {
   );
 
   return (
+    <>
+    <Onboarding t={t} dark={dark} />
     <div style={{ minHeight:"100vh", background:t.bg, color:t.text, fontFamily:"'IBM Plex Mono','Courier New',monospace", transition:"background 0.3s,color 0.3s" }}>
       {/* Grid bg */}
       <div style={{ position:"fixed", inset:0, zIndex:0, backgroundImage:`linear-gradient(${t.grid} 1px,transparent 1px),linear-gradient(90deg,${t.grid} 1px,transparent 1px)`, backgroundSize:"40px 40px", pointerEvents:"none" }} />
@@ -1080,5 +1084,6 @@ export default function SentinelaRS() {
         ::-webkit-scrollbar-thumb{background:#1e293b;border-radius:3px}
       `}</style>
     </div>
+    </>
   );
 }

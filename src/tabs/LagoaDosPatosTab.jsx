@@ -1,3 +1,4 @@
+import { DefesaCivilNotice } from "../components/DefesaCivilNotice";
 export function LagoaDosPatosTab({ ctx }) {
   const {
     APAS_RS,
@@ -12,7 +13,6 @@ export function LagoaDosPatosTab({ ctx }) {
     STATIONS_LAGOA,
     activeENSO,
     alerts,
-    anaComplementar,
     copernicusEms,
     copernicusNdvi,
     copernicusS1,
@@ -68,6 +68,7 @@ export function LagoaDosPatosTab({ ctx }) {
   return (
 
           <div>
+            <DefesaCivilNotice t={t} dark={dark} />
             <div style={{ ...s.card, marginBottom:12, border:`1px solid ${t.borderActive}` }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12, flexWrap:"wrap" }}>
                 <div>

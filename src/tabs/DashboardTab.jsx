@@ -1,3 +1,4 @@
+import { DefesaCivilNotice } from "../components/DefesaCivilNotice";
 export function DashboardTab({ ctx }) {
   const {
     APAS_RS,
@@ -11,7 +12,6 @@ export function DashboardTab({ ctx }) {
     STATIONS_LAGOA,
     activeENSO,
     alerts,
-    anaComplementar,
     copernicusEms,
     copernicusNdvi,
     copernicusS1,
@@ -67,6 +67,7 @@ export function DashboardTab({ ctx }) {
   return (
 
           <div>
+            <DefesaCivilNotice t={t} dark={dark} />
             <div
               onClick={() => setActiveTab("lagoa")}
               style={{ ...s.card, marginBottom:12, border:`1px solid ${lagoaSummary.above ? "#f9731655" : t.borderActive}`, cursor:"pointer" }}

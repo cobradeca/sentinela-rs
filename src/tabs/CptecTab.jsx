@@ -1,3 +1,4 @@
+import { DefesaCivilNotice } from "../components/DefesaCivilNotice";
 export function CptecTab({ ctx }) {
   const {
     APAS_RS,
@@ -11,7 +12,6 @@ export function CptecTab({ ctx }) {
     STATIONS_LAGOA,
     activeENSO,
     alerts,
-    anaComplementar,
     copernicusEms,
     copernicusNdvi,
     copernicusS1,
@@ -68,6 +68,7 @@ export function CptecTab({ ctx }) {
   return (
 
           <div>
+            <DefesaCivilNotice t={t} dark={dark} />
             <div style={{ ...s.card, marginBottom:12, border:`1px solid ${t.borderActive}` }}>
               <div style={{ fontSize:9, color:t.textMuted, letterSpacing:2 }}>CPTEC/INPE</div>
               <div style={{ fontSize:20, fontWeight:900, color:t.text, marginTop:2 }}>Produtos sazonais e subsazonais oficiais</div>

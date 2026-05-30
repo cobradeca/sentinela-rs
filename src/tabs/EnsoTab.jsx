@@ -1,3 +1,4 @@
+import { DefesaCivilNotice } from "../components/DefesaCivilNotice";
 export function EnsoTab({ ctx }) {
   const {
     APAS_RS,
@@ -11,7 +12,6 @@ export function EnsoTab({ ctx }) {
     STATIONS_LAGOA,
     activeENSO,
     alerts,
-    anaComplementar,
     copernicusEms,
     copernicusNdvi,
     copernicusS1,
@@ -68,6 +68,7 @@ export function EnsoTab({ ctx }) {
   return (
 
           <div style={{ display:"grid", gap:12 }}>
+            <DefesaCivilNotice t={t} dark={dark} />
             <div style={{ padding:"12px 16px", background: dark?"rgba(34,211,238,0.08)":"rgba(8,145,178,0.06)", border:`1px solid ${t.borderActive}`, borderRadius:5, display:"flex", gap:12, alignItems:"flex-start" }}>
               <span style={{ fontSize:24 }}>🌡️</span>
               <div>

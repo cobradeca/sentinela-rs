@@ -1,3 +1,4 @@
+import { DefesaCivilNotice } from "../components/DefesaCivilNotice";
 export function QueimadasTab({ ctx }) {
   const {
     APAS_RS,
@@ -11,7 +12,6 @@ export function QueimadasTab({ ctx }) {
     STATIONS_LAGOA,
     activeENSO,
     alerts,
-    anaComplementar,
     copernicusEms,
     copernicusNdvi,
     copernicusS1,
@@ -70,6 +70,7 @@ export function QueimadasTab({ ctx }) {
   return (
 
           <div style={{ display:"grid", gap:12 }}>
+            <DefesaCivilNotice t={t} dark={dark} />
             <div style={{ padding:"10px 14px", background: dark?"rgba(249,115,22,0.08)":"rgba(249,115,22,0.05)", border:"1px solid rgba(249,115,22,0.3)", borderRadius:5, fontSize:10, color: dark?"#fdba74":"#c2410c", display:"flex", justifyContent:"space-between", alignItems:"center", gap:12, flexWrap:"wrap" }}>
               <span>🔥 Focos via <strong>INPE BDQueimadas</strong> (48h). <strong>EFFIS/Copernicus</strong> conectado como WMS complementar; alerta operacional continua dependente de foco real georreferenciado no RS.</span>
               <button onClick={loadQueimadas} disabled={qLoading} style={{ background:"none", border:"1px solid rgba(249,115,22,0.5)", color:"#fdba74", padding:"5px 12px", borderRadius:4, cursor:"pointer", fontFamily:"inherit", fontSize:9, letterSpacing:1 }}>{qLoading ? "⏳ Consultando..." : "↻ Atualizar"}</button>
@@ -184,7 +185,7 @@ export function QueimadasTab({ ctx }) {
                       <div style={{ fontSize:9, color:t.textMuted }}>{apa.municipio || apa.municipios || apa.categoria}</div>
                     </div>
                     <div style={{ fontSize:9, color:t.textFaint }}>{apa.area_ha ? `${Math.round(apa.area_ha).toLocaleString("pt-BR")} ha` : apa.lat ? `${apa.lat.toFixed(2)}S` : "CNUC"}</div>
-                    <div style={{ fontSize:8, padding:"2px 7px", border:`1px solid ${hasFire ? "#f97316" : "#22c55e66"}`, color:hasFire ? "#f97316" : "#22c55e", borderRadius:3 }}>{hasFire ? "Alerta" : "Normal"}</div>
+                    <div style={{ fontSize:8, padding:"2px 7px", border:`1px solid ${hasFire ? "#f97316" : "rgba(100,116,139,0.4)"}`, color:hasFire ? "#f97316" : "#94a3b8", borderRadius:3 }}>{hasFire ? "Foco detectado" : "Sem foco informado"}</div>
                   </div>
                   );
                 })}

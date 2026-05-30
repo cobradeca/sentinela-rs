@@ -1,3 +1,4 @@
+import { DefesaCivilNotice } from "../components/DefesaCivilNotice";
 export function CopernicusTab({ ctx }) {
   const {
     APAS_RS,
@@ -11,7 +12,6 @@ export function CopernicusTab({ ctx }) {
     STATIONS_LAGOA,
     activeENSO,
     alerts,
-    anaComplementar,
     copernicusEms,
     copernicusNdvi,
     copernicusS1,
@@ -67,6 +67,7 @@ export function CopernicusTab({ ctx }) {
   return (
 
           <div style={{ display:"grid", gap:12 }}>
+            <DefesaCivilNotice t={t} dark={dark} />
             <div style={{ padding:"10px 14px", background: dark?"rgba(139,92,246,0.08)":"rgba(139,92,246,0.05)", border:"1px solid rgba(139,92,246,0.3)", borderRadius:5, fontSize:10, color: dark?"#c4b5fd":"#7c3aed" }}>
               🛰️ <strong>Copernicus — produtos reais ativos.</strong> Sentinel-2 observa água e vegetação quando há céu útil. Sentinel-1 usa radar e ajuda mesmo com nuvens ou à noite. As cores dos números destacam o tipo do indicador e a qualidade da leitura; não são alerta oficial. A decisão operacional continua dependendo de Defesa Civil, CEMADEN, RADAR Lagoa, HidroSens e demais fontes responsáveis.
             </div>
