@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
           token_type: attempt.json?.token_type || "Bearer",
           expires_in: Number.isFinite(expiresIn) ? expiresIn : null,
           fetched_at: new Date().toISOString(),
-          note: "Autenticação Copernicus validada. Produtos reais já ativos: Copernicus Water/Sentinel-2 e Copernicus Sentinel-1 SAR. Próximo produto opcional: NDVI/vegetação.",
+          note: "Autenticação Copernicus validada. Esta função verifica apenas credenciais e token. Produtos reais devem ser validados nos endpoints específicos: copernicus-water, copernicus-sentinel1-water, copernicus-ndvi e copernicus-ems.",
           attempts,
         }), {
           headers: {
