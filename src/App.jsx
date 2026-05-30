@@ -940,7 +940,7 @@ export default function SentinelaRS() {
 
   const tabCtx = {
     APAS_RS, CEMADEN_ATTRIBUTION, COPERNICUS_REFERENCE, FIRE_MONITORED_AREAS_RS, HistorySparkline, RISK_LEVELS, STATIONS, STATIONS_CIDADES, STATIONS_LAGOA,
-    activeENSO, alerts, anaComplementar, copernicusEms, copernicusNdvi, copernicusS1, copernicusWater, dark, dataStaleness, effisHealth,
+    activeENSO, alerts, copernicusEms, copernicusNdvi, copernicusS1, copernicusWater, dark, dataStaleness, effisHealth,
     ensoClass, ensoDominantProb, ensoFirstForecast, ensoObservedAvailable, ensoProbabilityAvailable, ensoProbabilityText, explainCityRisk, explainDailyRisk, explainLagoaRisk,
     formatCemadenRain, formatDateTimeBR, formatProbability, formatSignedCelsius, getFallbackWarningText, getLagoaMaxMay2024, getLagoaMeasuredAt, getLagoaPointData, getLagoaSourceText,
     getResponsibleAgencyText, getRiskColor, getRiskLevel, getValidatedSourceHealth, lagoaHistory, lagoaHistoryMeta, lagoaStatusColor, lagoaStatusLabel, lagoaSummary, lastUpdate,
