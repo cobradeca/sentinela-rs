@@ -1,24 +1,27 @@
-const DEFESA_CIVIL_RS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/defesa-civil-rs";
-const INMET_FORECAST_BASE_URL = "https://apiprevmet3.inmet.gov.br/previsao";
-const INMET_PREVISAO_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/inmet-previsao";
-const CEMADEN_RS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/cemaden-rs";
+import {
+  ANA_RS_FUNCTION_URL,
+  CEMADEN_RS_FUNCTION_URL,
+  COPERNICUS_EMS_FUNCTION_URL,
+  COPERNICUS_EMS_RAPID_DETAIL_URL,
+  COPERNICUS_EMS_RAPID_INFO_URL,
+  COPERNICUS_EMS_RRM_URL,
+  COPERNICUS_NDVI_FUNCTION_URL,
+  COPERNICUS_SENTINEL1_FUNCTION_URL,
+  COPERNICUS_WATER_FUNCTION_URL,
+  CPTEC_INPE_PRODUCTS_FUNCTION_URL,
+  DEFESA_CIVIL_RS_FUNCTION_URL,
+  EFFIS_WMS_HEALTH_FUNCTION_URL,
+  HIDROSENS_LARANJAL_FUNCTION_URL,
+  ICMBIO_UCS_RS_FUNCTION_URL,
+  INMET_PREVISAO_FUNCTION_URL,
+  INPE_QUEIMADAS_RS_FUNCTION_URL,
+  IRI_ENSO_PROB_FUNCTION_URL,
+  LAGOA_RADAR_FUNCTION_URL,
+  NOAA_ENSO_FUNCTION_URL,
+  NOTIFICATION_HEALTH_FUNCTION_URL,
+} from "../config/sources";
+
 export const CEMADEN_ATTRIBUTION = "DADOS DA REDE OBSERVACIONAL DO CEMADEN/MCTIC";
-const ANA_RS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/ana-rs";
-const LAGOA_RADAR_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/lagoa-patos-radar";
-const HIDROSENS_LARANJAL_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/hidrosens-laranjal";
-const NOAA_ENSO_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/noaa-enso";
-const IRI_ENSO_PROB_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/iri-enso-probabilidades";
-const CPTEC_INPE_PRODUCTS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/cptec-inpe-produtos";
-const INPE_QUEIMADAS_RS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/inpe-queimadas-rs";
-const ICMBIO_UCS_RS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/icmbio-ucs-rs";
-const NOTIFICATION_HEALTH_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/notification-health";
-const COPERNICUS_WATER_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/copernicus-water";
-const COPERNICUS_SENTINEL1_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/copernicus-sentinel1-water";
-const COPERNICUS_NDVI_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/copernicus-ndvi";
-const COPERNICUS_EMS_FUNCTION_URL = "https://ykaaxrzkfeaxatrnkkxj.supabase.co/functions/v1/copernicus-ems";
-const COPERNICUS_EMS_RAPID_INFO_URL = "https://rapidmapping.emergency.copernicus.eu/backend/dashboard-api/public-activations-info/";
-const COPERNICUS_EMS_RAPID_DETAIL_URL = "https://rapidmapping.emergency.copernicus.eu/backend/dashboard-api/public-activations/";
-const COPERNICUS_EMS_RRM_URL = "https://riskandrecovery.emergency.copernicus.eu/api/public-activations/";
 
 export const ENSO_UNAVAILABLE = {
   nino34: null,
@@ -397,6 +400,20 @@ export async function fetchIcmbioUcsRs() {
   } catch { return null; }
 }
 
+export async function fetchEffisWmsHealth() {
+  try {
+    const res = await fetch(EFFIS_WMS_HEALTH_FUNCTION_URL, {
+      signal: AbortSignal.timeout(15000),
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchNotificationHealth() {
   try {
     const res = await fetch(NOTIFICATION_HEALTH_FUNCTION_URL, {
@@ -424,5 +441,68 @@ export async function fetchCemadenAccumulations() {
     );
   } catch {
     return {};
+  }
+}
+
+export async function fetchInmetForecast(ibgeCode) {
+  if (!ibgeCode) return null;
+
+  try {
+    const res = await fetch(`${INMET_PREVISAO_FUNCTION_URL}?codigo_ibge=${encodeURIComponent(ibgeCode)}`, {
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    if (!data?.ok || !data?.latest) return null;
+
+    return {
+      ...data.latest,
+      proxied: true,
+      fetched_at: data.fetched_at,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function normalizeOfficialRiskLevel(alert) {
+  const text = `${alert?.title || ""} ${alert?.message || ""}`.toUpperCase();
+
+  if (text.includes("RISCO EXTREMO") || text.includes("EMERGENCIA METEOROLOGICA")) {
+    return "EMERGENCIA";
+  }
+
+  if (text.includes("RISCO MUITO NAO USAR COMO ALERTA") || text.includes("CRITICO")) {
+    return "CRITICO";
+  }
+
+  if (text.includes("ALERTA") || text.includes("RISCO NAO USAR COMO ALERTA")) {
+    return "ALERTA";
+  }
+
+  return alert?.risk_level || "ATENCAO";
+}
+
+export async function fetchDefesaCivilAlerts() {
+  try {
+    const res = await fetch(DEFESA_CIVIL_RS_FUNCTION_URL, { signal: AbortSignal.timeout(10000) });
+    if (!res.ok) return [];
+
+    const data = await res.json();
+    if (!data?.ok || !Array.isArray(data.alerts)) return [];
+
+    return data.alerts.map((alert) => ({
+      ...alert,
+      id: alert.id || `defesa_civil_rs_${alert.at || alert.title}`,
+      station: alert.station || "Defesa Civil RS",
+      risk_level: normalizeOfficialRiskLevel(alert),
+      official: true,
+      source: "Defesa Civil RS",
+    }));
+  } catch {
+    return [];
   }
 }
