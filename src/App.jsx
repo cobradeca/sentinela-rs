@@ -1,5 +1,4 @@
-import { Suspense, lazy, useState, useEffect, useCallback, useRef } from "react";
-import { usePush } from "./hooks/usePush";
+import { Component, Suspense, lazy, useState, useEffect, useCallback, useRef } from "react";
 import { FreshnessBadge } from "./components/FreshnessBadge";
 import { Sparkline as HistorySparkline } from "./components/Sparkline";
 import { appendLagoaHistorySnapshot, loadLagoaHistory } from "./services/lagoaHistory";
@@ -19,7 +18,6 @@ import {
   fetchIriEnsoProbabilities,
   fetchLagoaRadarLevels,
   fetchNoaaEnso,
-  fetchNotificationHealth,
   fetchQueimadas,
   fetchWeather14Days,
 } from "./services/api";
@@ -47,6 +45,35 @@ const CopernicusTab = lazy(() => import("./tabs/CopernicusTab").then((m) => ({ d
 const QueimadasTab = lazy(() => import("./tabs/QueimadasTab").then((m) => ({ default: m.QueimadasTab })));
 const AlertasTab = lazy(() => import("./tabs/AlertasTab").then((m) => ({ default: m.AlertasTab })));
 const FontesDeDadosTab = lazy(() => import("./tabs/FontesDeDadosTab").then((m) => ({ default: m.FontesDeDadosTab })));
+
+class TabErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.resetKey !== this.props.resetKey && this.state.hasError) {
+      this.setState({ hasError: false });
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: 24, border: "1px solid rgba(239,68,68,0.35)", borderRadius: 8, background: "rgba(239,68,68,0.08)" }}>
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>Nao foi possivel abrir esta aba.</div>
+          <div style={{ fontSize: 12, opacity: 0.9 }}>Atualize a pagina. Se persistir, volte para Dashboard e tente novamente.</div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 function radarRiskToLevel(status) {
   if (status === "ALERTA") return "ALERTA";
@@ -321,30 +348,6 @@ const WMO_WEATHER = {
 const wmoDesc  = (c) => WMO_WEATHER[Number(c)]?.[1] || "Condição meteorológica";
 const wmoEmoji = (c) => WMO_WEATHER[Number(c)]?.[0] || "🌦️";
 
-// ─── PUSH ────────────────────────────────────────────────────────────────────
-function PushButton({ dark }) {
-  const { supported, subscribed, loading, error, subscribe: subscribePush } = usePush();
-  async function subscribe() {
-    await subscribePush([]);
-  }
-  const state = subscribed ? "subscribed" : loading ? "requesting" : error ? "error" : "idle";
-  const c = { idle:"#22d3ee", requesting:"#eab308", subscribed:"#22c55e", error:"#ef4444" };
-  const helpText = error || (!supported ? "Este navegador não oferece Push API para PWA." : null);
-  const label = subscribed ? "✓ Push ativo" : loading ? "⏳..." : error ? "✗ Ajustar push" : "🔔 Push";
-  return (
-    <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:3 }}>
-      <button onClick={subscribe} disabled={state==="subscribed"||state==="requesting"||!supported}
-        style={{ padding:"6px 12px", borderRadius:4, fontFamily:"inherit", fontSize:10, cursor:"pointer",
-          background: dark ? "rgba(0,0,0,0.3)" : "rgba(255,255,255,0.6)",
-          border:`1px solid ${c[state]}44`, color:c[state] }}>
-        {label}
-      </button>
-      {helpText && (
-        <div style={{ fontSize:9, color:"#fca5a5", maxWidth:280, textAlign:"right", lineHeight:1.45 }}>{helpText}</div>
-      )}
-    </div>
-  );
-}
 
 // ─── APP ─────────────────────────────────────────────────────────────────────
 export default function SentinelaRS() {
@@ -355,6 +358,7 @@ export default function SentinelaRS() {
   const [lagoaHistoryMeta, setLagoaHistoryMeta] = useState({ source: "sessão atual", persistent: false });
   const [selStation, setSelStation]     = useState(STATIONS_CIDADES[0]); // POA default
   const [activeTab, setActiveTab]       = useState("dashboard");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [alerts, setAlerts]             = useState([]);
   const [queimadas, setQueimadas]       = useState(null);
   const [icmbioUcs, setIcmbioUcs]       = useState(null);
@@ -369,7 +373,6 @@ export default function SentinelaRS() {
   const [copernicusS1, setCopernicusS1] = useState(null);
   const [copernicusNdvi, setCopernicusNdvi] = useState(null);
   const [copernicusEms, setCopernicusEms] = useState(null);
-  const [notificationHealth, setNotificationHealth] = useState(null);
   const [expandedCard, setExpandedCard] = useState(null); // para detalhe do card
   const [riskExplain, setRiskExplain] = useState(null);
   // BLOCO D — saúde das fontes
@@ -484,7 +487,6 @@ export default function SentinelaRS() {
   const loadAllData = useCallback(async () => {
     setLoading(true);
     const results = {};
-    const newAlerts = [];
     const health = { ...sourceHealthRef.current };
     const t0 = Date.now();
     const historyResult = await loadLagoaHistory(STATIONS_LAGOA.map((station) => station.id));
@@ -577,27 +579,6 @@ export default function SentinelaRS() {
         const order = ["NORMAL","ATENCAO","ALERTA","EMERGENCIA","CRITICO"];
         const risk = order.indexOf(levelRisk) > order.indexOf(baseRisk) ? levelRisk : baseRisk;
         results[st.id] = { weather, inmet, cemaden, lagoa, precip, tempMin, windMax, risk, realLevel, radarLevel };
-        // Só ALERTA, EMERGÊNCIA e CRÍTICO entram na aba Alertas.
-        // ATENÇÃO permanece visível no card, mas não infla o contador de alertas ativos.
-        if (["ALERTA", "EMERGENCIA", "CRITICO"].includes(risk)) {
-          const parts=[];
-          if (precip>80) parts.push(`chuva ${precip.toFixed(0)}mm/14d`);
-          if (tempMin<5) parts.push(`temp. mín. ${tempMin.toFixed(1)}°C`);
-          if (windMax>50) parts.push(`rajadas ${windMax.toFixed(0)}km/h`);
-          if (lagoa?.radar && lagoa.levelStatus === "ALERTA") parts.push(`lagoa ${lagoa.atual.toFixed(2)}m / limiar ${lagoa.threshold_m.toFixed(2)}m (RADAR)`);
-          const explain = st.type === "lagoa"
-            ? explainLagoaRisk(st, lagoa)
-            : explainCityRisk(st, results[st.id], ensoProbabilityText);
-          newAlerts.push({
-            id:`${st.id}_${Date.now()}`,
-            station:st.name,
-            risk_level:risk,
-            message:parts.join(" · ") || "Clique para ver os parâmetros que elevaram o risco.",
-            at:new Date(),
-            official:false,
-            explain,
-          });
-        }
       } catch { results[st.id]={ error:true, risk:"NORMAL" }; }
     });
     const defesaStart = Date.now();
@@ -613,7 +594,7 @@ export default function SentinelaRS() {
       persistent: historyResult.persistent,
       error: historyResult.error || null,
     });
-    setAlerts([...officialAlerts, ...newAlerts]);
+    setAlerts(officialAlerts);
     setLastUpdate(new Date());
     setLoading(false);
   }, []);
@@ -636,27 +617,6 @@ export default function SentinelaRS() {
     const iv = setInterval(loadAllData, 30*60*1000);
     return () => clearInterval(iv);
   }, [loadAllData]);
-
-
-
-
-  useEffect(() => {
-    let alive = true;
-
-    async function loadNotificationHealth() {
-      const data = await fetchNotificationHealth();
-      if (!alive) return;
-      setNotificationHealth(data);
-    }
-
-    loadNotificationHealth();
-    const iv = setInterval(loadNotificationHealth, 5 * 60 * 1000);
-
-    return () => {
-      alive = false;
-      clearInterval(iv);
-    };
-  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -803,7 +763,9 @@ export default function SentinelaRS() {
   }, []);
 
   useEffect(() => {
-    if (activeTab === "queimadas") loadQueimadas();
+    if (activeTab === "queimadas" || activeTab === "apis") {
+      loadQueimadas();
+    }
   }, [activeTab, loadQueimadas]);
 
   const overallRisk = Object.values(stationData).reduce((w,d) => {
@@ -921,36 +883,22 @@ export default function SentinelaRS() {
     );
   }
 
-  // ─── RENDER ──────────────────────────────────────────────────────────────
-  const notifyChannels = notificationHealth?.channels || {};
-  const channelStatus = (channel, fallbackReady = false) => {
-    const info = notifyChannels[channel];
-    if (!notificationHealth) return { ok: fallbackReady, label: fallbackReady ? "Ativo" : "Verificando", color: fallbackReady ? "#22c55e" : "#eab308" };
-    if (info?.configured) return { ok: true, label: "Ativo", color: "#22c55e" };
-    return { ok: false, label: "Configurar", color: "#eab308" };
-  };
-  const notificationCards = [
-    { i:"📱", n:"Push nativo (PWA)", status:channelStatus("push"), s: notifyChannels.push?.configured ? `Servidor pronto${Number.isFinite(notifyChannels.push?.subscriptions) ? ` · ${notifyChannels.push.subscriptions} inscrição(ões)` : ""}` : "Configurar VAPID", h: notifyChannels.push?.note || "Front-end registra o Service Worker e salva a assinatura em push_subscriptions. A Edge Function send-alerts envia via Web Push usando VAPID_PRIVATE_JWK." },
-    { i:"🔔", n:"Alertas na tela", status:channelStatus("screen", true), s:"Ativo — cálculo local", h:"Canal local do app. Exibe alertas calculados na tela e não depende de provedor externo." },
-    { i:"📧", n:"E-mail (Resend)", status:channelStatus("email"), s: notifyChannels.email?.configured ? "Secrets OK" : "Configurar secrets", h: notifyChannels.email?.note || "Secrets esperados no Supabase: RESEND_API_KEY, ALERT_EMAIL_TO e opcionalmente ALERT_EMAIL_FROM." },
-    { i:"📢", n:"Defesa Civil RS", status:channelStatus("defesa_civil", Boolean(getValidatedSourceHealth("Defesa Civil RS")?.ok)), s: getValidatedSourceHealth("Defesa Civil RS")?.ok ? "RSS oficial OK" : "Verificando RSS", h:"Fonte oficial conectada via Supabase Edge Function. RSS: www.defesacivil.rs.gov.br/rss" },
-    { i:"📲", n:"SMS (Twilio)", status:channelStatus("sms"), s: notifyChannels.sms?.configured ? "Emergência/crítico" : "Configurar Twilio", h: notifyChannels.sms?.note || "Secrets esperados no Supabase: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM e ALERT_SMS_TO. O envio só roda para EMERGENCIA ou CRITICO." },
-    { i:"🔊", n:"Sirene IoT", status:channelStatus("sirene"), s: notifyChannels.sirene?.configured ? "Crítico com webhook" : "Aguardando hardware/webhook", h: notifyChannels.sirene?.note || "Secrets esperados no Supabase: SIRENE_WEBHOOK_URL e opcionalmente SIRENE_WEBHOOK_TOKEN. A sirene só recebe POST quando o alerta é CRITICO e houver hardware pronto." },
-  ];
-
   const tabCtx = {
-    APAS_RS, CEMADEN_ATTRIBUTION, COPERNICUS_REFERENCE, FIRE_MONITORED_AREAS_RS, HistorySparkline, RISK_LEVELS, STATIONS, STATIONS_CIDADES, STATIONS_LAGOA,
-    activeENSO, alerts, copernicusEms, copernicusNdvi, copernicusS1, copernicusWater, dark, dataStaleness, effisHealth,
-    ensoClass, ensoDominantProb, ensoFirstForecast, ensoObservedAvailable, ensoProbabilityAvailable, ensoProbabilityText, explainCityRisk, explainDailyRisk, explainLagoaRisk,
+    APAS_RS, CEMADEN_ATTRIBUTION, COPERNICUS_REFERENCE, FIRE_MONITORED_AREAS_RS, FreshnessBadge, HistorySparkline, RISK_LEVELS, STATIONS, STATIONS_CIDADES, STATIONS_LAGOA,
+    activeENSO, alerts, copernicusEms, copernicusNdvi, copernicusS1, copernicusWater, cptecProducts, dark, dataStaleness, dayNames, effisHealth,
+    ensoClass, ensoDominantProb, ensoFirstForecast, ensoObservedAvailable, ensoObservedText, ensoProbabilityAvailable, ensoProbabilityText, expanded, explainCityRisk, explainDailyRisk, explainLagoaRisk,
     formatCemadenRain, formatDateTimeBR, formatProbability, formatSignedCelsius, getFallbackWarningText, getLagoaMaxMay2024, getLagoaMeasuredAt, getLagoaPointData, getLagoaSourceText,
-    getResponsibleAgencyText, getRiskColor, getRiskLevel, getValidatedSourceHealth, lagoaHistory, lagoaHistoryMeta, lagoaStatusColor, lagoaStatusLabel, lagoaSummary, lastUpdate,
-    loadAllData, notificationCards, percentValue, queimadas, s, safeEnsoForecast, selStation, setActiveTab, setExpandedCard, setRiskExplain, setSelStation, sourceHealth, stationData, t, wmoDesc, wmoEmoji,
+    getResponsibleAgencyText, getRiskBg, getRiskColor, getRiskLevel, getValidatedSourceHealth, lagoaHistory, lagoaHistoryMeta, lagoaStatusColor, lagoaStatusLabel, lagoaSummary, lastUpdate,
+    icmbioUcs, loadAllData, loadQueimadas, percentValue, qLoading, queimadas, s, safeEnsoForecast, selData, selStation, setActiveTab, setExpanded, setExpandedCard, setRiskExplain, setSelStation, sourceHealth, stationData, t, wmoDesc, wmoEmoji,
   };
 
   const renderNavButton = (tab, compact = false) => (
     <button
       key={tab.key}
-      onClick={() => setActiveTab(tab.key)}
+      onClick={() => {
+        setActiveTab(tab.key);
+        setMobileMenuOpen(false);
+      }}
       className={compact ? "sr-mobile-tab-button" : "sr-side-tab-button"}
       style={{
         padding: compact ? "8px 12px" : "10px 12px",
@@ -980,7 +928,25 @@ export default function SentinelaRS() {
         <CardDetail station={expandedCard} d={stationData[expandedCard.id]} onClose={()=>setExpandedCard(null)} />
       )}
 
-      <div style={{ position:"relative", zIndex:2, maxWidth:1420, margin:"0 auto", padding:"0 16px 40px" }}>
+      <div className="sr-app-inner" style={{ position:"relative", zIndex:2, maxWidth:1420, margin:"0 auto", padding:"0 16px 40px" }}>
+
+        <div className="sr-mobile-quickbar">
+          <button
+            type="button"
+            className="sr-mobile-menu-trigger"
+            onClick={() => setMobileMenuOpen(true)}
+            aria-label="Abrir menu"
+          >
+            <span />
+            <span />
+            <span />
+          </button>
+          <button onClick={()=>setDark(d=>!d)} title={dark?"Modo claro":"Modo escuro"} className="sr-mobile-quick-btn">
+            {dark?"☀️":"🌙"}
+          </button>
+          <span className="sr-mobile-quick-time">{lastUpdate?lastUpdate.toLocaleTimeString("pt-BR"):"--:--"}</span>
+          <button onClick={loadAllData} title="Atualizar" className="sr-mobile-quick-btn">↻</button>
+        </div>
 
         {/* ── HEADER ── */}
         <header style={{ borderBottom:`1px solid ${dark?"rgba(34,211,238,0.2)":t.border}`, paddingBottom:14, marginBottom:20, paddingTop:18 }}>
@@ -999,17 +965,12 @@ export default function SentinelaRS() {
               <div style={{ padding:"5px 12px", borderRadius:4, border:`1px solid ${RISK_LEVELS[overallRisk].color}`, background:getRiskBg(overallRisk), color:getRiskColor(overallRisk), fontSize:12, fontWeight:700, letterSpacing:2 }}>
                 {RISK_LEVELS[overallRisk].icon} RISCO GERAL: {RISK_LEVELS[overallRisk].label.toUpperCase()}
               </div>
-              {/* ENSO badge — apenas evento mais próximo */}
-              <div style={{ padding:"4px 10px", borderRadius:4, border:`1px solid ${ensoClass.color}55`, color:ensoClass.color, fontSize:10, fontWeight:700 }}>
-                {ensoClass.icon} ENSO {ensoObservedAvailable ? `${ensoClass.label} · Niño 3.4 ${formatSignedCelsius(activeENSO.nino34)}` : "observado indisponível"}{ensoDominantProb ? ` · ${ensoDominantProb.label} ${formatProbability(ensoDominantProb.value)}` : ""}
-              </div>
-              <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+              <div className="sr-header-controls" style={{ display:"flex", gap:6, alignItems:"center" }}>
                 {/* Toggle modo claro/escuro */}
                 <button onClick={()=>setDark(d=>!d)} title={dark?"Modo claro":"Modo escuro"}
                   style={{ padding:"6px 10px", borderRadius:4, fontFamily:"inherit", fontSize:11, cursor:"pointer", background: dark?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.07)", border:`1px solid ${t.border}`, color:t.textMuted }}>
                   {dark?"☀️":"🌙"}
                 </button>
-                <PushButton dark={dark} />
                 <span style={{ fontSize:9, color:t.textFaint }}>{lastUpdate?lastUpdate.toLocaleTimeString("pt-BR"):"..."}</span>
                 <button onClick={loadAllData} style={{ background:"none", border:"none", color:t.accent, cursor:"pointer", fontSize:12, padding:0 }}>↻</button>
               </div>
@@ -1018,10 +979,24 @@ export default function SentinelaRS() {
 
           {/* Banner ENSO */}
           <div style={{ marginTop:10, padding:"9px 14px", background: ensoBannerActive ? `${ensoBannerColor}12` : (dark?"rgba(100,116,139,0.10)":"rgba(100,116,139,0.08)"), border:`1px solid ${ensoBannerActive ? `${ensoBannerColor}55` : t.border}`, borderRadius:4, fontSize:11, color: ensoBannerActive ? ensoBannerColor : t.textMuted, display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
-            ⚠️ <strong>ENSO — leitura observada e probabilidade</strong> — {ensoObservedText}. {ensoProbabilityText}.
+            <strong>ENSO:</strong> {ensoObservedAvailable ? `${ensoClass.label} observado` : "observado indisponível"}{ensoDominantProb ? ` · ${ensoDominantProb.label} ${formatProbability(ensoDominantProb.value)}` : ""}.
             <button onClick={()=>setActiveTab("enso")} style={{ background:"none", border:"none", color:t.accent, cursor:"pointer", fontSize:11, padding:0, fontFamily:"inherit" }}>Ver dados completos →</button>
           </div>
         </header>
+
+        <div
+          className={`sr-mobile-drawer-backdrop ${mobileMenuOpen ? "is-open" : ""}`}
+          onClick={() => setMobileMenuOpen(false)}
+        />
+        <aside className={`sr-mobile-drawer ${mobileMenuOpen ? "is-open" : ""}`} style={{ border:`1px solid ${t.borderActive}` }}>
+          <div className="sr-mobile-drawer-head">
+            <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2 }}>NAVEGAÇÃO</div>
+            <button type="button" className="sr-mobile-close" onClick={() => setMobileMenuOpen(false)} aria-label="Fechar menu">×</button>
+          </div>
+          <nav className="sr-mobile-tabs">
+            {TABS.map((tab) => renderNavButton(tab, true))}
+          </nav>
+        </aside>
 
         <div className="sr-shell">
           <aside className="sr-sidebar" style={{ border:`1px solid ${t.border}`, background:t.cardBg, boxShadow:t.shadowCard }}>
@@ -1031,31 +1006,29 @@ export default function SentinelaRS() {
             </nav>
           </aside>
 
-          <div className="sr-mobile-tabs" style={{ display:"none", gap:6, marginBottom:16, overflowX:"auto", paddingBottom:4 }}>
-            {TABS.map((tab) => renderNavButton(tab, true))}
-          </div>
-
           <main className="sr-content">
 
         {loading && activeTab!=="copernicus" && activeTab!=="enso" && activeTab!=="apis" && (
           <div style={{ textAlign:"center", padding:50, color:t.accent }}>
-            <div style={{ fontSize:28, marginBottom:10, animation:"spin 1s linear infinite", display:"inline-block" }}>◌</div>
-            <div style={{ fontSize:11, letterSpacing:4 }}>CONSULTANDO APIs...</div>
+            <div style={{ fontSize:28, marginBottom:10, animation:"spin 1s linear infinite", display:"inline-block" }}>◯</div>
+            <div style={{ fontSize:11, letterSpacing:4 }}>ANALISANDO OS DADOS...</div>
             <div style={{ fontSize:9, color:t.textMuted, marginTop:4 }}>Open-Meteo · ANA HidroWeb · INPE · NOAA</div>
           </div>
         )}
 
-        <Suspense fallback={<div style={{ padding:24, color:t.accent, fontSize:11, letterSpacing:2 }}>CARREGANDO ABA...</div>}>
-          {!loading && activeTab==="dashboard" && <DashboardTab ctx={tabCtx} />}
-          {!loading && activeTab==="previsao" && <PrevisaoTab ctx={tabCtx} />}
-          {!loading && activeTab==="lagoa" && <LagoaDosPatosTab ctx={tabCtx} />}
-          {activeTab==="enso" && <EnsoTab ctx={tabCtx} />}
-          {!loading && activeTab==="cptec" && <CptecTab ctx={tabCtx} />}
-          {activeTab==="copernicus" && <CopernicusTab ctx={tabCtx} />}
-          {activeTab==="queimadas" && <QueimadasTab ctx={tabCtx} />}
-          {!loading && activeTab==="alertas" && <AlertasTab ctx={tabCtx} />}
-          {activeTab==="apis" && <FontesDeDadosTab ctx={tabCtx} />}
-        </Suspense>
+        <TabErrorBoundary resetKey={activeTab}>
+          <Suspense fallback={<div style={{ padding:24, color:t.accent, fontSize:11, letterSpacing:2 }}>CARREGANDO ABA...</div>}>
+            {activeTab==="dashboard" && <DashboardTab ctx={tabCtx} />}
+            {activeTab==="previsao" && <PrevisaoTab ctx={tabCtx} />}
+            {activeTab==="lagoa" && <LagoaDosPatosTab ctx={tabCtx} />}
+            {activeTab==="enso" && <EnsoTab ctx={tabCtx} />}
+            {activeTab==="cptec" && <CptecTab ctx={tabCtx} />}
+            {activeTab==="copernicus" && <CopernicusTab ctx={tabCtx} />}
+            {activeTab==="queimadas" && <QueimadasTab ctx={tabCtx} />}
+            {activeTab==="alertas" && <AlertasTab ctx={tabCtx} />}
+            {activeTab==="apis" && <FontesDeDadosTab ctx={tabCtx} />}
+          </Suspense>
+        </TabErrorBoundary>
 
           </main>
         </div>

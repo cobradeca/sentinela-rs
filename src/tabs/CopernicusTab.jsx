@@ -48,7 +48,6 @@ export function CopernicusTab({ ctx }) {
     lagoaSummary,
     lastUpdate,
     loadAllData,
-    notificationCards,
     percentValue,
     queimadas,
     s,

@@ -1,4 +1,4 @@
-const CACHE_NAME = "sentinela-rs-v1";
+const CACHE_NAME = "sentinela-rs-v20260530-3";
 const APP_BASE = "/sentinela-rs/";
 
 const APP_SHELL = [
@@ -40,8 +40,13 @@ self.addEventListener("fetch", (event) => {
 
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request).catch(() => caches.match(APP_BASE + "index.html"))
+      fetch(request, { cache: "no-store" }).catch(() => caches.match(APP_BASE + "index.html"))
     );
+    return;
+  }
+
+  if (url.pathname.includes("/assets/") || url.pathname.endsWith("index.html")) {
+    event.respondWith(fetch(request, { cache: "no-store" }));
     return;
   }
 
@@ -62,45 +67,6 @@ self.addEventListener("fetch", (event) => {
           return response;
         })
         .catch(() => cached);
-    })
-  );
-});
-
-self.addEventListener("push", (event) => {
-  let payload = {};
-
-  try {
-    payload = event.data ? event.data.json() : {};
-  } catch {
-    payload = { body: event.data?.text() };
-  }
-
-  const title = payload.title || "Sentinela-RS";
-  const options = {
-    body: payload.body || "Novo alerta operacional.",
-    icon: APP_BASE + "icons/icon-192.png",
-    badge: APP_BASE + "icons/icon-192.png",
-    data: { url: payload.url || APP_BASE },
-    tag: payload.risk ? `sentinela-${payload.risk}-${payload.station || "rs"}` : "sentinela-alerta",
-    renotify: true
-  };
-
-  event.waitUntil(self.registration.showNotification(title, options));
-});
-
-self.addEventListener("notificationclick", (event) => {
-  event.notification.close();
-  const targetUrl = event.notification.data?.url || APP_BASE;
-
-  event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
-      for (const client of clients) {
-        if (client.url.includes(APP_BASE) && "focus" in client) {
-          client.navigate(targetUrl);
-          return client.focus();
-        }
-      }
-      return self.clients.openWindow(targetUrl);
     })
   );
 });

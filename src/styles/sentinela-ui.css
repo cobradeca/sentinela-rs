@@ -204,7 +204,7 @@ span[style*="font-size: 8px"],
 button[style*="font-size: 8px"],
 a[style*="font-size: 8px"],
 text[style*="font-size: 8px"] {
-  font-size: 17px !important;
+  font-size: 13px !important;
 }
 
 div[style*="font-size: 9px"],
@@ -212,7 +212,7 @@ span[style*="font-size: 9px"],
 button[style*="font-size: 9px"],
 a[style*="font-size: 9px"],
 text[style*="font-size: 9px"] {
-  font-size: 19px !important;
+  font-size: 14px !important;
 }
 
 div[style*="font-size: 10px"],
@@ -220,91 +220,91 @@ span[style*="font-size: 10px"],
 button[style*="font-size: 10px"],
 a[style*="font-size: 10px"],
 text[style*="font-size: 10px"] {
-  font-size: 20px !important;
+  font-size: 15px !important;
 }
 
 div[style*="font-size: 11px"],
 span[style*="font-size: 11px"],
 button[style*="font-size: 11px"],
 a[style*="font-size: 11px"] {
-  font-size: 22px !important;
+  font-size: 16px !important;
 }
 
 div[style*="font-size: 12px"],
 span[style*="font-size: 12px"],
 button[style*="font-size: 12px"],
 a[style*="font-size: 12px"] {
-  font-size: 22px !important;
+  font-size: 16px !important;
 }
 
 div[style*="font-size: 13px"],
 span[style*="font-size: 13px"],
 button[style*="font-size: 13px"],
 a[style*="font-size: 13px"] {
-  font-size: 27px !important;
+  font-size: 18px !important;
 }
 
 div[style*="font-size: 14px"],
 span[style*="font-size: 14px"],
 button[style*="font-size: 14px"],
 a[style*="font-size: 14px"] {
-  font-size: 27px !important;
+  font-size: 18px !important;
 }
 
 div[style*="font-size: 15px"],
 span[style*="font-size: 15px"],
 button[style*="font-size: 15px"],
 a[style*="font-size: 15px"] {
-  font-size: 27px !important;
+  font-size: 19px !important;
 }
 
 div[style*="font-size: 16px"],
 span[style*="font-size: 16px"],
 button[style*="font-size: 16px"],
 a[style*="font-size: 16px"] {
-  font-size: 27px !important;
+  font-size: 19px !important;
 }
 
 div[style*="font-size: 17px"],
 span[style*="font-size: 17px"],
 button[style*="font-size: 17px"],
 a[style*="font-size: 17px"] {
-  font-size: 28px !important;
+  font-size: 20px !important;
 }
 
 div[style*="font-size: 18px"],
 span[style*="font-size: 18px"],
 button[style*="font-size: 18px"],
 a[style*="font-size: 18px"] {
-  font-size: 29px !important;
+  font-size: 21px !important;
 }
 
 div[style*="font-size: 20px"],
 span[style*="font-size: 20px"],
 button[style*="font-size: 20px"],
 a[style*="font-size: 20px"] {
-  font-size: 31px !important;
+  font-size: 22px !important;
 }
 
 div[style*="font-size: 22px"],
 span[style*="font-size: 22px"],
 button[style*="font-size: 22px"],
 a[style*="font-size: 22px"] {
-  font-size: 34px !important;
+  font-size: 24px !important;
 }
 
 div[style*="font-size: 24px"],
 span[style*="font-size: 24px"],
 button[style*="font-size: 24px"],
 a[style*="font-size: 24px"] {
-  font-size: 36px !important;
+  font-size: 26px !important;
 }
 
 div[style*="font-size: 26px"],
 span[style*="font-size: 26px"],
 button[style*="font-size: 26px"],
 a[style*="font-size: 26px"] {
-  font-size: 39px !important;
+  font-size: 28px !important;
 }
 
 body[data-theme="dark"] div[style*="#64748b"],
@@ -371,7 +371,7 @@ span[style*="letterSpacing: 2"] {
 
 div[style*="font-size: 28px"],
 h1[style*="font-size: 28px"] {
-  font-size: clamp(2.2rem, 6vw, 4.85rem) !important;
+  font-size: clamp(1.9rem, 5vw, 3.8rem) !important;
 }
 
 div[style*="gridTemplateColumns:\"repeat(7"],
@@ -460,6 +460,91 @@ div[style*="grid-template-columns: repeat(7"] {
   min-width: 0;
 }
 
+.sr-mobile-drawer,
+.sr-mobile-drawer-backdrop {
+  display: none;
+}
+
+.sr-mobile-quickbar {
+  display: none;
+}
+
+.sr-precip-card {
+  max-width: 100%;
+}
+
+.sr-precip-chart {
+  min-width: 0;
+}
+
+.sr-mobile-quick-btn {
+  min-width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(8, 20, 35, 0.88);
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  color: #8be9ff;
+  cursor: pointer;
+  font-family: var(--sr-font-ui);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.sr-mobile-quick-time {
+  font-size: 11px;
+  color: #9fb0c3;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.sr-mobile-tabs {
+  display: grid;
+  gap: 8px;
+}
+
+.sr-mobile-menu-trigger {
+  width: 44px;
+  height: 36px;
+  border-radius: 8px;
+  display: grid;
+  align-content: center;
+  gap: 5px;
+  padding: 7px 8px;
+}
+
+.sr-mobile-menu-trigger span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: currentColor;
+  border-radius: 999px;
+}
+
+.sr-mobile-close {
+  min-width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  color: inherit;
+  cursor: pointer;
+  line-height: 1;
+  font-size: 22px;
+}
+
+.sr-mobile-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
 .sr-city-card,
 .sr-lagoa-card {
   display: flex;
@@ -536,18 +621,30 @@ div[style*="grid-template-columns: repeat(7"] {
 }
 
 .sr-lagoa-current div:nth-child(2) {
-  font-size: clamp(1.45rem, 3vw, 2.05rem) !important;
+  font-size: clamp(1.25rem, 2.4vw, 1.7rem) !important;
   line-height: 1.05;
   white-space: nowrap;
 }
 
 .sr-lagoa-source-name {
-  font-size: clamp(0.98rem, 1.8vw, 1.18rem) !important;
+  font-size: clamp(0.9rem, 1.45vw, 1.02rem) !important;
   line-height: 1.22;
   overflow-wrap: anywhere;
 }
 
 @media (max-width: 920px) {
+  header::before {
+    display: none;
+  }
+
+  header {
+    padding-left: 0;
+  }
+
+  .sr-app-inner {
+    padding-top: 30px !important;
+  }
+
   .sr-shell {
     display: block;
   }
@@ -556,13 +653,165 @@ div[style*="grid-template-columns: repeat(7"] {
     display: none;
   }
 
+  .sr-mobile-quickbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .sr-precip-card {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+
+  .sr-precip-chart {
+    min-width: 620px;
+    padding-right: 4px;
+  }
+
+  .sr-mobile-quickbar > div {
+    flex: 0 0 auto;
+  }
+
+  .sr-mobile-quickbar .sr-mobile-menu-trigger {
+    flex: 0 0 auto;
+  }
+
+  .sr-header-controls {
+    display: none !important;
+  }
+
+  .sr-mobile-drawer-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(2, 6, 13, 0.58);
+    z-index: 35;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms ease;
+  }
+
+  .sr-mobile-drawer-backdrop.is-open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .sr-mobile-drawer {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(320px, 86vw);
+    padding: 12px;
+    z-index: 40;
+    transform: translateX(-104%);
+    transition: transform 220ms ease;
+    overflow-y: auto;
+    background: linear-gradient(180deg, rgba(7, 17, 29, 0.98), rgba(2, 8, 15, 0.98)) !important;
+    backdrop-filter: blur(8px);
+  }
+
+  .sr-mobile-drawer.is-open {
+    transform: translateX(0);
+  }
+
   .sr-mobile-tabs {
-    display: flex !important;
+    display: grid;
+    gap: 8px;
   }
 
   .sr-mobile-tab-button {
-    flex: 0 0 auto;
-    white-space: nowrap;
+    width: 100%;
+    text-align: left;
+    min-height: 42px;
+    line-height: 1.25;
+    font-size: 14px !important;
+  }
+
+  .sr-mobile-menu-trigger {
+    color: #8be9ff;
+    border: 1px solid rgba(34, 211, 238, 0.35);
+    background: rgba(8, 20, 35, 0.88);
+  }
+
+  .sr-mobile-close {
+    color: #8be9ff;
+    border-color: rgba(34, 211, 238, 0.35);
+    background: rgba(8, 20, 35, 0.78);
+  }
+
+  div[style*="font-size: 8px"],
+  span[style*="font-size: 8px"],
+  button[style*="font-size: 8px"],
+  a[style*="font-size: 8px"],
+  text[style*="font-size: 8px"] {
+    font-size: 11px !important;
+  }
+
+  div[style*="font-size: 9px"],
+  span[style*="font-size: 9px"],
+  button[style*="font-size: 9px"],
+  a[style*="font-size: 9px"],
+  text[style*="font-size: 9px"] {
+    font-size: 12px !important;
+  }
+
+  div[style*="font-size: 10px"],
+  span[style*="font-size: 10px"],
+  button[style*="font-size: 10px"],
+  a[style*="font-size: 10px"],
+  text[style*="font-size: 10px"] {
+    font-size: 13px !important;
+  }
+
+  div[style*="font-size: 11px"],
+  span[style*="font-size: 11px"],
+  button[style*="font-size: 11px"],
+  a[style*="font-size: 11px"] {
+    font-size: 14px !important;
+  }
+
+  div[style*="font-size: 12px"],
+  span[style*="font-size: 12px"],
+  button[style*="font-size: 12px"],
+  a[style*="font-size: 12px"] {
+    font-size: 14px !important;
+  }
+
+  div[style*="font-size: 13px"],
+  span[style*="font-size: 13px"],
+  button[style*="font-size: 13px"],
+  a[style*="font-size: 13px"] {
+    font-size: 15px !important;
+  }
+
+  div[style*="font-size: 14px"],
+  span[style*="font-size: 14px"],
+  button[style*="font-size: 14px"],
+  a[style*="font-size: 14px"] {
+    font-size: 15px !important;
+  }
+
+  div[style*="font-size: 15px"],
+  span[style*="font-size: 15px"],
+  button[style*="font-size: 15px"],
+  a[style*="font-size: 15px"] {
+    font-size: 16px !important;
+  }
+
+  div[style*="font-size: 16px"],
+  span[style*="font-size: 16px"],
+  button[style*="font-size: 16px"],
+  a[style*="font-size: 16px"] {
+    font-size: 16px !important;
   }
 
   .sr-city-grid,

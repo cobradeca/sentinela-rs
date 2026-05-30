@@ -18,7 +18,6 @@ import {
   IRI_ENSO_PROB_FUNCTION_URL,
   LAGOA_RADAR_FUNCTION_URL,
   NOAA_ENSO_FUNCTION_URL,
-  NOTIFICATION_HEALTH_FUNCTION_URL,
 } from "../config/sources";
 
 export const CEMADEN_ATTRIBUTION = "DADOS DA REDE OBSERVACIONAL DO CEMADEN/MCTIC";
@@ -412,18 +411,6 @@ export async function fetchEffisWmsHealth() {
   } catch {
     return null;
   }
-}
-
-export async function fetchNotificationHealth() {
-  try {
-    const res = await fetch(NOTIFICATION_HEALTH_FUNCTION_URL, {
-      signal: AbortSignal.timeout(8000),
-      cache: "no-store",
-      headers: { Accept: "application/json" },
-    });
-    if (!res.ok) return null;
-    return res.json();
-  } catch { return null; }
 }
 
 export async function fetchCemadenAccumulations() {

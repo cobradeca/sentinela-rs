@@ -18,6 +18,7 @@ export function PrevisaoTab({ ctx }) {
     copernicusWater,
     dark,
     dataStaleness,
+    dayNames,
     effisHealth,
     ensoClass,
     ensoDominantProb,
@@ -38,6 +39,7 @@ export function PrevisaoTab({ ctx }) {
     getLagoaPointData,
     getLagoaSourceText,
     getResponsibleAgencyText,
+    getRiskBg,
     getRiskColor,
     getRiskLevel,
     getValidatedSourceHealth,
@@ -48,11 +50,11 @@ export function PrevisaoTab({ ctx }) {
     lagoaSummary,
     lastUpdate,
     loadAllData,
-    notificationCards,
     percentValue,
     queimadas,
     s,
     safeEnsoForecast,
+    selData,
     selStation,
     setActiveTab,
     setExpandedCard,
@@ -115,9 +117,9 @@ export function PrevisaoTab({ ctx }) {
                   })}
                 </div>
                 {/* Gráfico precipitação */}
-                <div style={{ ...s.card, marginBottom:12 }}>
+                <div className="sr-precip-card" style={{ ...s.card, marginBottom:12 }}>
                   <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:12 }}>PRECIPITAÇÃO (mm/dia)</div>
-                  <div style={{ display:"flex", alignItems:"flex-end", gap:4, height:80 }}>
+                  <div className="sr-precip-chart" style={{ display:"flex", alignItems:"flex-end", gap:4, height:80 }}>
                     {selData.weather.daily.precipitation_sum?.slice(0,14).map((p,i) => {
                       const mx=Math.max(...selData.weather.daily.precipitation_sum.slice(0,14),1);
                       const dd=new Date(selData.weather.daily.time[i]+"T12:00:00");

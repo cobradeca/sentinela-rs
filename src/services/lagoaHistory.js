@@ -1,7 +1,7 @@
 import { supabase } from "../lib/supabase";
 
-const HISTORY_MAX_POINTS = 48;
-const HISTORY_LOOKBACK_HOURS = 24;
+const HISTORY_MAX_POINTS = 336;
+const HISTORY_LOOKBACK_HOURS = 168;
 
 let sessionHistory = {};
 

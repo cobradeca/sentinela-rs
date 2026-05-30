@@ -4,6 +4,7 @@ export function LagoaDosPatosTab({ ctx }) {
     CEMADEN_ATTRIBUTION,
     COPERNICUS_REFERENCE,
     FIRE_MONITORED_AREAS_RS,
+    FreshnessBadge,
     HistorySparkline,
     RISK_LEVELS,
     STATIONS,
@@ -48,7 +49,6 @@ export function LagoaDosPatosTab({ ctx }) {
     lagoaSummary,
     lastUpdate,
     loadAllData,
-    notificationCards,
     percentValue,
     queimadas,
     s,
@@ -178,12 +178,12 @@ export function LagoaDosPatosTab({ ctx }) {
                           />
                         </div>
                         {/* BLOCO B — sparkline histórico */}
-                        {(() => {
-                          const hist = lagoaHistory[point.id] || [];
-                          return hist.length >= 2 ? (
-                            <HistorySparkline points={hist} color={rColor} t={t} sourceLabel={lagoaHistoryMeta.source} />
-                          ) : null;
-                        })()}
+                        <HistorySparkline
+                          points={lagoaHistory[point.id] || []}
+                          color={rColor}
+                          t={t}
+                          sourceLabel={lagoaHistoryMeta.source}
+                        />
                       </>
                     ) : (
                       <div style={{ padding:12, background:dark?"rgba(0,0,0,0.25)":t.bg, borderRadius:5, color:t.textMuted, fontSize:10 }}>

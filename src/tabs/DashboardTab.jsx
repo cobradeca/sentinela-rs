@@ -48,7 +48,6 @@ export function DashboardTab({ ctx }) {
     lagoaSummary,
     lastUpdate,
     loadAllData,
-    notificationCards,
     percentValue,
     queimadas,
     s,

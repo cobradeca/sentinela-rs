@@ -1,128 +1,104 @@
 export function AlertasTab({ ctx }) {
   const {
-    APAS_RS,
-    CEMADEN_ATTRIBUTION,
-    COPERNICUS_REFERENCE,
-    FIRE_MONITORED_AREAS_RS,
-    HistorySparkline,
     RISK_LEVELS,
-    STATIONS,
-    STATIONS_CIDADES,
-    STATIONS_LAGOA,
-    activeENSO,
     alerts,
-    anaComplementar,
-    copernicusEms,
-    copernicusNdvi,
-    copernicusS1,
-    copernicusWater,
     dark,
-    dataStaleness,
-    effisHealth,
-    ensoClass,
-    ensoDominantProb,
-    ensoFirstForecast,
-    ensoObservedAvailable,
-    ensoProbabilityAvailable,
-    ensoProbabilityText,
-    explainCityRisk,
-    explainDailyRisk,
-    explainLagoaRisk,
-    formatCemadenRain,
     formatDateTimeBR,
-    formatProbability,
-    formatSignedCelsius,
-    getFallbackWarningText,
-    getLagoaMaxMay2024,
-    getLagoaMeasuredAt,
-    getLagoaPointData,
-    getLagoaSourceText,
-    getResponsibleAgencyText,
+    getRiskBg,
     getRiskColor,
-    getRiskLevel,
-    getValidatedSourceHealth,
-    lagoaHistory,
-    lagoaHistoryMeta,
-    lagoaStatusColor,
-    lagoaStatusLabel,
-    lagoaSummary,
-    lastUpdate,
-    loadAllData,
-    notificationCards,
-    percentValue,
-    queimadas,
-    s,
-    safeEnsoForecast,
-    selStation,
-    setActiveTab,
-    setExpandedCard,
-    setRiskExplain,
-    setSelStation,
-    sourceHealth,
-    stationData,
     t,
-    wmoDesc,
-    wmoEmoji
   } = ctx;
 
+  const orderedAlerts = [...(alerts || [])].sort((a, b) => {
+    const order = ["CRITICO", "EMERGENCIA", "ALERTA", "ATENCAO", "NORMAL"];
+    return order.indexOf(a.risk_level) - order.indexOf(b.risk_level);
+  });
+
   return (
+    <div>
+      <div
+        style={{
+          marginBottom: 14,
+          padding: "12px 14px",
+          background: dark ? "rgba(34,197,94,0.08)" : "rgba(22,163,74,0.06)",
+          border: "1px solid rgba(34,197,94,0.35)",
+          borderRadius: 6,
+          fontSize: 12,
+          color: dark ? "#bbf7d0" : "#166534",
+          lineHeight: 1.6,
+        }}
+      >
+        Esta aba mostra apenas avisos oficiais publicados pela Defesa Civil RS. Em emergencia, ligue 199.
+        <a
+          href="https://www.defesacivil.rs.gov.br/"
+          target="_blank"
+          rel="noreferrer"
+          style={{ color: t.accent, marginLeft: 8 }}
+        >
+          Abrir Defesa Civil RS
+        </a>
+      </div>
 
-          <div>
-            <div style={{ marginBottom:12, padding:"10px 14px", background: dark?"rgba(249,115,22,0.08)":"rgba(249,115,22,0.05)", border:"1px solid rgba(249,115,22,0.3)", borderRadius:5, fontSize:10, color: dark?"#fdba74":"#c2410c" }}>
-              🌡️ <strong>ENSO — contexto climático:</strong> {ensoObservedAvailable ? `${ensoClass.label} · Niño 3.4 ${formatSignedCelsius(activeENSO.nino34)}.` : "leitura NOAA/CPC indisponível."} {ensoDominantProb ? `${ensoDominantProb.label}: ${formatProbability(ensoDominantProb.value)} (IRI/CCSR).` : "Probabilidade IRI/CCSR indisponível."} ENSO é contexto climático e não aciona alerta local sozinho.
-            </div>
-            {alerts.length===0 ? (
-              <div style={{ textAlign:"center", padding:50, border:"1px solid rgba(34,197,94,0.3)", borderRadius:5, background:"rgba(34,197,94,0.05)" }}>
-                <div style={{ fontSize:36, marginBottom:10 }}>✓</div>
-                <div style={{ fontSize:13, color:"#22c55e", letterSpacing:2 }}>NENHUM ALERTA ATIVO</div>
-                <div style={{ fontSize:10, color:t.textMuted, marginTop:5 }}>Sem alertas operacionais severos. Condições de atenção podem aparecer no Dashboard.</div>
-              </div>
-            ) : (
-              <div style={{ display:"grid", gap:8 }}>
-                {[...alerts].sort((a,b)=>["CRITICO","EMERGENCIA","ALERTA","ATENCAO","NORMAL"].indexOf(a.risk_level)-["CRITICO","EMERGENCIA","ALERTA","ATENCAO","NORMAL"].indexOf(b.risk_level)).map((alert,i)=>{
-                  const r=RISK_LEVELS[alert.risk_level];
-                  const rColor=getRiskColor(alert.risk_level);
-                  const rBg=getRiskBg(alert.risk_level);
-                  return (
-                    <div
-                      key={i}
-                      onClick={() => alert.explain && setRiskExplain(alert.explain)}
-                      title={alert.explain ? "Clique para ver os parâmetros deste alerta" : "Alerta oficial ou externo"}
-                      style={{ padding:"12px 14px", background:rBg, border:`1px solid ${rColor}55`, borderLeft:`4px solid ${rColor}`, borderRadius:5, cursor:alert.explain?"pointer":"default" }}
-                    >
-                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:5 }}>
-                        <div style={{ fontSize:12, fontWeight:700, color:rColor }}>{r.icon} {r.label.toUpperCase()} — {alert.station}</div>
-                        <div style={{ fontSize:9, color:t.textMuted }}>detectado {new Date(alert.at).toLocaleString("pt-BR")}</div>
-                      </div>
-                      <div style={{ fontSize:11, color:t.textMuted }}>{alert.message}</div>
-                      {alert.explain && (
-                        <div style={{ marginTop:6, fontSize:8, color:t.accent, textAlign:"right", opacity:0.75 }}>ver parâmetros →</div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Canais */}
-            <div style={{ marginTop:16, ...s.card }}>
-              <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:10 }}>CANAIS DE NOTIFICAÇÃO</div>
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))", gap:8 }}>
-                {notificationCards.map(c=>(
-                  <div key={c.n} style={{ background: dark?"rgba(0,0,0,0.3)":t.bg, borderRadius:4, border:`1px solid ${t.border}`, overflow:"hidden" }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:8, padding:"9px 11px" }}>
-                      <span style={{ fontSize:18 }}>{c.i}</span>
-                      <div style={{ flex:1 }}>
-                        <div style={{ fontSize:10, color:t.text }}>{c.n}</div>
-                        <div style={{ fontSize:9, color:c.status.ok ? c.status.color : c.status.color }}>{c.status.label} · {c.s}</div>
-                      </div>
-                      {c.h && <button onClick={()=>setExpanded(expanded===c.n?null:c.n)} style={{ background:"none", border:`1px solid ${t.accent}44`, color:t.accent, cursor:"pointer", fontSize:8, padding:"2px 6px", borderRadius:3, fontFamily:"inherit" }}>{expanded===c.n?"▲":"▼"}</button>}
-                    </div>
-                    {c.h && expanded===c.n && <div style={{ padding:"8px 11px", borderTop:`1px solid ${t.border}`, fontSize:9, color:t.textMuted, lineHeight:1.7, whiteSpace:"pre-line" }}>{c.h}</div>}
-                  </div>
-                ))}
-              </div>
-            </div>
+      {orderedAlerts.length === 0 ? (
+        <div
+          style={{
+            textAlign: "center",
+            padding: 42,
+            border: "1px solid rgba(34,197,94,0.3)",
+            borderRadius: 6,
+            background: "rgba(34,197,94,0.05)",
+          }}
+        >
+          <div style={{ fontSize: 30, marginBottom: 10 }}>✓</div>
+          <div style={{ fontSize: 14, color: "#22c55e", letterSpacing: 1.5 }}>
+            Sem aviso oficial ativo no RSS
           </div>
+          <div style={{ fontSize: 12, color: t.textMuted, marginTop: 6 }}>
+            Continue acompanhando os canais oficiais da Defesa Civil RS.
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: "grid", gap: 10 }}>
+          {orderedAlerts.map((alert, i) => {
+            const level = alert.risk_level || "ALERTA";
+            const risk = RISK_LEVELS[level] || RISK_LEVELS.ALERTA;
+            const riskColor = getRiskColor(level);
+            const riskBg = getRiskBg(level);
+            const when = alert.at ? formatDateTimeBR(alert.at) : "sem horario";
+
+            return (
+              <div
+                key={alert.id || `${alert.station || "defesa-civil"}-${i}`}
+                style={{
+                  padding: "13px 15px",
+                  background: riskBg,
+                  border: `1px solid ${riskColor}55`,
+                  borderLeft: `4px solid ${riskColor}`,
+                  borderRadius: 6,
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 7 }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: riskColor }}>
+                    {risk.icon} {risk.label.toUpperCase()} - Defesa Civil RS
+                  </div>
+                  <div style={{ fontSize: 10, color: t.textMuted, whiteSpace: "nowrap" }}>{when}</div>
+                </div>
+                <div style={{ fontSize: 12, color: t.textMuted, lineHeight: 1.55 }}>{alert.message}</div>
+                {(alert.url || alert.link) && (
+                  <a
+                    href={alert.url || alert.link}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ display: "inline-block", marginTop: 9, fontSize: 11, color: t.accent }}
+                  >
+                    Ver aviso oficial
+                  </a>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
