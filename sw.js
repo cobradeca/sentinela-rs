@@ -1,4 +1,4 @@
-const CACHE_NAME = "sentinela-rs-v1";
+const CACHE_NAME = "sentinela-rs-v20260529-2";
 const APP_BASE = "/sentinela-rs/";
 
 const APP_SHELL = [
@@ -40,8 +40,13 @@ self.addEventListener("fetch", (event) => {
 
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request).catch(() => caches.match(APP_BASE + "index.html"))
+      fetch(request, { cache: "no-store" }).catch(() => caches.match(APP_BASE + "index.html"))
     );
+    return;
+  }
+
+  if (url.pathname.includes("/assets/") || url.pathname.endsWith("index.html")) {
+    event.respondWith(fetch(request, { cache: "no-store" }));
     return;
   }
 
