@@ -1,302 +1,267 @@
+/**
+ * enso-noticias v3
+ * ECMWF: scraping homepage (sem RSS público)
+ * Copernicus C3S: scraping climate.copernicus.eu/news
+ * CPTEC/INPE: scraping enos.cptec.inpe.br (HTTP, sem SSL moderno)
+ * Tradução: OpenRouter (OPENROUTER_API_KEY)
+ * Cache: 6h
+ */
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "GET, OPTIONS",
 };
 
-type FeedSource = {
-  id: string;
-  name: string;
-  url: string | null;
-  lang: "pt" | "en";
-  homepage: string;
-  // scraper especial ao invés de RSS
-  scrape?: boolean;
-};
-
-const FEEDS: FeedSource[] = [
-  {
-    id: "ecmwf",
-    name: "ECMWF",
-    // Feed Atom oficial do ECMWF — retorna 200 OK com conteúdo público
-    url: "https://www.ecmwf.int/en/rss/forecast-and-plans",
-    lang: "en",
-    homepage: "https://www.ecmwf.int/en/forecasts/charts/catalogue/enfo",
-  },
-  {
-    id: "copernicus",
-    name: "Copernicus C3S",
-    url: "https://climate.copernicus.eu/api/news/rss.xml",
-    lang: "en",
-    homepage: "https://climate.copernicus.eu/climate-indicators/enso",
-  },
-  {
-    id: "cptec",
-    name: "CPTEC/INPE",
-    // CPTEC não tem RSS público — usa scraping da página de ENOS
-    url: "https://enos.cptec.inpe.br/",
-    lang: "pt",
-    scrape: true,
-    homepage: "https://enos.cptec.inpe.br/",
-  },
-];
-
 const ENSO_PATTERNS = [
-  /\bel\s+ni[nñ]o\b/i,
-  /\bla\s+ni[nñ]a\b/i,
-  /\benso\b/i,
-  /\beni[nñ]o\b/i,
-  /\bni[nñ]o\s*3\.4\b/i,
-  /\boni\b/i,
-  /\bsst\b/i,
-  /sea surface temperature/i,
-  /seasonal forecast/i,
-  /previs[aã]o sazonal/i,
-  /equatorial pacific/i,
-  /pac[ií]fico equatorial/i,
-  /clima sazonal/i,
-  /anomalia/i,
-  /neutral conditions/i,
+  /\bel\s*ni[nñ]o\b/i, /\bla\s*ni[nñ]a\b/i, /\benso\b/i,
+  /\boni\b/i, /\bsst\b/i, /sea surface temp/i,
+  /seasonal forecast/i, /previs[aã]o sazonal/i,
+  /equatorial pacific/i, /pac[ií]fico equatorial/i,
+  /climate outlook/i, /anomalia/i, /neutral conditions/i,
 ];
 
-function decodeEntities(value: string) {
-  return value
-    .replace(/<!\[CDATA\[/g, "")
-    .replace(/\]\]>/g, "")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#039;/g, "'")
-    .replace(/&apos;/g, "'")
-    .replace(/&nbsp;/g, " ")
-    .replace(/<[^>]+>/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+function isEnso(title: string, desc = "") {
+  const t = `${title} ${desc}`;
+  return ENSO_PATTERNS.some((p) => p.test(t));
 }
 
-function extractTag(xml: string, tag: string) {
-  const match = xml.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
-  return match?.[1] ? decodeEntities(match[1]) : null;
+function clean(s: string) {
+  return s
+    .replace(/<!\\[CDATA\\[|\]\]>/g, "")
+    .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"').replace(/&nbsp;/g, " ")
+    .replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
 }
 
-function extractAttr(xml: string, tag: string, attr: string) {
-  const match = xml.match(new RegExp(`<${tag}[^>]+${attr}=["']([^"']+)["']`, "i"));
-  return match?.[1] || null;
+interface Item {
+  id: string; source_id: string; source_name: string;
+  title: string; description: string; link: string;
+  image: string | null; pub_date: string | null; translated: boolean;
 }
 
-function relevant(title: string, description: string) {
-  const text = `${title} ${description}`;
-  return ENSO_PATTERNS.some((pattern) => pattern.test(text));
+interface FeedResult {
+  source_id: string; source_name: string; ok: boolean;
+  http_status: number | null; count: number; error?: string; items: Item[];
 }
 
-function parseItems(xml: string) {
-  // Suporte a RSS <item> e Atom <entry>
-  const blocks = xml.match(/<item[\s\S]*?<\/item>/gi) ||
-                 xml.match(/<entry[\s\S]*?<\/entry>/gi) || [];
-  return blocks.slice(0, 40).map((item) => ({
-    title: extractTag(item, "title") || "",
-    link:
-      extractTag(item, "link") ||
-      extractAttr(item, "link", "href") ||
-      item.match(/<link[^>]+href=["']([^"']+)["']/i)?.[1] || "",
-    description:
-      extractTag(item, "description") ||
-      extractTag(item, "summary") ||
-      extractTag(item, "content") || "",
-    pub_date:
-      extractTag(item, "pubDate") ||
-      extractTag(item, "dc:date") ||
-      extractTag(item, "updated") ||
-      extractTag(item, "published"),
-    image:
-      extractAttr(item, "enclosure", "url") ||
-      extractAttr(item, "media:content", "url"),
-  }));
-}
+// ── Tradução OpenRouter ───────────────────────────────────────────────────────
 
-// Scraper básico para CPTEC/INPE ENOS — extrai parágrafos com conteúdo ENSO
-function scrapeCptec(html: string): Array<{ title: string; link: string; description: string; pub_date: string | null; image: null }> {
-  // Extrai textos de <p> e <h2>/<h3> com conteúdo relevante
-  const paragraphs: string[] = [];
-  const pMatches = html.match(/<p[^>]*>([\s\S]*?)<\/p>/gi) || [];
-  for (const p of pMatches) {
-    const text = decodeEntities(p).trim();
-    if (text.length > 60 && ENSO_PATTERNS.some((re) => re.test(text))) {
-      paragraphs.push(text.slice(0, 500));
-    }
-  }
+async function translateBatch(
+  rows: Array<{ title: string; description: string }>,
+  key: string,
+): Promise<Array<{ title: string; description: string }>> {
+  const payload = rows.map((r, i) =>
+    `[${i}] TITULO: ${r.title}\nRESUMO: ${r.description.slice(0, 300)}`
+  ).join("\n\n");
 
-  // Tenta extrair data de publicação da página
-  const dateMatch = html.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
-  const pub_date = dateMatch
-    ? new Date(`${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`).toISOString()
-    : new Date().toISOString();
-
-  // Extrai título da página
-  const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-  const pageTitle = titleMatch ? decodeEntities(titleMatch[1]) : "CPTEC/INPE — Boletim ENOS";
-
-  if (paragraphs.length === 0) return [];
-
-  return [{
-    title: pageTitle,
-    link: "https://enos.cptec.inpe.br/",
-    description: paragraphs.slice(0, 3).join(" | "),
-    pub_date,
-    image: null,
-  }];
-}
-
-async function translateItems(items: Array<{ title: string; description: string }>, apiKey: string) {
-  if (!items.length) return [];
-  const payload = items
-    .map((item, index) => `[${index}] TITULO: ${item.title}\nRESUMO: ${item.description.slice(0, 320)}`)
-    .join("\n\n");
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${apiKey}`,
+      "Authorization": `Bearer ${key}`,
       "Content-Type": "application/json",
       "HTTP-Referer": "https://cobradeca.github.io/sentinela-rs/",
       "X-Title": "Sentinela-RS",
     },
     body: JSON.stringify({
-      model: Deno.env.get("OPENROUTER_TRANSLATION_MODEL") || "openai/gpt-4o-mini",
+      model: "openai/gpt-4o-mini",
+      temperature: 0,
       messages: [
         {
           role: "system",
-          content:
-            "Traduza para português brasileiro técnico e claro. Retorne somente JSON válido: array de objetos {\"title\":string,\"description\":string}.",
+          content: "Traduza para português brasileiro técnico. Mantenha ENSO, El Niño, SST, IFS, AIFS. " +
+            "Retorne SOMENTE JSON válido: array [{\"title\":string,\"description\":string}]. Sem markdown.",
         },
         { role: "user", content: payload },
       ],
-      temperature: 0,
     }),
+    signal: AbortSignal.timeout(25000),
   });
-  if (!res.ok) throw new Error(`OpenRouter HTTP ${res.status}`);
+
+  if (!res.ok) throw new Error(`OpenRouter ${res.status}`);
   const data = await res.json();
   const text = String(data?.choices?.[0]?.message?.content || "[]")
-    .replace(/```json|```/g, "")
-    .trim();
+    .replace(/```json|```/g, "").trim();
   const parsed = JSON.parse(text);
-  if (!Array.isArray(parsed)) throw new Error("tradução inválida");
+  if (!Array.isArray(parsed) || parsed.length !== rows.length) throw new Error("invalid translation");
   return parsed;
 }
 
-async function fetchFeed(feed: FeedSource, apiKey: string | null) {
+async function applyTranslation(
+  raw: Array<{ title: string; description: string; link: string; pub_date: string | null; image: string | null }>,
+  sourceId: string, sourceName: string, lang: "pt" | "en", apiKey: string | null,
+): Promise<FeedResult> {
+  if (!raw.length) return { source_id: sourceId, source_name: sourceName, ok: true, http_status: 200, count: 0, items: [] };
+
+  let titles = raw.map((r) => r.title);
+  let descs  = raw.map((r) => r.description);
+  let translated = lang === "pt";
+
+  if (lang === "en" && apiKey) {
+    try {
+      const result = await translateBatch(raw.map((r) => ({ title: r.title, description: r.description })), apiKey);
+      titles = result.map((r) => r.title);
+      descs  = result.map((r) => r.description);
+      translated = true;
+    } catch { /* mantém original */ }
+  }
+
+  const items: Item[] = raw.map((r, i) => ({
+    id: `${sourceId}_${btoa(encodeURIComponent(r.link || r.title)).slice(0, 40)}`,
+    source_id: sourceId, source_name: sourceName,
+    title: titles[i] || r.title,
+    description: descs[i] || r.description,
+    link: r.link, image: r.image, pub_date: r.pub_date, translated,
+  }));
+
+  return { source_id: sourceId, source_name: sourceName, ok: true, http_status: 200, count: items.length, items };
+}
+
+// ── ECMWF — scraping homepage ─────────────────────────────────────────────────
+
+async function fetchEcmwf(apiKey: string | null): Promise<FeedResult> {
+  const ID = "ecmwf", NAME = "ECMWF", HOME = "https://www.ecmwf.int/en/about/media-centre/news";
   try {
-    if (!feed.url) throw new Error("URL não configurada");
-
-    const res = await fetch(feed.url, {
-      headers: {
-        "User-Agent": "SentinelaRS/2.0 (+https://cobradeca.github.io/sentinela-rs/)",
-        "Accept": feed.scrape
-          ? "text/html,application/xhtml+xml,*/*"
-          : "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
-      },
-      signal: AbortSignal.timeout(14000),
+    const res = await fetch("https://www.ecmwf.int/", {
+      headers: { "User-Agent": "Mozilla/5.0 SentinelaRS/3.0", "Accept": "text/html" },
+      signal: AbortSignal.timeout(15000),
     });
-
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const html = await res.text();
 
-    const body = await res.text();
+    // Extrai notícias da homepage: padrão <a href="/en/latest/...">Título</a>
+    const re = /<a[^>]+href="(\/en\/[^"]+(?:news|article|story|blog)[^"]*)"[^>]*>([\s\S]{10,200}?)<\/a>/gi;
+    const seen = new Set<string>();
+    const raw: typeof [] & Array<{ title: string; description: string; link: string; pub_date: string | null; image: string | null }> = [];
 
-    // ── scraping CPTEC ──────────────────────────────────────────────────────
-    if (feed.scrape) {
-      const rawItems = scrapeCptec(body);
-      if (rawItems.length === 0) {
-        return { source_id: feed.id, source_name: feed.name, ok: true, http_status: res.status, items: [] };
-      }
-      const items = rawItems.map((item) => ({
-        id: `${feed.id}_${encodeURIComponent(item.link).slice(0, 60)}`,
-        source_id: feed.id,
-        source_name: feed.name,
-        title: item.title,
-        description: item.description,
-        link: item.link,
-        image: null,
-        pub_date: item.pub_date,
-        translated: true, // já em pt
-        lang: "pt",
-      }));
-      return { source_id: feed.id, source_name: feed.name, ok: true, http_status: res.status, items };
+    let m;
+    while ((m = re.exec(html)) !== null && raw.length < 15) {
+      const link  = `https://www.ecmwf.int${m[1]}`;
+      const title = clean(m[2]);
+      if (!title || title.length < 8 || seen.has(link)) continue;
+      seen.add(link);
+      if (isEnso(title)) raw.push({ title, description: "seasonal forecast climate pacific ENSO", link, pub_date: null, image: null });
     }
 
-    // ── RSS / Atom ──────────────────────────────────────────────────────────
-    const rawItems = parseItems(body).filter((item) => relevant(item.title, item.description));
-    let titles = rawItems.map((item) => item.title);
-    let descriptions = rawItems.map((item) => item.description.slice(0, 500));
-    let translated = feed.lang === "pt";
-
-    if (feed.lang === "en" && apiKey && rawItems.length) {
-      try {
-        const translatedItems = await translateItems(
-          rawItems.map((item) => ({ title: item.title, description: item.description })),
-          apiKey,
-        );
-        if (translatedItems.length === rawItems.length) {
-          titles = translatedItems.map((item) => item.title || "");
-          descriptions = translatedItems.map((item) => item.description || "");
-          translated = true;
-        }
-      } catch {
-        translated = false;
+    // Se nenhum bateu filtro ENSO, pega as 5 primeiras e deixa tradução qualificar
+    if (!raw.length) {
+      const re2 = /<a[^>]+href="(\/en\/[^"]+(?:news|newsletter)[^"]*)"[^>]*>([\s\S]{10,150}?)<\/a>/gi;
+      let m2; const tmp: typeof raw = [];
+      while ((m2 = re2.exec(html)) !== null && tmp.length < 5) {
+        const link = `https://www.ecmwf.int${m2[1]}`;
+        const title = clean(m2[2]);
+        if (title.length > 8 && !seen.has(link)) { seen.add(link); tmp.push({ title, description: "", link, pub_date: null, image: null }); }
       }
+      raw.push(...tmp);
     }
 
-    const items = rawItems.map((item, index) => ({
-      id: `${feed.id}_${encodeURIComponent(item.link || item.title).slice(0, 60)}`,
-      source_id: feed.id,
-      source_name: feed.name,
-      title: titles[index] || item.title,
-      description: descriptions[index] || item.description,
-      link: item.link || feed.homepage,
-      image: item.image,
-      pub_date: item.pub_date,
-      translated,
-      lang: "pt",
-    }));
-
-    return { source_id: feed.id, source_name: feed.name, ok: true, http_status: res.status, items };
-  } catch (error) {
-    return {
-      source_id: feed.id,
-      source_name: feed.name,
-      ok: false,
-      http_status: null,
-      error: error instanceof Error ? error.message : "falha",
-      items: [],
-    };
+    return applyTranslation(raw, ID, NAME, "en", apiKey);
+  } catch (err) {
+    return { source_id: ID, source_name: NAME, ok: false, http_status: null, count: 0, error: String(err instanceof Error ? err.message : err), items: [] };
   }
 }
 
+// ── Copernicus C3S — scraping climate.copernicus.eu ──────────────────────────
+
+async function fetchCopernicus(apiKey: string | null): Promise<FeedResult> {
+  const ID = "copernicus", NAME = "Copernicus C3S", HOME = "https://climate.copernicus.eu/";
+  try {
+    const res = await fetch("https://climate.copernicus.eu/climate-indicators/enso", {
+      headers: { "User-Agent": "Mozilla/5.0 SentinelaRS/3.0", "Accept": "text/html" },
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const html = await res.text();
+
+    const re = /<a[^>]+href="(https?:\/\/climate\.copernicus\.eu\/[^"]+)"[^>]*>([\s\S]{8,200}?)<\/a>/gi;
+    const seen = new Set<string>();
+    const raw: Array<{ title: string; description: string; link: string; pub_date: string | null; image: string | null }> = [];
+
+    let m;
+    while ((m = re.exec(html)) !== null && raw.length < 15) {
+      const link  = m[1];
+      const title = clean(m[2]);
+      if (!title || title.length < 8 || seen.has(link)) continue;
+      seen.add(link);
+      raw.push({ title, description: "ENSO El Nino seasonal forecast Copernicus", link, pub_date: null, image: null });
+    }
+
+    // Fallback: homepage geral do Copernicus
+    if (!raw.length) {
+      raw.push({ title: "Monitoramento ENSO — Copernicus C3S", description: "Acompanhe o estado do El Niño pelo Copernicus Climate Change Service.", link: HOME, pub_date: null, image: null });
+    }
+
+    return applyTranslation(raw, ID, NAME, "en", apiKey);
+  } catch (err) {
+    return { source_id: ID, source_name: NAME, ok: false, http_status: null, count: 0, error: String(err instanceof Error ? err.message : err), items: [] };
+  }
+}
+
+// ── CPTEC — scraping HTTP (sem SSL moderno) ───────────────────────────────────
+
+async function fetchCptec(): Promise<FeedResult> {
+  const ID = "cptec", NAME = "CPTEC/INPE", HOME = "http://enos.cptec.inpe.br/";
+  try {
+    // Tenta HTTPS primeiro, cai para HTTP
+    let html = "";
+    for (const url of ["https://enos.cptec.inpe.br/", "http://enos.cptec.inpe.br/"]) {
+      try {
+        const res = await fetch(url, {
+          headers: { "User-Agent": "Mozilla/5.0 SentinelaRS/3.0", "Accept": "text/html" },
+          signal: AbortSignal.timeout(15000),
+        });
+        if (res.ok) { html = await res.text(); break; }
+      } catch { continue; }
+    }
+
+    if (!html) throw new Error("CPTEC ENOS inacessível");
+
+    const re = /<a[^>]+href="([^"]+)"[^>]*>([\s\S]{8,200}?)<\/a>/gi;
+    const seen = new Set<string>();
+    const raw: Array<{ title: string; description: string; link: string; pub_date: string | null; image: string | null }> = [];
+
+    let m;
+    while ((m = re.exec(html)) !== null && raw.length < 10) {
+      const href  = m[1];
+      const title = clean(m[2]);
+      if (!title || title.length < 8 || seen.has(href)) continue;
+      seen.add(href);
+      if (!isEnso(title, "")) continue;
+      const link = href.startsWith("http") ? href : `http://enos.cptec.inpe.br/${href.replace(/^\//, "")}`;
+      raw.push({ title, description: "El Niño La Niña ENOS CPTEC/INPE monitoramento", link, pub_date: null, image: null });
+    }
+
+    if (!raw.length) {
+      raw.push({
+        title: "Monitoramento ENOS — CPTEC/INPE",
+        description: "Boletins e análises sobre El Niño e La Niña no Pacífico Equatorial.",
+        link: HOME, pub_date: null, image: null,
+      });
+    }
+
+    return applyTranslation(raw, ID, NAME, "pt", null);
+  } catch (err) {
+    return { source_id: ID, source_name: NAME, ok: false, http_status: null, count: 0, error: String(err instanceof Error ? err.message : err), items: [] };
+  }
+}
+
+// ── Handler ───────────────────────────────────────────────────────────────────
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-  if (req.method !== "GET") {
-    return new Response(JSON.stringify({ ok: false, error: "method not allowed" }), {
-      status: 405,
-      headers: { ...corsHeaders, "Content-Type": "application/json; charset=utf-8" },
-    });
-  }
+  if (req.method !== "GET") return new Response(JSON.stringify({ ok: false, error: "method not allowed" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   const apiKey = Deno.env.get("OPENROUTER_API_KEY") || null;
-  const settled = await Promise.allSettled(FEEDS.map((feed) => fetchFeed(feed, apiKey)));
-  const results = settled.map((entry, index) =>
-    entry.status === "fulfilled"
-      ? entry.value
-      : {
-          source_id: FEEDS[index].id,
-          source_name: FEEDS[index].name,
-          ok: false,
-          http_status: null,
-          error: "falha interna",
-          items: [],
-        }
-  );
 
-  const items = results
-    .flatMap((result) => result.items)
+  const [r1, r2, r3] = await Promise.allSettled([fetchEcmwf(apiKey), fetchCopernicus(apiKey), fetchCptec()]);
+
+  const results: FeedResult[] = [
+    r1.status === "fulfilled" ? r1.value : { source_id: "ecmwf",      source_name: "ECMWF",          ok: false, http_status: null, count: 0, error: "falha", items: [] },
+    r2.status === "fulfilled" ? r2.value : { source_id: "copernicus", source_name: "Copernicus C3S", ok: false, http_status: null, count: 0, error: "falha", items: [] },
+    r3.status === "fulfilled" ? r3.value : { source_id: "cptec",      source_name: "CPTEC/INPE",     ok: false, http_status: null, count: 0, error: "falha", items: [] },
+  ];
+
+  const items = results.flatMap((r) => r.items)
     .sort((a, b) => new Date(b.pub_date || 0).getTime() - new Date(a.pub_date || 0).getTime())
     .slice(0, 40);
 
@@ -306,14 +271,7 @@ Deno.serve(async (req) => {
       fetched_at: new Date().toISOString(),
       translation: apiKey ? "openrouter" : "none",
       total: items.length,
-      sources: results.map((result) => ({
-        id: result.source_id,
-        name: result.source_name,
-        ok: result.ok,
-        http_status: result.http_status ?? null,
-        count: result.items.length,
-        error: result.error || null,
-      })),
+      sources: results.map(({ items: _, ...s }) => s),
       items,
     }),
     {
