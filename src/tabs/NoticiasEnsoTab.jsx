@@ -1,9 +1,15 @@
 import { DefesaCivilNotice } from "../components/DefesaCivilNotice";
 
 const SOURCE_COLORS = {
-  ecmwf: "#818cf8",
+  ecmwf:      "#818cf8",
   copernicus: "#34d399",
-  cptec: "#fb923c",
+  cptec:      "#fb923c",
+};
+
+const SOURCE_ICONS = {
+  ecmwf:      "🛰️",
+  copernicus: "🌍",
+  cptec:      "🇧🇷",
 };
 
 function formatRelativeDate(value) {
@@ -71,7 +77,7 @@ export function NoticiasEnsoTab({ ctx }) {
                 border: `1px solid ${statusOk ? color + "55" : "rgba(239,68,68,0.4)"}`,
                 color: statusOk ? color : "#ef4444",
               }}>
-                {src.name}
+                {SOURCE_ICONS[src.id] || "📡"} {src.name}
                 {src.http_status !== null && src.http_status !== undefined
                   ? <span style={{ opacity: 0.7 }}> · HTTP {src.http_status}</span>
                   : null}
@@ -109,6 +115,7 @@ export function NoticiasEnsoTab({ ctx }) {
 
       {items.map((item) => {
         const color = SOURCE_COLORS[item.source_id] || t.accent;
+        const icon  = SOURCE_ICONS[item.source_id]  || "📡";
         const when = formatRelativeDate(item.pub_date);
         return (
           <a
@@ -128,7 +135,7 @@ export function NoticiasEnsoTab({ ctx }) {
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
-              <span style={{ fontSize: 9, color, fontWeight: 700 }}>{item.source_name}</span>
+              <span style={{ fontSize: 9, color, fontWeight: 700 }}>{icon} {item.source_name}</span>
               {when && <span style={{ fontSize: 9, color: t.textMuted }}>{when}</span>}
             </div>
             <div style={{ fontSize: 13, fontWeight: 700, color: t.text, lineHeight: 1.35, marginBottom: 5 }}>{item.title}</div>
