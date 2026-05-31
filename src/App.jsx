@@ -821,7 +821,7 @@ export default function SentinelaRS() {
     { key:"previsao",   label:"📅 Previsão 14 Dias" },
     { key:"lagoa",      label:"🌊 Lagoa dos Patos" },
     { key:"enso",       label:"🌡️ ENSO" },
-    { key:"noticias-enso", label:"Notícias El Niño" },
+    { key:"noticias-enso", label:"🌪️ Notícias El Niño" },
     { key:"cptec",      label:"🌦️ CPTEC/INPE" },
     { key:"copernicus", label:"🛰️ Copernicus" },
     { key:"queimadas",  label:"🔥 Queimadas / APAs" },

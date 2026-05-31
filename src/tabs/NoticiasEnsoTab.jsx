@@ -1,7 +1,6 @@
 import { DefesaCivilNotice } from "../components/DefesaCivilNotice";
 
 const SOURCE_COLORS = {
-  noaa: "#38bdf8",
   ecmwf: "#818cf8",
   copernicus: "#34d399",
   cptec: "#fb923c",
@@ -38,7 +37,7 @@ export function NoticiasEnsoTab({ ctx }) {
         gap: 12,
         flexWrap: "wrap",
       }}>
-        <span><strong>Notícias El Niño</strong> — leituras informativas sobre ENSO. Links abrem a fonte original.</span>
+        <span><strong>🌪️ Notícias El Niño</strong> — leituras informativas sobre ENSO de fontes científicas internacionais. Links abrem a fonte original.</span>
         <button
           onClick={loadEnsoNoticias}
           disabled={ensoNoticiasLoading}
@@ -61,35 +60,50 @@ export function NoticiasEnsoTab({ ctx }) {
 
       {sources.length > 0 && (
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {sources.map((src) => (
-            <div key={src.id} style={{
-              fontSize: 9,
-              padding: "3px 9px",
-              borderRadius: 999,
-              border: `1px solid ${src.ok ? (SOURCE_COLORS[src.id] || t.accent) + "55" : "rgba(239,68,68,0.4)"}`,
-              color: src.ok ? (SOURCE_COLORS[src.id] || t.accent) : "#ef4444",
-            }}>
-              {src.name}: {src.ok ? `${src.count} item${src.count === 1 ? "" : "s"}` : "indisponível"}
-            </div>
-          ))}
+          {sources.map((src) => {
+            const color = SOURCE_COLORS[src.id] || t.accent;
+            const statusOk = src.ok && (src.http_status === 200 || src.http_status === null);
+            return (
+              <div key={src.id} style={{
+                fontSize: 9,
+                padding: "3px 9px",
+                borderRadius: 999,
+                border: `1px solid ${statusOk ? color + "55" : "rgba(239,68,68,0.4)"}`,
+                color: statusOk ? color : "#ef4444",
+              }}>
+                {src.name}
+                {src.http_status !== null && src.http_status !== undefined
+                  ? <span style={{ opacity: 0.7 }}> · HTTP {src.http_status}</span>
+                  : null}
+                {": "}
+                {statusOk ? `${src.count} item${src.count === 1 ? "" : "s"}` : (src.error || "indisponível")}
+              </div>
+            );
+          })}
         </div>
       )}
 
       {ensoNoticiasLoading && (
         <div style={{ textAlign: "center", padding: 36, color: t.accent, fontSize: 12 }}>
-          Buscando notícias...
+          🌪️ Buscando notícias...
         </div>
       )}
 
       {!ensoNoticiasLoading && !ensoNoticias && (
         <div style={{ textAlign: "center", padding: 36, border: `1px solid ${t.border}`, borderRadius: 6, color: t.textMuted, fontSize: 11 }}>
-          Clique em Atualizar para consultar as notícias.
+          Clique em <strong>Atualizar</strong> para consultar as notícias.
         </div>
       )}
 
       {!ensoNoticiasLoading && ensoNoticias && !ensoNoticias.ok && items.length === 0 && (
         <div style={{ padding: "12px 14px", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 6, color: dark ? "#fca5a5" : "#b91c1c", fontSize: 11 }}>
           Não foi possível carregar as notícias agora. Tente novamente em alguns minutos.
+        </div>
+      )}
+
+      {!ensoNoticiasLoading && ensoNoticias && items.length === 0 && ensoNoticias.ok && (
+        <div style={{ padding: "12px 14px", border: `1px solid ${t.border}`, borderRadius: 6, color: t.textMuted, fontSize: 11, textAlign: "center" }}>
+          Nenhuma notícia sobre ENSO encontrada nas fontes no momento.
         </div>
       )}
 
@@ -110,6 +124,7 @@ export function NoticiasEnsoTab({ ctx }) {
               border: `1px solid ${t.border}`,
               borderLeft: `3px solid ${color}`,
               borderRadius: 6,
+              transition: "background 0.15s",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
