@@ -28,7 +28,7 @@ function isEnso(title: string, desc = "") {
 
 function clean(s: string) {
   return s
-    .replace(/<!\\[CDATA\\[|\]\]>/g, "")
+    .replace("<!CDATA[", "").replace("]]>", "")
     .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"').replace(/&nbsp;/g, " ")
     .replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
