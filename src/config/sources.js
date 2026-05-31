@@ -18,6 +18,7 @@ export const COPERNICUS_WATER_FUNCTION_URL = `${SUPABASE_FUNCTIONS_BASE_URL}/cop
 export const COPERNICUS_SENTINEL1_FUNCTION_URL = `${SUPABASE_FUNCTIONS_BASE_URL}/copernicus-sentinel1-water`;
 export const COPERNICUS_NDVI_FUNCTION_URL = `${SUPABASE_FUNCTIONS_BASE_URL}/copernicus-ndvi`;
 export const COPERNICUS_EMS_FUNCTION_URL = `${SUPABASE_FUNCTIONS_BASE_URL}/copernicus-ems`;
+export const ENSO_NOTICIAS_FUNCTION_URL = `${SUPABASE_FUNCTIONS_BASE_URL}/enso-noticias`;
 
 export const COPERNICUS_EMS_RAPID_INFO_URL = "https://rapidmapping.emergency.copernicus.eu/backend/dashboard-api/public-activations-info/";
 export const COPERNICUS_EMS_RAPID_DETAIL_URL = "https://rapidmapping.emergency.copernicus.eu/backend/dashboard-api/public-activations/";

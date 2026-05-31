@@ -88,7 +88,7 @@ Observacao: o app ja separa `STATIONS_CIDADES` de `STATIONS_LAGOA`. A previsao p
 - IRI/CCSR ENSO: probabilidades via `iri-enso-probabilidades`.
 - CPTEC/INPE: produtos graficos via `cptec-inpe-produtos`.
 - Defesa Civil RS: RSS via `defesa-civil-rs`.
-- INPE BDQueimadas: chamada direta no navegador.
+- INPE BDQueimadas: via Edge Function `inpe-queimadas-rs`.
 - Copernicus Water: via `copernicus-water`, depende de credenciais Copernicus.
 - Copernicus Sentinel-1: via `copernicus-sentinel1-water`, depende de credenciais Copernicus.
 - Copernicus NDVI: via `copernicus-ndvi`, depende de credenciais Copernicus.
@@ -96,9 +96,9 @@ Observacao: o app ja separa `STATIONS_CIDADES` de `STATIONS_LAGOA`. A previsao p
 ### Complementares, parciais ou dependentes
 
 - ANA HidroWeb: existe `ana-rs`, mas a UI descreve como complementar/aguardando credencial.
-- Push PWA: depende de `VITE_VAPID_PUBLIC_KEY` no frontend e secrets VAPID no backend.
-- `send-alerts`: depende de Supabase Service Role e VAPID.
-- `poll-apis`: existe como funcao de polling, mas usa logica mais antiga e previsao 7 dias; deve ser revisada antes de uso operacional.
+- Push proprio PWA: removido.
+- `send-alerts`: removida.
+- `poll-apis`: funcao mantida desativada; nao deve ser ativada sem revisao separada.
 
 ### Referenciais, nao operacionais
 
@@ -142,13 +142,13 @@ Na aba Alertas, entram apenas:
 - `src/App.jsx` concentra muita responsabilidade: UI, regras, fontes, parsing, risco e estado.
 - `loadAllData` faz varias chamadas em sequencia, principalmente por estacao.
 - O helper `tracked` pode chamar uma fonte novamente no erro por causa de `typeof fn()`.
-- INPE BDQueimadas e chamado direto no navegador, sem proxy, cache ou normalizacao.
+- INPE BDQueimadas usa proxy/Edge Function.
 - Parser do IRI/CCSR depende de texto da pagina publica; e fragil se o texto mudar.
 - Copernicus EFFIS aparece no produto, mas nao esta conectado como dado operacional em tempo real.
 - Modo claro existe, mas o CSS global ainda forca uma identidade escura forte.
-- Historico da Lagoa fica em `localStorage`, nao em backend persistente.
-- Alertas locais sao gerados no frontend; nao ha fila/persistencia central de alertas.
-- Algumas funcoes antigas podem estar desalinhadas com o app atual, especialmente `poll-apis`.
+- Historico da Lagoa usa Supabase `readings` quando disponivel e memoria de sessao como fallback.
+- Alertas exibidos no app sao apenas RSS oficial da Defesa Civil RS.
+- `poll-apis` permanece fora de producao operacional.
 
 ## Performance Atual
 
@@ -203,6 +203,11 @@ Se for calculo do app, deve dizer que e indicador derivado.
 Se for historico, deve dizer que nao e operacional.
 ```
 
-## Estado Congelado
+## Atualizacao 2026-05-30
 
-Esta cartilha representa o estado atual antes das proximas alteracoes. Depois de zipar o projeto, as proximas mudancas podem ser feitas com este documento como baseline.
+- Push proprio, `send-alerts` e `usePush` foram removidos. Alertas exibidos no app passam a ser apenas RSS oficial da Defesa Civil RS.
+- `poll-apis` permanece desativada para automacao operacional; nao deve ser ativada sem revisao separada.
+- Nova aba `Noticias El Nino` adicionada ao app.
+- Nova Edge Function `enso-noticias` adicionada e publicada sem JWT.
+- A funcao agrega feeds verificados da NOAA ENSO Blog e Copernicus; ECMWF e CPTEC ficam marcados como indisponiveis enquanto nao houver RSS confirmado.
+- Traducao automatica usa `OPENROUTER_API_KEY` via Supabase Secret quando configurada; sem secret, entrega o texto original com `translation: none`.

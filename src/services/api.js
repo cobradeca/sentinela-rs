@@ -10,6 +10,7 @@ import {
   COPERNICUS_WATER_FUNCTION_URL,
   CPTEC_INPE_PRODUCTS_FUNCTION_URL,
   DEFESA_CIVIL_RS_FUNCTION_URL,
+  ENSO_NOTICIAS_FUNCTION_URL,
   EFFIS_WMS_HEALTH_FUNCTION_URL,
   HIDROSENS_LARANJAL_FUNCTION_URL,
   ICMBIO_UCS_RS_FUNCTION_URL,
@@ -491,5 +492,36 @@ export async function fetchDefesaCivilAlerts() {
     }));
   } catch {
     return [];
+  }
+}
+
+export async function fetchEnsoNoticias() {
+  try {
+    const res = await fetch(ENSO_NOTICIAS_FUNCTION_URL, {
+      signal: AbortSignal.timeout(25000),
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) return { ok: false, items: [], sources: [], error: `HTTP ${res.status}` };
+
+    const data = await res.json();
+    if (!data?.ok) {
+      return {
+        ok: false,
+        items: [],
+        sources: data?.sources || [],
+        error: data?.error || "sem dados",
+      };
+    }
+
+    return {
+      ok: true,
+      items: data.items || [],
+      sources: data.sources || [],
+      fetched_at: data.fetched_at || null,
+      translation: data.translation || "none",
+      total: data.total || 0,
+    };
+  } catch (err) {
+    return { ok: false, items: [], sources: [], error: err?.message || "timeout" };
   }
 }

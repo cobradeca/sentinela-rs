@@ -12,6 +12,7 @@ import {
   fetchCopernicusWater,
   fetchCptecInpeProducts,
   fetchDefesaCivilAlerts,
+  fetchEnsoNoticias,
   fetchEffisWmsHealth,
   fetchHidroSensLaranjalLevel,
   fetchIcmbioUcsRs,
@@ -45,6 +46,7 @@ const CptecTab = lazy(() => import("./tabs/CptecTab").then((m) => ({ default: m.
 const CopernicusTab = lazy(() => import("./tabs/CopernicusTab").then((m) => ({ default: m.CopernicusTab })));
 const QueimadasTab = lazy(() => import("./tabs/QueimadasTab").then((m) => ({ default: m.QueimadasTab })));
 const AlertasTab = lazy(() => import("./tabs/AlertasTab").then((m) => ({ default: m.AlertasTab })));
+const NoticiasEnsoTab = lazy(() => import("./tabs/NoticiasEnsoTab").then((m) => ({ default: m.NoticiasEnsoTab })));
 const FontesDeDadosTab = lazy(() => import("./tabs/FontesDeDadosTab").then((m) => ({ default: m.FontesDeDadosTab })));
 
 class TabErrorBoundary extends Component {
@@ -376,6 +378,8 @@ export default function SentinelaRS() {
   const [copernicusEms, setCopernicusEms] = useState(null);
   const [expandedCard, setExpandedCard] = useState(null); // para detalhe do card
   const [riskExplain, setRiskExplain] = useState(null);
+  const [ensoNoticias, setEnsoNoticias] = useState(null);
+  const [ensoNoticiasLoading, setEnsoNoticiasLoading] = useState(false);
   // BLOCO D — saúde das fontes
   const [sourceHealth, setSourceHealth] = useState({});
   const sourceHealthRef = useRef({});
@@ -613,6 +617,13 @@ export default function SentinelaRS() {
     setQLoading(false);
   }, []);
 
+  const loadEnsoNoticias = useCallback(async () => {
+    setEnsoNoticiasLoading(true);
+    const data = await fetchEnsoNoticias();
+    setEnsoNoticias(data);
+    setEnsoNoticiasLoading(false);
+  }, []);
+
   useEffect(() => {
     loadAllData();
     const iv = setInterval(loadAllData, 30*60*1000);
@@ -767,7 +778,10 @@ export default function SentinelaRS() {
     if (activeTab === "queimadas" || activeTab === "apis") {
       loadQueimadas();
     }
-  }, [activeTab, loadQueimadas]);
+    if (activeTab === "noticias-enso" && !ensoNoticias && !ensoNoticiasLoading) {
+      loadEnsoNoticias();
+    }
+  }, [activeTab, loadQueimadas, loadEnsoNoticias, ensoNoticias, ensoNoticiasLoading]);
 
   const overallRisk = Object.values(stationData).reduce((w,d) => {
     const o=["NORMAL","ATENCAO","ALERTA","EMERGENCIA","CRITICO"];
@@ -807,6 +821,7 @@ export default function SentinelaRS() {
     { key:"previsao",   label:"📅 Previsão 14 Dias" },
     { key:"lagoa",      label:"🌊 Lagoa dos Patos" },
     { key:"enso",       label:"🌡️ ENSO" },
+    { key:"noticias-enso", label:"Notícias El Niño" },
     { key:"cptec",      label:"🌦️ CPTEC/INPE" },
     { key:"copernicus", label:"🛰️ Copernicus" },
     { key:"queimadas",  label:"🔥 Queimadas / APAs" },
@@ -890,9 +905,9 @@ export default function SentinelaRS() {
     ensoClass, ensoDominantProb, ensoFirstForecast, ensoObservedAvailable, ensoObservedText, ensoProbabilityAvailable, ensoProbabilityText, expanded, explainCityRisk, explainDailyRisk, explainLagoaRisk,
     formatCemadenRain, formatDateTimeBR, formatProbability, formatSignedCelsius, getFallbackWarningText, getLagoaMaxMay2024, getLagoaMeasuredAt, getLagoaPointData, getLagoaSourceText,
     getResponsibleAgencyText, getRiskBg, getRiskColor, getRiskLevel, getValidatedSourceHealth, lagoaHistory, lagoaHistoryMeta, lagoaStatusColor, lagoaStatusLabel, lagoaSummary, lastUpdate,
-    icmbioUcs, loadAllData, loadQueimadas, percentValue, qLoading, queimadas, s, safeEnsoForecast, selData, selStation, setActiveTab, setExpanded, setExpandedCard, setRiskExplain, setSelStation, sourceHealth, stationData, t, wmoDesc, wmoEmoji,
+    ensoNoticias, ensoNoticiasLoading, icmbioUcs, loadAllData, loadEnsoNoticias, loadQueimadas, percentValue, qLoading, queimadas, s, safeEnsoForecast, selData, selStation, setActiveTab, setExpanded, setExpandedCard, setRiskExplain, setSelStation, sourceHealth, stationData, t, wmoDesc, wmoEmoji,
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [stationData, alerts, dark, activeTab, selStation, selData, loading, lastUpdate, sourceHealth, lagoaHistory, lagoaHistoryMeta, expanded, expandedCard, riskExplain, queimadas, qLoading, copernicusWater, copernicusS1, copernicusNdvi, copernicusEms, cptecProducts, effisHealth, icmbioUcs, activeENSO]);
+  }), [stationData, alerts, dark, activeTab, selStation, selData, loading, lastUpdate, sourceHealth, lagoaHistory, lagoaHistoryMeta, expanded, expandedCard, riskExplain, queimadas, qLoading, copernicusWater, copernicusS1, copernicusNdvi, copernicusEms, cptecProducts, effisHealth, icmbioUcs, activeENSO, ensoNoticias, ensoNoticiasLoading]);
 
   const renderNavButton = (tab, compact = false) => (
     <button
@@ -1026,6 +1041,7 @@ export default function SentinelaRS() {
             {activeTab==="previsao" && <PrevisaoTab ctx={tabCtx} />}
             {activeTab==="lagoa" && <LagoaDosPatosTab ctx={tabCtx} />}
             {activeTab==="enso" && <EnsoTab ctx={tabCtx} />}
+            {activeTab==="noticias-enso" && <NoticiasEnsoTab ctx={tabCtx} />}
             {activeTab==="cptec" && <CptecTab ctx={tabCtx} />}
             {activeTab==="copernicus" && <CopernicusTab ctx={tabCtx} />}
             {activeTab==="queimadas" && <QueimadasTab ctx={tabCtx} />}
