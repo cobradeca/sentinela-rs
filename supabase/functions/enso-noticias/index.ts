@@ -132,7 +132,7 @@ async function fetchEcmwf(apiKey: string | null): Promise<FeedResult> {
     // Extrai notícias da homepage: padrão <a href="/en/latest/...">Título</a>
     const re = /<a[^>]+href="(\/en\/[^"]+(?:news|article|story|blog)[^"]*)"[^>]*>([\s\S]{10,200}?)<\/a>/gi;
     const seen = new Set<string>();
-    const raw: typeof [] & Array<{ title: string; description: string; link: string; pub_date: string | null; image: string | null }> = [];
+    const raw: Array<{ title: string; description: string; link: string; pub_date: string | null; image: string | null }> = [];
 
     let m;
     while ((m = re.exec(html)) !== null && raw.length < 15) {
@@ -146,7 +146,7 @@ async function fetchEcmwf(apiKey: string | null): Promise<FeedResult> {
     // Se nenhum bateu filtro ENSO, pega as 5 primeiras e deixa tradução qualificar
     if (!raw.length) {
       const re2 = /<a[^>]+href="(\/en\/[^"]+(?:news|newsletter)[^"]*)"[^>]*>([\s\S]{10,150}?)<\/a>/gi;
-      let m2; const tmp: typeof raw = [];
+      let m2; const tmp: Array<{ title: string; description: string; link: string; pub_date: string | null; image: string | null }> = [];
       while ((m2 = re2.exec(html)) !== null && tmp.length < 5) {
         const link = `https://www.ecmwf.int${m2[1]}`;
         const title = clean(m2[2]);
