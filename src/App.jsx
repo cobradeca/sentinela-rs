@@ -1088,7 +1088,7 @@ export default function SentinelaRS() {
         )}
 
         <div style={{ marginTop:28, borderTop:`1px solid ${t.border}`, paddingTop:12, display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:6 }}>
-          <div style={{ fontSize:9, color:t.textFaint }}>SENTINELA·RS v2.2 · Open-Meteo + INMET + CEMADEN + Lagoa RADAR + HidroSens + ANA complementar/aguardando API + NOAA ENSO + INPE + Copernicus · Fonte CEMADEN: {CEMADEN_ATTRIBUTION}</div>
+          <div style={{ fontSize:9, color:t.textFaint }}>SENTINELA·RS v2.2 · Open-Meteo + INMET + CEMADEN + Lagoa RADAR + HidroSens + Ana HidroWeb/aguardando API + NOAA ENSO + INPE + Copernicus · Fonte CEMADEN: {CEMADEN_ATTRIBUTION}</div>
         </div>
       </div>
 
