@@ -43,7 +43,7 @@ export function NoticiasEnsoTab({ ctx }) {
         gap: 12,
         flexWrap: "wrap",
       }}>
-        <span><strong>🌪️ Notícias El Niño</strong> — leituras informativas sobre ENSO de fontes científicas internacionais. Links abrem a fonte original.</span>
+        <span><strong>🌪️ Notícias El Niño</strong> — cobertura sobre ENSO reunida de fontes científicas e jornalísticas brasileiras e internacionais. Links abrem a fonte original.</span>
         <button
           onClick={loadEnsoNoticias}
           disabled={ensoNoticiasLoading}
@@ -68,7 +68,7 @@ export function NoticiasEnsoTab({ ctx }) {
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {sources.map((src) => {
             const color = SOURCE_COLORS[src.id] || t.accent;
-            const statusOk = src.ok && (src.http_status === 200 || src.http_status === null);
+            const statusOk = src.ok;
             return (
               <div key={src.id} style={{
                 fontSize: 9,
