@@ -108,16 +108,16 @@ async function build(raw: Raw[], sid: string, sname: string, lang: "pt" | "en", 
   if (!raw.length) return { source_id: sid, source_name: sname, ok: true, http_status: 200, count: 0, items: [] };
 
   let titles = raw.map((r) => r.title);
-  let descs  = raw.map((r) => r.description);
+  let descs = raw.map((r) => r.description);
   let translated = lang === "pt";
 
   if (lang === "en" && key) {
     try {
       const tr = await translateBatch(raw, key);
       titles = tr.map((t) => t.title || "");
-      descs  = tr.map((t) => t.description || "");
+      descs = tr.map((t) => t.description || "");
       translated = true;
-    } catch { /* mantém original */ }
+    } catch (e) { console.error("translateBatch error:", e instanceof Error ? e.message : e); /* mantém original */ }
   }
 
   const items: Item[] = raw.map((r, i) => ({
@@ -145,7 +145,7 @@ async function fetchEcmwf(key: string | null): Promise<Result> {
     const raw: Raw[] = [];
 
     // Padrão confirmado: href="/en/about/media-centre/YYYY/slug" ou "/en/latest/YYYY/slug"
-    const linkRe = /href="(\/en\/(?:about\/media-centre|latest)\/\d{4}\/[^"#?]+)"/gi;
+    const linkRe = /href="(\/en\/[^"]*(?:media-centre|news|newsletter)\/[^"]*\d{4}\/[^"#?]{5,})"/gi;
     const matches: string[] = [];
     let lm;
     while ((lm = linkRe.exec(html)) !== null) {
@@ -204,9 +204,9 @@ async function fetchCopernicus(key: string | null): Promise<Result> {
 
     // Extrai imagem do plume Niño3.4
     const imgMatch = html.match(/src="([^"]+precalc_plume[^"]+ENSO[^"]+\.png)"/i) ||
-                     html.match(/src="([^"]+NINO34[^"]+\.png)"/i) ||
-                     html.match(/src="([^"]+enso[^"]+\.png)"/i);
-    const image = imgMatch ? imgMatch[1] : null;
+      html.match(/src="([^"]+NINO34[^"]+\.png)"/i) ||
+      html.match(/src="([^"]+enso[^"]+\.png)"/i);
+    const image = imgMatch ? (imgMatch[1].startsWith("http") ? imgMatch[1] : `https://climate.copernicus.eu${imgMatch[1]}`) : null;
 
     // Extrai o parágrafo de highlight ENSO — texto entre "Highlights" e o próximo heading
     const highlightMatch = html.match(/Highlights of the latest seasonal forecasts[\s\S]{0,200}?<\/[ph][^>]*>([\s\S]{100,1200}?)(?=<h[23]|##)/i);
@@ -314,9 +314,9 @@ Deno.serve(async (req) => {
   });
 
   const [r1, r2, r3] = await Promise.allSettled([
-    withTimeout(fetchEcmwf(key),      22000, errResult("ecmwf",      "ECMWF")),
+    withTimeout(fetchEcmwf(key), 22000, errResult("ecmwf", "ECMWF")),
     withTimeout(fetchCopernicus(key), 22000, errResult("copernicus", "Copernicus C3S")),
-    withTimeout(fetchCptec(),         22000, errResult("cptec",      "CPTEC/INPE")),
+    withTimeout(fetchCptec(), 22000, errResult("cptec", "CPTEC/INPE")),
   ]);
 
   const err = (sid: string, sname: string): Result => ({
