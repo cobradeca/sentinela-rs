@@ -108,14 +108,14 @@ async function build(raw: Raw[], sid: string, sname: string, lang: "pt" | "en", 
   if (!raw.length) return { source_id: sid, source_name: sname, ok: true, http_status: 200, count: 0, items: [] };
 
   let titles = raw.map((r) => r.title);
-  let descs  = raw.map((r) => r.description);
+  let descs = raw.map((r) => r.description);
   let translated = lang === "pt";
 
   if (lang === "en" && key) {
     try {
       const tr = await translateBatch(raw, key);
       titles = tr.map((t) => t.title || "");
-      descs  = tr.map((t) => t.description || "");
+      descs = tr.map((t) => t.description || "");
       translated = true;
     } catch (e) { console.error("translateBatch error:", e instanceof Error ? e.message : e); /* mantém original */ }
   }
@@ -135,48 +135,48 @@ async function build(raw: Raw[], sid: string, sname: string, lang: "pt" | "en", 
 // Extrai notícias de /en/about/media-centre/news
 // Padrão do HTML: links /en/about/media-centre/YYYY/slug
 
-async function fetchEcmwf(key: string | null): Promise<Result> {
-  const SID = "ecmwf", SNAME = "ECMWF";
-  const BASE = "https://www.ecmwf.int";
+// ── GNews (Brasil, português) ────────────────────────────────────────────────
+// Substitui ECMWF: traz notícias brasileiras sobre El Niño já em português
+// Requer GNEWS_API_KEY nos secrets do Supabase
+
+async function fetchGNews(): Promise<Result> {
+  const SID = "gnews", SNAME = "Notícias BR";
+  const apiKey = Deno.env.get("GNEWS_API_KEY") || null;
+
+  if (!apiKey) {
+    return { source_id: SID, source_name: SNAME, ok: false, http_status: null, count: 0, error: "GNEWS_API_KEY não configurada", items: [] };
+  }
 
   try {
-    const html = await get(`${BASE}/en/about/media-centre/news`);
-    const seen = new Set<string>();
-    const raw: Raw[] = [];
+    const now = new Date();
+    const from = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split("T")[0];
+    const url = `https://gnews.io/api/v4/search?q=%22El+Niño%22+OR+%22La+Niña%22+OR+%22ENOS%22&lang=pt&country=br&from=${from}&sortby=publishedAt&max=10&apikey=${apiKey}`;
 
-    // HTML do ECMWF usa URLs ABSOLUTAS: href="https://www.ecmwf.int/en/about/media-centre/..."
-    const linkRe = /href="(https:\/\/www\.ecmwf\.int\/en\/about\/media-centre\/[^"#?]{10,})"/gi;
-    let lm;
-    while ((lm = linkRe.exec(html)) !== null && raw.length < 20) {
-      const link = lm[1];
-      if (seen.has(link) || /\.(css|js|png|gif|svg|jpg)/.test(link)) continue;
-      seen.add(link);
+    const res = await fetch(url, { signal: AbortSignal.timeout(12000) });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-      const idx = html.indexOf(lm[0]);
-      const chunk = html.slice(idx, idx + 800);
+    const data = await res.json();
+    if (!Array.isArray(data?.articles)) throw new Error("resposta inválida");
 
-      // Título: primeiro texto longo após o href
-      const tm = chunk.match(/[">\s]([A-Z][^<"]{15,200}?)(?:<|"|\n)/);
-      const title = tm ? clean(tm[1]) : "";
-      if (!title || title.length < 15) continue;
+    const items: Item[] = data.articles.map((a: Record<string, string>) => ({
+      id: uid(SID, a.url || a.title),
+      source_id: SID,
+      source_name: a.source?.name || SNAME,
+      title: a.title || "",
+      description: a.description || "",
+      link: a.url || "",
+      image: a.image || null,
+      pub_date: a.publishedAt || null,
+      translated: true,
+    }));
 
-      // Data: DD Month YYYY
-      const dm = chunk.match(/(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+20\d\d)/i);
-      const pub_date = dm ? (() => { try { return new Date(dm[1]).toISOString(); } catch { return null; } })() : null;
-
-      raw.push({ title, description: "ECMWF climate seasonal forecast", link, pub_date, image: null });
-    }
-
-    const ensoFiltered = raw.filter((r) => isEnso(r.title));
-    const final = ensoFiltered.length >= 1 ? ensoFiltered : raw.slice(0, 5);
-
-    return build(final, SID, SNAME, "en", key);
+    return { source_id: SID, source_name: SNAME, ok: true, http_status: 200, count: items.length, items };
   } catch (e) {
     return { source_id: SID, source_name: SNAME, ok: false, http_status: null, count: 0, error: String(e instanceof Error ? e.message : e), items: [] };
   }
 }
 
-// ── Copernicus C3S ────────────────────────────────────────────────────────────
+// ── Copernicus// ── Copernicus C3S ────────────────────────────────────────────────────────────
 // Estratégia: scraping de /seasonal-forecasts
 // A página tem seção "Highlights of the latest seasonal forecasts" com texto ENSO
 // e imagem do plume Niño3.4
@@ -195,8 +195,8 @@ async function fetchCopernicus(key: string | null): Promise<Result> {
 
     // Extrai imagem do plume Niño3.4
     const imgMatch = html.match(/src="([^"]+precalc_plume[^"]+ENSO[^"]+\.png)"/i) ||
-                     html.match(/src="([^"]+NINO34[^"]+\.png)"/i) ||
-                     html.match(/src="([^"]+enso[^"]+\.png)"/i);
+      html.match(/src="([^"]+NINO34[^"]+\.png)"/i) ||
+      html.match(/src="([^"]+enso[^"]+\.png)"/i);
     const image = imgMatch ? (imgMatch[1].startsWith("http") ? imgMatch[1] : `https://climate.copernicus.eu${imgMatch[1]}`) : null;
 
     // Extrai o parágrafo de highlight ENSO — texto entre "Highlights" e o próximo heading
@@ -307,9 +307,9 @@ Deno.serve(async (req) => {
   });
 
   const [r1, r2, r3] = await Promise.allSettled([
-    withTimeout(fetchEcmwf(key),      22000, errResult("ecmwf",      "ECMWF")),
+    withTimeout(fetchGNews(), 15000, errResult("gnews", "Notícias BR")),
     withTimeout(fetchCopernicus(key), 22000, errResult("copernicus", "Copernicus C3S")),
-    withTimeout(fetchCptec(),         22000, errResult("cptec",      "CPTEC/INPE")),
+    withTimeout(fetchCptec(), 22000, errResult("cptec", "CPTEC/INPE")),
   ]);
 
   const err = (sid: string, sname: string): Result => ({
@@ -317,7 +317,7 @@ Deno.serve(async (req) => {
   });
 
   const results: Result[] = [
-    r1.status === "fulfilled" ? r1.value : err("ecmwf", "ECMWF"),
+    r1.status === "fulfilled" ? r1.value : err("gnews", "Notícias BR"),
     r2.status === "fulfilled" ? r2.value : err("copernicus", "Copernicus C3S"),
     r3.status === "fulfilled" ? r3.value : err("cptec", "CPTEC/INPE"),
   ];

@@ -1,15 +1,15 @@
 import { DefesaCivilNotice } from "../components/DefesaCivilNotice";
 
 const SOURCE_COLORS = {
-  ecmwf:      "#818cf8",
+  gnews: "#38bdf8",
   copernicus: "#34d399",
-  cptec:      "#fb923c",
+  cptec: "#fb923c",
 };
 
 const SOURCE_ICONS = {
-  ecmwf:      "🛰️",
+  gnews: "📰",
   copernicus: "🌍",
-  cptec:      "🇧🇷",
+  cptec: "🇧🇷",
 };
 
 function formatRelativeDate(value) {
@@ -77,11 +77,7 @@ export function NoticiasEnsoTab({ ctx }) {
                 border: `1px solid ${statusOk ? color + "55" : "rgba(239,68,68,0.4)"}`,
                 color: statusOk ? color : "#ef4444",
               }}>
-                {SOURCE_ICONS[src.id] || "📡"} {src.name}
-                {src.http_status !== null && src.http_status !== undefined
-                  ? <span style={{ opacity: 0.7 }}> · HTTP {src.http_status}</span>
-                  : null}
-                {": "}
+                {SOURCE_ICONS[src.id] || "📡"} {src.name}{": "}
                 {statusOk ? `${src.count} item${src.count === 1 ? "" : "s"}` : (src.error || "indisponível")}
               </div>
             );
@@ -115,7 +111,7 @@ export function NoticiasEnsoTab({ ctx }) {
 
       {items.map((item) => {
         const color = SOURCE_COLORS[item.source_id] || t.accent;
-        const icon  = SOURCE_ICONS[item.source_id]  || "📡";
+        const icon = SOURCE_ICONS[item.source_id] || "📡";
         const when = formatRelativeDate(item.pub_date);
         return (
           <a
