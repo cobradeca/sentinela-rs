@@ -145,7 +145,7 @@ async function fetchEcmwf(key: string | null): Promise<Result> {
     const raw: Raw[] = [];
 
     // Padrão confirmado: href="/en/about/media-centre/YYYY/slug" ou "/en/latest/YYYY/slug"
-    const linkRe = /href="(\/en\/[^"]*(?:media-centre|news|newsletter)\/[^"]*\d{4}\/[^"#?]{5,})"/gi;
+    const linkRe = /href="(\/en\/about\/media-centre(?:\/news)?\/\d{4}\/[^"#?]{5,})"/gi;
     const matches: string[] = [];
     let lm;
     while ((lm = linkRe.exec(html)) !== null) {
@@ -161,9 +161,9 @@ async function fetchEcmwf(key: string | null): Promise<Result> {
       const chunk = html.slice(Math.max(0, idx - 50), idx + 600);
 
       // Título: texto dentro do <a> ou <h3>/<h2> mais próximo
-      const titleMatch = chunk.match(/>([A-Z][^<]{15,180})</);
+      const titleMatch = chunk.match(/>([A-Za-z][^<]{15,180})</);
       const title = titleMatch ? clean(titleMatch[1]) : "";
-      if (!title || title.length < 15) continue;
+      if (!title || title.length < 10) continue;
 
       // Data: padrão "DD Month YYYY" ou "YYYY-MM-DD"
       const dateMatch = chunk.match(/(\d{1,2}\s+\w+\s+202[0-9]|202[0-9]-\d{2}-\d{2})/);
@@ -219,6 +219,8 @@ async function fetchCopernicus(key: string | null): Promise<Result> {
       if (paraMatch) description = clean(paraMatch[1]).slice(0, 600);
     }
 
+    // Remove data que aparece no início da description (ex: "10 May 2026The latest...")
+    description = description.replace(/^\d{1,2}\s+\w+\s+\d{4}/, "").trim();
     if (!description) description = "Previsões sazonais C3S com foco no El Niño e variabilidade climática global.";
 
     raw.push({
