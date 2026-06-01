@@ -108,14 +108,14 @@ async function build(raw: Raw[], sid: string, sname: string, lang: "pt" | "en", 
   if (!raw.length) return { source_id: sid, source_name: sname, ok: true, http_status: 200, count: 0, items: [] };
 
   let titles = raw.map((r) => r.title);
-  let descs = raw.map((r) => r.description);
+  let descs  = raw.map((r) => r.description);
   let translated = lang === "pt";
 
   if (lang === "en" && key) {
     try {
       const tr = await translateBatch(raw, key);
       titles = tr.map((t) => t.title || "");
-      descs = tr.map((t) => t.description || "");
+      descs  = tr.map((t) => t.description || "");
       translated = true;
     } catch (e) { console.error("translateBatch error:", e instanceof Error ? e.message : e); /* mantém original */ }
   }
@@ -204,8 +204,8 @@ async function fetchCopernicus(key: string | null): Promise<Result> {
 
     // Extrai imagem do plume Niño3.4
     const imgMatch = html.match(/src="([^"]+precalc_plume[^"]+ENSO[^"]+\.png)"/i) ||
-      html.match(/src="([^"]+NINO34[^"]+\.png)"/i) ||
-      html.match(/src="([^"]+enso[^"]+\.png)"/i);
+                     html.match(/src="([^"]+NINO34[^"]+\.png)"/i) ||
+                     html.match(/src="([^"]+enso[^"]+\.png)"/i);
     const image = imgMatch ? (imgMatch[1].startsWith("http") ? imgMatch[1] : `https://climate.copernicus.eu${imgMatch[1]}`) : null;
 
     // Extrai o parágrafo de highlight ENSO — texto entre "Highlights" e o próximo heading
@@ -316,9 +316,9 @@ Deno.serve(async (req) => {
   });
 
   const [r1, r2, r3] = await Promise.allSettled([
-    withTimeout(fetchEcmwf(key), 22000, errResult("ecmwf", "ECMWF")),
+    withTimeout(fetchEcmwf(key),      22000, errResult("ecmwf",      "ECMWF")),
     withTimeout(fetchCopernicus(key), 22000, errResult("copernicus", "Copernicus C3S")),
-    withTimeout(fetchCptec(), 22000, errResult("cptec", "CPTEC/INPE")),
+    withTimeout(fetchCptec(),         22000, errResult("cptec",      "CPTEC/INPE")),
   ]);
 
   const err = (sid: string, sname: string): Result => ({
