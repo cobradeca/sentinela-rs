@@ -53,7 +53,7 @@ function uid(sid: string, key: string) {
   return sid + "_" + Math.abs(h).toString(36);
 }
 
-async function get(url: string, timeout = 15000): Promise<string> {
+async function get(url: string, timeout = 9000): Promise<string> {
   const r = await fetch(url, {
     headers: { "User-Agent": "Mozilla/5.0 SentinelaRS/5.0", "Accept": "text/html,*/*" },
     signal: AbortSignal.timeout(timeout),
@@ -305,18 +305,23 @@ Deno.serve(async (req) => {
   }
 
   const key = Deno.env.get("OPENROUTER_API_KEY") || null;
-  const timeout = <T>(p: Promise<T>, ms: number, fallback: T): Promise<T> =>
-    Promise.race([p, new Promise<T>((res) => setTimeout(() => res(fallback), ms))]);
+  function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
+    return Promise.race([p, new Promise<T>((res) => setTimeout(() => res(fallback), ms))]);
+  }
 
   const errResult = (sid: string, sname: string): Result => ({
     source_id: sid, source_name: sname, ok: false, http_status: null, count: 0, error: "timeout global", items: [],
   });
 
   const [r1, r2, r3] = await Promise.allSettled([
-    timeout(fetchEcmwf(key),      22000, errResult("ecmwf",      "ECMWF")),
-    timeout(fetchCopernicus(key), 22000, errResult("copernicus", "Copernicus C3S")),
-    timeout(fetchCptec(),         22000, errResult("cptec",      "CPTEC/INPE")),
+    withTimeout(fetchEcmwf(key),      22000, errResult("ecmwf",      "ECMWF")),
+    withTimeout(fetchCopernicus(key), 22000, errResult("copernicus", "Copernicus C3S")),
+    withTimeout(fetchCptec(),         22000, errResult("cptec",      "CPTEC/INPE")),
   ]);
+
+  const err = (sid: string, sname: string): Result => ({
+    source_id: sid, source_name: sname, ok: false, http_status: null, count: 0, error: "falha inesperada", items: [],
+  });
 
   const results: Result[] = [
     r1.status === "fulfilled" ? r1.value : err("ecmwf", "ECMWF"),
