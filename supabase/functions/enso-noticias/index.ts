@@ -144,40 +144,31 @@ async function fetchEcmwf(key: string | null): Promise<Result> {
     const seen = new Set<string>();
     const raw: Raw[] = [];
 
-    // Padrão confirmado: href="/en/about/media-centre/YYYY/slug" ou "/en/latest/YYYY/slug"
-    const linkRe = /href="(\/en\/about\/media-centre(?:\/news)?\/\d{4}\/[^"#?]{5,})"/gi;
-    const matches: string[] = [];
+    // HTML do ECMWF usa URLs ABSOLUTAS: href="https://www.ecmwf.int/en/about/media-centre/..."
+    const linkRe = /href="(https:\/\/www\.ecmwf\.int\/en\/about\/media-centre\/[^"#?]{10,})"/gi;
     let lm;
-    while ((lm = linkRe.exec(html)) !== null) {
-      if (!seen.has(lm[1])) { seen.add(lm[1]); matches.push(lm[1]); }
+    while ((lm = linkRe.exec(html)) !== null && raw.length < 20) {
+      const link = lm[1];
+      if (seen.has(link) || /\.(css|js|png|gif|svg|jpg)/.test(link)) continue;
+      seen.add(link);
+
+      const idx = html.indexOf(lm[0]);
+      const chunk = html.slice(idx, idx + 800);
+
+      // Título: primeiro texto longo após o href
+      const tm = chunk.match(/[">\s]([A-Z][^<"]{15,200}?)(?:<|"|\n)/);
+      const title = tm ? clean(tm[1]) : "";
+      if (!title || title.length < 15) continue;
+
+      // Data: DD Month YYYY
+      const dm = chunk.match(/(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+20\d\d)/i);
+      const pub_date = dm ? (() => { try { return new Date(dm[1]).toISOString(); } catch { return null; } })() : null;
+
+      raw.push({ title, description: "ECMWF climate seasonal forecast", link, pub_date, image: null });
     }
 
-    // Para cada link, extrai título do texto próximo e data
-    for (const href of matches.slice(0, 20)) {
-      // Encontra o bloco ao redor desse href no HTML
-      const idx = html.indexOf(`href="${href}"`);
-      if (idx === -1) continue;
-      // Pega ~600 chars ao redor do link para extrair título e data
-      const chunk = html.slice(Math.max(0, idx - 50), idx + 600);
-
-      // Título: texto dentro do <a> ou <h3>/<h2> mais próximo
-      const titleMatch = chunk.match(/>([A-Za-z][^<]{15,180})</);
-      const title = titleMatch ? clean(titleMatch[1]) : "";
-      if (!title || title.length < 10) continue;
-
-      // Data: padrão "DD Month YYYY" ou "YYYY-MM-DD"
-      const dateMatch = chunk.match(/(\d{1,2}\s+\w+\s+202[0-9]|202[0-9]-\d{2}-\d{2})/);
-      const pub_date = dateMatch ? (() => { try { return new Date(dateMatch[1]).toISOString(); } catch { return null; } })() : null;
-
-      const link = BASE + href;
-      raw.push({ title, description: "ECMWF forecast climate seasonal", link, pub_date, image: null });
-
-      if (raw.length >= 8) break;
-    }
-
-    // Filtra por ENSO se tiver matches suficientes
-    const ensoFiltered = raw.filter((r) => isEnso(r.title, r.description));
-    const final = ensoFiltered.length >= 2 ? ensoFiltered : raw.slice(0, 5);
+    const ensoFiltered = raw.filter((r) => isEnso(r.title));
+    const final = ensoFiltered.length >= 1 ? ensoFiltered : raw.slice(0, 5);
 
     return build(final, SID, SNAME, "en", key);
   } catch (e) {
