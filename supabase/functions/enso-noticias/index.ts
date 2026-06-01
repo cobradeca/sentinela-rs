@@ -82,7 +82,7 @@ async function translateBatch(rows: Raw[], key: string): Promise<Array<{ title: 
       "X-Title": "Sentinela-RS",
     },
     body: JSON.stringify({
-      model: "google/gemma-2-9b-it:free", temperature: 0,
+      model: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free", temperature: 0,
       messages: [
         {
           role: "system",
