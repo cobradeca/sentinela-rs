@@ -259,8 +259,8 @@ function explainDailyRisk(station, date, p, tn, w, riskCode) {
       tn < 0
         ? `A mínima pode cair para ${tn.toFixed(1)}°C, com risco de geada ou gelo.`
         : tn < 5
-        ? `A mínima pode chegar a ${tn.toFixed(1)}°C. É frio relevante para o RS e entra como atenção.`
-        : `A mínima prevista é de ${tn.toFixed(1)}°C. Esse frio não aumenta o nível de atenção agora.`,
+          ? `A mínima pode chegar a ${tn.toFixed(1)}°C. É frio relevante para o RS e entra como atenção.`
+          : `A mínima prevista é de ${tn.toFixed(1)}°C. Esse frio não aumenta o nível de atenção agora.`,
       w >= 30
         ? `O vento pode chegar a ${w.toFixed(0)}km/h. A partir de 30km/h o app passa a acompanhar o vento com mais cuidado.`
         : `O vento previsto é baixo (${w.toFixed(0)}km/h), sem influência relevante no risco do dia.`
@@ -348,30 +348,30 @@ const WMO_WEATHER = {
   99: ["⛈️", "Tempestade forte com granizo"],
 };
 
-const wmoDesc  = (c) => WMO_WEATHER[Number(c)]?.[1] || "Condição meteorológica";
+const wmoDesc = (c) => WMO_WEATHER[Number(c)]?.[1] || "Condição meteorológica";
 const wmoEmoji = (c) => WMO_WEATHER[Number(c)]?.[0] || "🌦️";
 
 
 // ─── APP ─────────────────────────────────────────────────────────────────────
 export default function SentinelaRS() {
-  const [stationData, setStationData]   = useState({});
-  const [loading, setLoading]           = useState(true);
-  const [lastUpdate, setLastUpdate]     = useState(null);
+  const [stationData, setStationData] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [lastUpdate, setLastUpdate] = useState(null);
   const [lagoaHistory, setLagoaHistory] = useState({});
   const [lagoaHistoryMeta, setLagoaHistoryMeta] = useState({ source: "sessão atual", persistent: false });
-  const [selStation, setSelStation]     = useState(STATIONS_CIDADES[0]); // POA default
-  const [activeTab, setActiveTab]       = useState("dashboard");
+  const [selStation, setSelStation] = useState(STATIONS_CIDADES[0]); // POA default
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [alerts, setAlerts]             = useState([]);
-  const [queimadas, setQueimadas]       = useState(null);
-  const [icmbioUcs, setIcmbioUcs]       = useState(null);
-  const [effisHealth, setEffisHealth]   = useState(null);
-  const [qLoading, setQLoading]         = useState(false);
-  const [expanded, setExpanded]         = useState(null);
-  const [dark, setDark]                 = useState(true);
-  const [ensoLive, setEnsoLive]         = useState(null);
-  const [ensoProbLive, setEnsoProbLive]     = useState(null);
-  const [cptecProducts, setCptecProducts]   = useState(null);
+  const [alerts, setAlerts] = useState([]);
+  const [queimadas, setQueimadas] = useState(null);
+  const [icmbioUcs, setIcmbioUcs] = useState(null);
+  const [effisHealth, setEffisHealth] = useState(null);
+  const [qLoading, setQLoading] = useState(false);
+  const [expanded, setExpanded] = useState(null);
+  const [dark, setDark] = useState(true);
+  const [ensoLive, setEnsoLive] = useState(null);
+  const [ensoProbLive, setEnsoProbLive] = useState(null);
+  const [cptecProducts, setCptecProducts] = useState(null);
   const [copernicusWater, setCopernicusWater] = useState(null);
   const [copernicusS1, setCopernicusS1] = useState(null);
   const [copernicusNdvi, setCopernicusNdvi] = useState(null);
@@ -427,8 +427,8 @@ export default function SentinelaRS() {
   };
 
   const s = {
-    card: { background: t.cardBg, border:`1px solid ${t.border}`, borderRadius:6, padding:"14px 16px", boxShadow: t.shadowCard },
-    label: { fontSize:9, color: t.textMuted, letterSpacing:2, textTransform:"uppercase", marginBottom:6 },
+    card: { background: t.cardBg, border: `1px solid ${t.border}`, borderRadius: 6, padding: "14px 16px", boxShadow: t.shadowCard },
+    label: { fontSize: 9, color: t.textMuted, letterSpacing: 2, textTransform: "uppercase", marginBottom: 6 },
   };
 
   const getRiskColor = (lvl) => {
@@ -526,10 +526,10 @@ export default function SentinelaRS() {
           const start = Date.now();
           try {
             const r = await fetchWeather14Days(st.lat, st.lon);
-            if (!health["Open-Meteo"]) health["Open-Meteo"] = { ok: true, lastOk: new Date().toISOString(), latencyMs: Date.now()-start, error: null };
+            if (!health["Open-Meteo"]) health["Open-Meteo"] = { ok: true, lastOk: new Date().toISOString(), latencyMs: Date.now() - start, error: null };
             return r;
-          } catch(err) {
-            health["Open-Meteo"] = { ok: false, lastOk: health["Open-Meteo"]?.lastOk || null, latencyMs: Date.now()-start, error: err?.message };
+          } catch (err) {
+            health["Open-Meteo"] = { ok: false, lastOk: health["Open-Meteo"]?.lastOk || null, latencyMs: Date.now() - start, error: err?.message };
             throw err;
           }
         })();
@@ -537,24 +537,24 @@ export default function SentinelaRS() {
         if (st.anaCode) {
           const start = Date.now();
           realLevel = await fetchAnaLevel(st.anaCode);
-          if (!health["ANA HidroWeb"]) health["ANA HidroWeb"] = { ok: realLevel !== null, lastOk: realLevel !== null ? new Date().toISOString() : health["ANA HidroWeb"]?.lastOk || null, latencyMs: Date.now()-start, error: realLevel === null ? "sem leitura" : null };
+          if (!health["ANA HidroWeb"]) health["ANA HidroWeb"] = { ok: realLevel !== null, lastOk: realLevel !== null ? new Date().toISOString() : health["ANA HidroWeb"]?.lastOk || null, latencyMs: Date.now() - start, error: realLevel === null ? "sem leitura" : null };
         }
         const radarLevel = lagoaRadarMap[st.id] || null;
         const hidrosensLevel = st.id === "lagoa_patos_pelotas" ? hidrosensLaranjal : null;
         const inmet = st.ibgeCode ? await (async () => {
           const start = Date.now();
           const r = await fetchInmetForecast(st.ibgeCode);
-          if (!health["INMET"]) health["INMET"] = { ok: r !== null, lastOk: r !== null ? new Date().toISOString() : health["INMET"]?.lastOk || null, latencyMs: Date.now()-start, error: r === null ? "sem resposta" : null };
+          if (!health["INMET"]) health["INMET"] = { ok: r !== null, lastOk: r !== null ? new Date().toISOString() : health["INMET"]?.lastOk || null, latencyMs: Date.now() - start, error: r === null ? "sem resposta" : null };
           return r;
         })() : null;
         const cemaden = cemadenMap[st.id] || null;
-        const precip  = weather.daily?.precipitation_sum?.reduce((a,b)=>a+b,0)||0;
-        const tempMin  = Math.min(...(weather.daily?.temperature_2m_min||[20]));
-        const windMax  = Math.max(...(weather.daily?.windspeed_10m_max||[0]));
+        const precip = weather.daily?.precipitation_sum?.reduce((a, b) => a + b, 0) || 0;
+        const tempMin = Math.min(...(weather.daily?.temperature_2m_min || [20]));
+        const windMax = Math.max(...(weather.daily?.windspeed_10m_max || [0]));
 
         // Nível real disponível: prioriza RADAR da Lagoa quando houver sensor validado.
         // ANA permanece como fonte complementar/parcial.
-        const lagoa = st.type==="lagoa" ? {
+        const lagoa = st.type === "lagoa" ? {
           atual: hidrosensLevel?.level_m ?? radarLevel?.level_m ?? realLevel,
           isReal: Boolean(hidrosensLevel?.level_m ?? radarLevel?.level_m ?? realLevel),
           source: hidrosensLevel ? "HIDROSENS" : (radarLevel ? "RADAR" : (realLevel !== null ? "ANA" : null)),
@@ -581,14 +581,14 @@ export default function SentinelaRS() {
 
         const baseRisk = getRiskLevel(precip, tempMin, windMax, null);
         const levelRisk = ((lagoa?.radar || lagoa?.hidrosens) && lagoa?.threshold_m && !lagoa?.isFallback && lagoa?.operational !== false) ? radarRiskToLevel(lagoa.levelStatus) : "NORMAL";
-        const order = ["NORMAL","ATENCAO","ALERTA","EMERGENCIA","CRITICO"];
+        const order = ["NORMAL", "ATENCAO", "ALERTA", "EMERGENCIA", "CRITICO"];
         const risk = order.indexOf(levelRisk) > order.indexOf(baseRisk) ? levelRisk : baseRisk;
         results[st.id] = { weather, inmet, cemaden, lagoa, precip, tempMin, windMax, risk, realLevel, radarLevel };
-      } catch { results[st.id]={ error:true, risk:"NORMAL" }; }
+      } catch { results[st.id] = { error: true, risk: "NORMAL" }; }
     });
     const defesaStart = Date.now();
     const officialAlerts = await fetchDefesaCivilAlerts();
-    health["Defesa Civil RS"] = { ok: Array.isArray(officialAlerts), lastOk: Array.isArray(officialAlerts) ? new Date().toISOString() : health["Defesa Civil RS"]?.lastOk || null, latencyMs: Date.now()-defesaStart, error: null };
+    health["Defesa Civil RS"] = { ok: Array.isArray(officialAlerts), lastOk: Array.isArray(officialAlerts) ? new Date().toISOString() : health["Defesa Civil RS"]?.lastOk || null, latencyMs: Date.now() - defesaStart, error: null };
 
     sourceHealthRef.current = health;
     setSourceHealth({ ...health });
@@ -626,7 +626,7 @@ export default function SentinelaRS() {
 
   useEffect(() => {
     loadAllData();
-    const iv = setInterval(loadAllData, 30*60*1000);
+    const iv = setInterval(loadAllData, 30 * 60 * 1000);
     return () => clearInterval(iv);
   }, [loadAllData]);
 
@@ -783,9 +783,9 @@ export default function SentinelaRS() {
     }
   }, [activeTab, loadQueimadas, loadEnsoNoticias, ensoNoticias, ensoNoticiasLoading]);
 
-  const overallRisk = Object.values(stationData).reduce((w,d) => {
-    const o=["NORMAL","ATENCAO","ALERTA","EMERGENCIA","CRITICO"];
-    return o.indexOf(d.risk)>o.indexOf(w)?d.risk:w;
+  const overallRisk = Object.values(stationData).reduce((w, d) => {
+    const o = ["NORMAL", "ATENCAO", "ALERTA", "EMERGENCIA", "CRITICO"];
+    return o.indexOf(d.risk) > o.indexOf(w) ? d.risk : w;
   }, "NORMAL");
 
   const observedENSO = ensoLive || ENSO_UNAVAILABLE;
@@ -812,21 +812,21 @@ export default function SentinelaRS() {
     : "Probabilidade IRI/CCSR indisponível";
   const ensoBannerActive = ensoObservedAvailable || ensoProbabilityAvailable;
   const ensoBannerColor = ensoObservedAvailable ? ensoClass.color : (ensoDominantProb?.color || t.textMuted);
-  const selData   = stationData[selStation.id];
+  const selData = stationData[selStation.id];
   const lagoaSummary = getLagoaSummary(stationData);
 
   // TABS: previsão agora é 14 dias
   const TABS = [
-    { key:"dashboard",  label:"📡 Dashboard" },
-    { key:"previsao",   label:"📅 Previsão 14 Dias" },
-    { key:"lagoa",      label:"🌊 Lagoa dos Patos" },
-    { key:"enso",       label:"🌡️ ENSO" },
-    { key:"noticias-enso", label:"🌪️ Notícias El Niño" },
-    { key:"cptec",      label:"🌦️ CPTEC/INPE" },
-    { key:"copernicus", label:"🛰️ Copernicus" },
-    { key:"queimadas",  label:"🔥 Queimadas / APAs" },
-    { key:"alertas",    label:`🔔 Alertas${alerts.length?` (${alerts.length})`:""}`},
-    { key:"apis",       label:"🔌 Fontes de Dados" },
+    { key: "dashboard", label: "📡 Dashboard" },
+    { key: "previsao", label: "📅 Previsão 14 Dias" },
+    { key: "lagoa", label: "🌊 Lagoa dos Patos" },
+    { key: "enso", label: "🌡️ ENSO" },
+    { key: "noticias-enso", label: "🌪️ Notícias El Niño" },
+    { key: "cptec", label: "🌦️ CPTEC/INPE" },
+    { key: "copernicus", label: "🛰️ Copernicus" },
+    { key: "queimadas", label: "🔥 Queimadas / APAs" },
+    { key: "alertas", label: `🔔 Alertas${alerts.length ? ` (${alerts.length})` : ""}` },
+    { key: "apis", label: "🔌 Fontes de Dados" },
   ];
 
   // ─── CARD DETALHE (modal inline) ─────────────────────────────────────────
@@ -834,64 +834,64 @@ export default function SentinelaRS() {
     if (!d || d.error) return null;
     const risk = RISK_LEVELS[d.risk];
     const rColor = getRiskColor(d.risk);
-    const rBg    = getRiskBg(d.risk);
-    const days   = d.weather?.daily?.time || [];
+    const rBg = getRiskBg(d.risk);
+    const days = d.weather?.daily?.time || [];
     return (
-      <div style={{ position:"fixed", inset:0, zIndex:100, background:"rgba(0,0,0,0.65)", display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}
+      <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
         onClick={onClose}>
-        <div onClick={e=>e.stopPropagation()} style={{ background: dark?"#0f172a":"#ffffff", border:`1px solid ${t.border}`, borderRadius:10, padding:22, maxWidth:560, width:"100%", maxHeight:"85vh", overflowY:"auto", boxShadow:"0 20px 60px rgba(0,0,0,0.5)" }}>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16 }}>
+        <div onClick={e => e.stopPropagation()} style={{ background: dark ? "#0f172a" : "#ffffff", border: `1px solid ${t.border}`, borderRadius: 10, padding: 22, maxWidth: 560, width: "100%", maxHeight: "85vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
             <div>
-              <div style={{ fontSize:9, color:t.textMuted, letterSpacing:2 }}>{station.type.toUpperCase()} · {station.rioRef||station.anaCode||""}</div>
-              <div style={{ fontSize:16, fontWeight:700, color:t.text, marginTop:2 }}>{station.name}</div>
+              <div style={{ fontSize: 9, color: t.textMuted, letterSpacing: 2 }}>{station.type.toUpperCase()} · {station.rioRef || station.anaCode || ""}</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: t.text, marginTop: 2 }}>{station.name}</div>
             </div>
-            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-              <div style={{ fontSize:10, fontWeight:700, padding:"3px 10px", border:`1px solid ${rColor}`, color:rColor, background:rBg, borderRadius:4 }}>{risk.icon} {risk.label}</div>
-              <button onClick={onClose} style={{ background:"none", border:`1px solid ${t.border}`, color:t.textMuted, cursor:"pointer", fontSize:14, borderRadius:4, padding:"2px 8px", fontFamily:"inherit" }}>✕</button>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, padding: "3px 10px", border: `1px solid ${rColor}`, color: rColor, background: rBg, borderRadius: 4 }}>{risk.icon} {risk.label}</div>
+              <button onClick={onClose} style={{ background: "none", border: `1px solid ${t.border}`, color: t.textMuted, cursor: "pointer", fontSize: 14, borderRadius: 4, padding: "2px 8px", fontFamily: "inherit" }}>✕</button>
             </div>
           </div>
 
           {/* Parâmetros */}
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:8, marginBottom:14 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 8, marginBottom: 14 }}>
             {[
-              { l:"Precip. 14d", v:`${d.precip?.toFixed(0)} mm`,    alert: d.precip>80 },
-              { l:"Temp. mínima", v:`${d.tempMin?.toFixed(1)} °C`,   alert: d.tempMin<5 },
-              { l:"Vento máx.",   v:`${d.windMax?.toFixed(0)} km/h`, alert: d.windMax>50 },
-              { l:"Contexto climático",v: ensoObservedAvailable ? `${ensoClass.label} · ${formatSignedCelsius(activeENSO.nino34)}` : "ENSO indisponível", alert:false },
+              { l: "Precip. 14d", v: `${d.precip?.toFixed(0)} mm`, alert: d.precip > 80 },
+              { l: "Temp. mínima", v: `${d.tempMin?.toFixed(1)} °C`, alert: d.tempMin < 5 },
+              { l: "Vento máx.", v: `${d.windMax?.toFixed(0)} km/h`, alert: d.windMax > 50 },
+              { l: "Contexto climático", v: ensoObservedAvailable ? `${ensoClass.label} · ${formatSignedCelsius(activeENSO.nino34)}` : "ENSO indisponível", alert: false },
               ...(d.lagoa ? [
-                { l:"Nível lagoa", v: d.lagoa.isReal && d.lagoa.atual !== null ? `${d.lagoa.atual.toFixed(2)} m (${d.lagoa.source || "real"})` : "– (indisponível)", alert: false },
+                { l: "Nível lagoa", v: d.lagoa.isReal && d.lagoa.atual !== null ? `${d.lagoa.atual.toFixed(2)} m (${d.lagoa.source || "real"})` : "– (indisponível)", alert: false },
               ] : []),
-            ].map(item=>(
-              <div key={item.l} style={{ background: dark?"rgba(0,0,0,0.3)":t.bg, padding:"8px 11px", borderRadius:5, borderLeft:`3px solid ${item.alert?rColor:t.textFaint}` }}>
-                <div style={{ fontSize:8, color:t.textMuted, marginBottom:2 }}>{item.l}</div>
-                <div style={{ fontSize:14, fontWeight:700, color:item.alert?rColor:t.text }}>{item.v}</div>
+            ].map(item => (
+              <div key={item.l} style={{ background: dark ? "rgba(0,0,0,0.3)" : t.bg, padding: "8px 11px", borderRadius: 5, borderLeft: `3px solid ${item.alert ? rColor : t.textFaint}` }}>
+                <div style={{ fontSize: 8, color: t.textMuted, marginBottom: 2 }}>{item.l}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: item.alert ? rColor : t.text }}>{item.v}</div>
               </div>
             ))}
           </div>
 
           {/* Previsão compacta dos 14 dias */}
-          <div style={{ fontSize:9, color:t.textMuted, letterSpacing:2, marginBottom:8 }}>PREVISÃO 14 DIAS</div>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:4 }}>
-            {days.slice(0,14).map((date,i)=>{
-              const dd=new Date(date+"T12:00:00");
-              const p=d.weather.daily.precipitation_sum?.[i]||0;
-              const tx=d.weather.daily.temperature_2m_max?.[i]||0;
-              const tn=d.weather.daily.temperature_2m_min?.[i]||0;
-              const c=d.weather.daily.weathercode?.[i]||0;
+          <div style={{ fontSize: 9, color: t.textMuted, letterSpacing: 2, marginBottom: 8 }}>PREVISÃO 14 DIAS</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4 }}>
+            {days.slice(0, 14).map((date, i) => {
+              const dd = new Date(date + "T12:00:00");
+              const p = d.weather.daily.precipitation_sum?.[i] || 0;
+              const tx = d.weather.daily.temperature_2m_max?.[i] || 0;
+              const tn = d.weather.daily.temperature_2m_min?.[i] || 0;
+              const c = d.weather.daily.weathercode?.[i] || 0;
               return (
-                <div key={date} style={{ padding:"6px 3px", background: dark?(i===0?"rgba(34,211,238,0.08)":"rgba(255,255,255,0.03)"):(i===0?"rgba(8,145,178,0.08)":"rgba(0,0,0,0.03)"), border:`1px solid ${i===0?t.accent+"55":t.border}`, borderRadius:4, textAlign:"center" }}>
-                  <div style={{ fontSize:7, color:t.textMuted }}>{i===0?"HOJE":dayNames[dd.getDay()]}</div>
-                  <div style={{ fontSize:16, margin:"3px 0 2px" }}>{wmoEmoji(c)}</div>
-                  <div style={{ fontSize:10, fontWeight:700, color:"#fbbf24" }}>{tx.toFixed(0)}°</div>
-                  <div style={{ fontSize:9, color:"#60a5fa" }}>{tn.toFixed(0)}°</div>
-                  <div style={{ fontSize:7, color:t.accent, marginTop:3 }}>{p.toFixed(0)}mm</div>
+                <div key={date} style={{ padding: "6px 3px", background: dark ? (i === 0 ? "rgba(34,211,238,0.08)" : "rgba(255,255,255,0.03)") : (i === 0 ? "rgba(8,145,178,0.08)" : "rgba(0,0,0,0.03)"), border: `1px solid ${i === 0 ? t.accent + "55" : t.border}`, borderRadius: 4, textAlign: "center" }}>
+                  <div style={{ fontSize: 7, color: t.textMuted }}>{i === 0 ? "HOJE" : dayNames[dd.getDay()]}</div>
+                  <div style={{ fontSize: 16, margin: "3px 0 2px" }}>{wmoEmoji(c)}</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#fbbf24" }}>{tx.toFixed(0)}°</div>
+                  <div style={{ fontSize: 9, color: "#60a5fa" }}>{tn.toFixed(0)}°</div>
+                  <div style={{ fontSize: 7, color: t.accent, marginTop: 3 }}>{p.toFixed(0)}mm</div>
                 </div>
               );
             })}
           </div>
 
-          <button onClick={()=>{setSelStation(station);setActiveTab("previsao");onClose();}}
-            style={{ marginTop:14, width:"100%", padding:"9px", background:"none", border:`1px solid ${t.accent}44`, color:t.accent, cursor:"pointer", borderRadius:5, fontFamily:"inherit", fontSize:10, letterSpacing:2 }}>
+          <button onClick={() => { setSelStation(station); setActiveTab("previsao"); onClose(); }}
+            style={{ marginTop: 14, width: "100%", padding: "9px", background: "none", border: `1px solid ${t.accent}44`, color: t.accent, cursor: "pointer", borderRadius: 5, fontFamily: "inherit", fontSize: 10, letterSpacing: 2 }}>
             VER PREVISÃO COMPLETA →
           </button>
         </div>
@@ -906,7 +906,7 @@ export default function SentinelaRS() {
     formatCemadenRain, formatDateTimeBR, formatProbability, formatSignedCelsius, getFallbackWarningText, getLagoaMaxMay2024, getLagoaMeasuredAt, getLagoaPointData, getLagoaSourceText,
     getResponsibleAgencyText, getRiskBg, getRiskColor, getRiskLevel, getValidatedSourceHealth, lagoaHistory, lagoaHistoryMeta, lagoaStatusColor, lagoaStatusLabel, lagoaSummary, lastUpdate,
     ensoNoticias, ensoNoticiasLoading, icmbioUcs, loadAllData, loadEnsoNoticias, loadQueimadas, percentValue, qLoading, queimadas, s, safeEnsoForecast, selData, selStation, setActiveTab, setExpanded, setExpandedCard, setRiskExplain, setSelStation, sourceHealth, stationData, t, wmoDesc, wmoEmoji,
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [stationData, alerts, dark, activeTab, selStation, selData, loading, lastUpdate, sourceHealth, lagoaHistory, lagoaHistoryMeta, expanded, expandedCard, riskExplain, queimadas, qLoading, copernicusWater, copernicusS1, copernicusNdvi, copernicusEms, cptecProducts, effisHealth, icmbioUcs, activeENSO, ensoNoticias, ensoNoticiasLoading]);
 
   const renderNavButton = (tab, compact = false) => (
@@ -937,169 +937,169 @@ export default function SentinelaRS() {
 
   return (
     <>
-    <Onboarding t={t} dark={dark} />
-    <div style={{ minHeight:"100vh", background:t.bg, color:t.text, fontFamily:"'IBM Plex Mono','Courier New',monospace", transition:"background 0.3s,color 0.3s" }}>
-      {/* Grid bg */}
-      <div style={{ position:"fixed", inset:0, zIndex:0, backgroundImage:`linear-gradient(${t.grid} 1px,transparent 1px),linear-gradient(90deg,${t.grid} 1px,transparent 1px)`, backgroundSize:"40px 40px", pointerEvents:"none" }} />
+      <Onboarding t={t} dark={dark} />
+      <div style={{ minHeight: "100vh", background: t.bg, color: t.text, fontFamily: "'IBM Plex Mono','Courier New',monospace", transition: "background 0.3s,color 0.3s" }}>
+        {/* Grid bg */}
+        <div style={{ position: "fixed", inset: 0, zIndex: 0, backgroundImage: `linear-gradient(${t.grid} 1px,transparent 1px),linear-gradient(90deg,${t.grid} 1px,transparent 1px)`, backgroundSize: "40px 40px", pointerEvents: "none" }} />
 
-      {/* Modal detalhe */}
-      {expandedCard && stationData[expandedCard.id] && (
-        <CardDetail station={expandedCard} d={stationData[expandedCard.id]} onClose={()=>setExpandedCard(null)} />
-      )}
+        {/* Modal detalhe */}
+        {expandedCard && stationData[expandedCard.id] && (
+          <CardDetail station={expandedCard} d={stationData[expandedCard.id]} onClose={() => setExpandedCard(null)} />
+        )}
 
-      <div className="sr-app-inner" style={{ position:"relative", zIndex:2, maxWidth:1420, margin:"0 auto", padding:"0 16px 40px" }}>
+        <div className="sr-app-inner" style={{ position: "relative", zIndex: 2, maxWidth: 1420, margin: "0 auto", padding: "0 16px 40px" }}>
 
-        <div className="sr-mobile-quickbar">
-          <button
-            type="button"
-            className="sr-mobile-menu-trigger"
-            onClick={() => setMobileMenuOpen(true)}
-            aria-label="Abrir menu"
-          >
-            <span />
-            <span />
-            <span />
-          </button>
-          <button onClick={()=>setDark(d=>!d)} title={dark?"Modo claro":"Modo escuro"} className="sr-mobile-quick-btn">
-            {dark?"☀️":"🌙"}
-          </button>
-          <span className="sr-mobile-quick-time">{lastUpdate?lastUpdate.toLocaleTimeString("pt-BR"):"--:--"}</span>
-          <button onClick={loadAllData} title="Atualizar" className="sr-mobile-quick-btn">↻</button>
-        </div>
+          <div className="sr-mobile-quickbar">
+            <button
+              type="button"
+              className="sr-mobile-menu-trigger"
+              onClick={() => setMobileMenuOpen(true)}
+              aria-label="Abrir menu"
+            >
+              <span />
+              <span />
+              <span />
+            </button>
+            <button onClick={() => setDark(d => !d)} title={dark ? "Modo claro" : "Modo escuro"} className="sr-mobile-quick-btn">
+              {dark ? "☀️" : "🌙"}
+            </button>
+            <span className="sr-mobile-quick-time">{lastUpdate ? lastUpdate.toLocaleTimeString("pt-BR") : "--:--"}</span>
+            <button onClick={loadAllData} title="Atualizar" className="sr-mobile-quick-btn">↻</button>
+          </div>
 
-        {/* ── HEADER ── */}
-        <header style={{ borderBottom:`1px solid ${dark?"rgba(34,211,238,0.2)":t.border}`, paddingBottom:14, marginBottom:20, paddingTop:18 }}>
-          <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", flexWrap:"wrap", gap:12 }}>
-            <div>
-              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:4 }}>
-                <div style={{ width:8, height:8, borderRadius:"50%", background:loading?"#eab308":"#22c55e", boxShadow:`0 0 6px ${loading?"#eab308":"#22c55e"}` }} />
-                <span style={{ fontSize:10, color:t.textMuted, letterSpacing:3 }}>SISTEMA ATIVO · RIO GRANDE DO SUL</span>
+          {/* ── HEADER ── */}
+          <header style={{ borderBottom: `1px solid ${dark ? "rgba(34,211,238,0.2)" : t.border}`, paddingBottom: 14, marginBottom: 20, paddingTop: 18 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: loading ? "#eab308" : "#22c55e", boxShadow: `0 0 6px ${loading ? "#eab308" : "#22c55e"}` }} />
+                  <span style={{ fontSize: 10, color: t.textMuted, letterSpacing: 3 }}>SISTEMA ATIVO · RIO GRANDE DO SUL</span>
+                </div>
+                <h1 style={{ margin: "2px 0", fontSize: 26, fontWeight: 700, letterSpacing: -1, color: t.text }}>
+                  SENTINELA<span style={{ color: t.accent }}>·RS</span>
+                  <span style={{ fontSize: 11, color: t.textMuted, fontWeight: 400, letterSpacing: 1, marginLeft: 10 }}>v2.2</span>
+                </h1>
               </div>
-              <h1 style={{ margin:"2px 0", fontSize:26, fontWeight:700, letterSpacing:-1, color:t.text }}>
-                SENTINELA<span style={{ color:t.accent }}>·RS</span>
-                <span style={{ fontSize:11, color:t.textMuted, fontWeight:400, letterSpacing:1, marginLeft:10 }}>v2.2</span>
-              </h1>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+                <div style={{ padding: "5px 12px", borderRadius: 4, border: `1px solid ${RISK_LEVELS[overallRisk].color}`, background: getRiskBg(overallRisk), color: getRiskColor(overallRisk), fontSize: 12, fontWeight: 700, letterSpacing: 2 }}>
+                  {RISK_LEVELS[overallRisk].icon} RISCO GERAL: {RISK_LEVELS[overallRisk].label.toUpperCase()}
+                </div>
+                <div className="sr-header-controls" style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  {/* Toggle modo claro/escuro */}
+                  <button onClick={() => setDark(d => !d)} title={dark ? "Modo claro" : "Modo escuro"}
+                    style={{ padding: "6px 10px", borderRadius: 4, fontFamily: "inherit", fontSize: 11, cursor: "pointer", background: dark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)", border: `1px solid ${t.border}`, color: t.textMuted }}>
+                    {dark ? "☀️" : "🌙"}
+                  </button>
+                  <span style={{ fontSize: 9, color: t.textFaint }}>{lastUpdate ? lastUpdate.toLocaleTimeString("pt-BR") : "..."}</span>
+                  <button onClick={loadAllData} style={{ background: "none", border: "none", color: t.accent, cursor: "pointer", fontSize: 12, padding: 0 }}>↻</button>
+                </div>
+              </div>
             </div>
-            <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:6 }}>
-              <div style={{ padding:"5px 12px", borderRadius:4, border:`1px solid ${RISK_LEVELS[overallRisk].color}`, background:getRiskBg(overallRisk), color:getRiskColor(overallRisk), fontSize:12, fontWeight:700, letterSpacing:2 }}>
-                {RISK_LEVELS[overallRisk].icon} RISCO GERAL: {RISK_LEVELS[overallRisk].label.toUpperCase()}
-              </div>
-              <div className="sr-header-controls" style={{ display:"flex", gap:6, alignItems:"center" }}>
-                {/* Toggle modo claro/escuro */}
-                <button onClick={()=>setDark(d=>!d)} title={dark?"Modo claro":"Modo escuro"}
-                  style={{ padding:"6px 10px", borderRadius:4, fontFamily:"inherit", fontSize:11, cursor:"pointer", background: dark?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.07)", border:`1px solid ${t.border}`, color:t.textMuted }}>
-                  {dark?"☀️":"🌙"}
-                </button>
-                <span style={{ fontSize:9, color:t.textFaint }}>{lastUpdate?lastUpdate.toLocaleTimeString("pt-BR"):"..."}</span>
-                <button onClick={loadAllData} style={{ background:"none", border:"none", color:t.accent, cursor:"pointer", fontSize:12, padding:0 }}>↻</button>
-              </div>
+
+            {/* Banner ENSO */}
+            <div style={{ marginTop: 10, padding: "9px 14px", background: ensoBannerActive ? `${ensoBannerColor}12` : (dark ? "rgba(100,116,139,0.10)" : "rgba(100,116,139,0.08)"), border: `1px solid ${ensoBannerActive ? `${ensoBannerColor}55` : t.border}`, borderRadius: 4, fontSize: 11, color: ensoBannerActive ? ensoBannerColor : t.textMuted, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <strong>ENSO:</strong> {ensoObservedAvailable ? `${ensoClass.label} observado` : "observado indisponível"}{ensoDominantProb ? ` · ${ensoDominantProb.label} ${formatProbability(ensoDominantProb.value)}` : ""}.
+              <button onClick={() => setActiveTab("enso")} style={{ background: "none", border: "none", color: t.accent, cursor: "pointer", fontSize: 11, padding: 0, fontFamily: "inherit" }}>Ver dados completos →</button>
             </div>
-          </div>
+          </header>
 
-          {/* Banner ENSO */}
-          <div style={{ marginTop:10, padding:"9px 14px", background: ensoBannerActive ? `${ensoBannerColor}12` : (dark?"rgba(100,116,139,0.10)":"rgba(100,116,139,0.08)"), border:`1px solid ${ensoBannerActive ? `${ensoBannerColor}55` : t.border}`, borderRadius:4, fontSize:11, color: ensoBannerActive ? ensoBannerColor : t.textMuted, display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
-            <strong>ENSO:</strong> {ensoObservedAvailable ? `${ensoClass.label} observado` : "observado indisponível"}{ensoDominantProb ? ` · ${ensoDominantProb.label} ${formatProbability(ensoDominantProb.value)}` : ""}.
-            <button onClick={()=>setActiveTab("enso")} style={{ background:"none", border:"none", color:t.accent, cursor:"pointer", fontSize:11, padding:0, fontFamily:"inherit" }}>Ver dados completos →</button>
-          </div>
-        </header>
-
-        <div
-          className={`sr-mobile-drawer-backdrop ${mobileMenuOpen ? "is-open" : ""}`}
-          onClick={() => setMobileMenuOpen(false)}
-        />
-        <aside className={`sr-mobile-drawer ${mobileMenuOpen ? "is-open" : ""}`} style={{ border:`1px solid ${t.borderActive}` }}>
-          <div className="sr-mobile-drawer-head">
-            <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2 }}>NAVEGAÇÃO</div>
-            <button type="button" className="sr-mobile-close" onClick={() => setMobileMenuOpen(false)} aria-label="Fechar menu">×</button>
-          </div>
-          <nav className="sr-mobile-tabs">
-            {TABS.map((tab) => renderNavButton(tab, true))}
-          </nav>
-        </aside>
-
-        <div className="sr-shell">
-          <aside className="sr-sidebar" style={{ border:`1px solid ${t.border}`, background:t.cardBg, boxShadow:t.shadowCard }}>
-            <div style={{ fontSize:9, color:t.textMuted, letterSpacing:2, margin:"0 0 10px 2px" }}>NAVEGAÇÃO</div>
-            <nav className="sr-sidebar-nav">
-              {TABS.map((tab) => renderNavButton(tab))}
+          <div
+            className={`sr-mobile-drawer-backdrop ${mobileMenuOpen ? "is-open" : ""}`}
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <aside className={`sr-mobile-drawer ${mobileMenuOpen ? "is-open" : ""}`} style={{ border: `1px solid ${t.borderActive}` }}>
+            <div className="sr-mobile-drawer-head">
+              <div style={{ fontSize: 10, color: t.textMuted, letterSpacing: 2 }}>NAVEGAÇÃO</div>
+              <button type="button" className="sr-mobile-close" onClick={() => setMobileMenuOpen(false)} aria-label="Fechar menu">×</button>
+            </div>
+            <nav className="sr-mobile-tabs">
+              {TABS.map((tab) => renderNavButton(tab, true))}
             </nav>
           </aside>
 
-          <main className="sr-content">
+          <div className="sr-shell">
+            <aside className="sr-sidebar" style={{ border: `1px solid ${t.border}`, background: t.cardBg, boxShadow: t.shadowCard }}>
+              <div style={{ fontSize: 9, color: t.textMuted, letterSpacing: 2, margin: "0 0 10px 2px" }}>NAVEGAÇÃO</div>
+              <nav className="sr-sidebar-nav">
+                {TABS.map((tab) => renderNavButton(tab))}
+              </nav>
+            </aside>
 
-        {loading && activeTab!=="copernicus" && activeTab!=="enso" && activeTab!=="apis" && (
-          <div style={{ textAlign:"center", padding:50, color:t.accent }}>
-            <div style={{ fontSize:28, marginBottom:10, animation:"spin 1s linear infinite", display:"inline-block" }}>◯</div>
-            <div style={{ fontSize:11, letterSpacing:4 }}>ANALISANDO OS DADOS...</div>
-            <div style={{ fontSize:9, color:t.textMuted, marginTop:4 }}>Open-Meteo · ANA HidroWeb · INPE · NOAA</div>
-          </div>
-        )}
+            <main className="sr-content">
 
-        <TabErrorBoundary resetKey={activeTab}>
-          <Suspense fallback={<div style={{ padding:24, color:t.accent, fontSize:11, letterSpacing:2 }}>CARREGANDO ABA...</div>}>
-            {activeTab==="dashboard" && <DashboardTab ctx={tabCtx} />}
-            {activeTab==="previsao" && <PrevisaoTab ctx={tabCtx} />}
-            {activeTab==="lagoa" && <LagoaDosPatosTab ctx={tabCtx} />}
-            {activeTab==="enso" && <EnsoTab ctx={tabCtx} />}
-            {activeTab==="noticias-enso" && <NoticiasEnsoTab ctx={tabCtx} />}
-            {activeTab==="cptec" && <CptecTab ctx={tabCtx} />}
-            {activeTab==="copernicus" && <CopernicusTab ctx={tabCtx} />}
-            {activeTab==="queimadas" && <QueimadasTab ctx={tabCtx} />}
-            {activeTab==="alertas" && <AlertasTab ctx={tabCtx} />}
-            {activeTab==="apis" && <FontesDeDadosTab ctx={tabCtx} />}
-          </Suspense>
-        </TabErrorBoundary>
-
-          </main>
-        </div>
-
-        {riskExplain && (
-          <div
-            onClick={()=>setRiskExplain(null)}
-            style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.55)", zIndex:50, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}
-          >
-            <div
-              onClick={(e)=>e.stopPropagation()}
-              style={{ width:"min(520px, 100%)", background:dark?"#0f172a":"#ffffff", border:`1px solid ${t.borderActive}`, borderRadius:8, boxShadow:"0 20px 60px rgba(0,0,0,0.35)", padding:16 }}
-            >
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:10, marginBottom:10 }}>
-                <div>
-                  <div style={{ fontSize:9, color:t.textMuted, letterSpacing:2 }}>EXPLICAÇÃO DO STATUS</div>
-                  <div style={{ fontSize:17, fontWeight:900, color:t.text, marginTop:3 }}>{riskExplain.title}</div>
-                </div>
-                <button onClick={()=>setRiskExplain(null)} style={{ background:"none", border:`1px solid ${t.border}`, color:t.textMuted, borderRadius:4, cursor:"pointer", fontFamily:"inherit", fontSize:11, padding:"4px 8px" }}>fechar</button>
-              </div>
-
-              <div style={{ display:"grid", gap:7, marginTop:8 }}>
-                {riskExplain.lines?.map((line, i)=>(
-                  <div key={i} style={{ fontSize:10, color:t.textMuted, lineHeight:1.5, padding:"7px 9px", background:dark?"rgba(0,0,0,0.25)":t.bg, borderRadius:4 }}>
-                    {line}
-                  </div>
-                ))}
-              </div>
-
-              {riskExplain.note && (
-                <div style={{ marginTop:10, padding:"8px 10px", background:dark?"rgba(34,211,238,0.07)":"rgba(8,145,178,0.06)", border:"1px solid rgba(34,211,238,0.25)", borderRadius:4, fontSize:9, color:t.textMuted, lineHeight:1.55 }}>
-                  {riskExplain.note}
+              {loading && activeTab !== "copernicus" && activeTab !== "enso" && activeTab !== "apis" && (
+                <div style={{ textAlign: "center", padding: 50, color: t.accent }}>
+                  <div style={{ fontSize: 28, marginBottom: 10, animation: "spin 1s linear infinite", display: "inline-block" }}>◯</div>
+                  <div style={{ fontSize: 11, letterSpacing: 4 }}>ANALISANDO OS DADOS...</div>
+                  <div style={{ fontSize: 9, color: t.textMuted, marginTop: 4 }}>Open-Meteo · ANA HidroWeb · INPE · NOAA</div>
                 </div>
               )}
-            </div>
+
+              <TabErrorBoundary resetKey={activeTab}>
+                <Suspense fallback={<div style={{ padding: 24, color: t.accent, fontSize: 11, letterSpacing: 2 }}>CARREGANDO ABA...</div>}>
+                  {activeTab === "dashboard" && <DashboardTab ctx={tabCtx} />}
+                  {activeTab === "previsao" && <PrevisaoTab ctx={tabCtx} />}
+                  {activeTab === "lagoa" && <LagoaDosPatosTab ctx={tabCtx} />}
+                  {activeTab === "enso" && <EnsoTab ctx={tabCtx} />}
+                  {activeTab === "noticias-enso" && <NoticiasEnsoTab ctx={tabCtx} />}
+                  {activeTab === "cptec" && <CptecTab ctx={tabCtx} />}
+                  {activeTab === "copernicus" && <CopernicusTab ctx={tabCtx} />}
+                  {activeTab === "queimadas" && <QueimadasTab ctx={tabCtx} />}
+                  {activeTab === "alertas" && <AlertasTab ctx={tabCtx} />}
+                  {activeTab === "apis" && <FontesDeDadosTab ctx={tabCtx} />}
+                </Suspense>
+              </TabErrorBoundary>
+
+            </main>
           </div>
-        )}
 
-        <div style={{ marginTop:28, borderTop:`1px solid ${t.border}`, paddingTop:12, display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:6 }}>
-          <div style={{ fontSize:9, color:t.textFaint }}>SENTINELA·RS v2.2 · Open-Meteo + INMET + CEMADEN + Lagoa RADAR + HidroSens + Ana HidroWeb/aguardando API + NOAA ENSO + INPE + Copernicus · Fonte CEMADEN: {CEMADEN_ATTRIBUTION}</div>
+          {riskExplain && (
+            <div
+              onClick={() => setRiskExplain(null)}
+              style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+            >
+              <div
+                onClick={(e) => e.stopPropagation()}
+                style={{ width: "min(520px, 100%)", background: dark ? "#0f172a" : "#ffffff", border: `1px solid ${t.borderActive}`, borderRadius: 8, boxShadow: "0 20px 60px rgba(0,0,0,0.35)", padding: 16 }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, marginBottom: 10 }}>
+                  <div>
+                    <div style={{ fontSize: 9, color: t.textMuted, letterSpacing: 2 }}>EXPLICAÇÃO DO STATUS</div>
+                    <div style={{ fontSize: 17, fontWeight: 900, color: t.text, marginTop: 3 }}>{riskExplain.title}</div>
+                  </div>
+                  <button onClick={() => setRiskExplain(null)} style={{ background: "none", border: `1px solid ${t.border}`, color: t.textMuted, borderRadius: 4, cursor: "pointer", fontFamily: "inherit", fontSize: 11, padding: "4px 8px" }}>fechar</button>
+                </div>
+
+                <div style={{ display: "grid", gap: 7, marginTop: 8 }}>
+                  {riskExplain.lines?.map((line, i) => (
+                    <div key={i} style={{ fontSize: 10, color: t.textMuted, lineHeight: 1.5, padding: "7px 9px", background: dark ? "rgba(0,0,0,0.25)" : t.bg, borderRadius: 4 }}>
+                      {line}
+                    </div>
+                  ))}
+                </div>
+
+                {riskExplain.note && (
+                  <div style={{ marginTop: 10, padding: "8px 10px", background: dark ? "rgba(34,211,238,0.07)" : "rgba(8,145,178,0.06)", border: "1px solid rgba(34,211,238,0.25)", borderRadius: 4, fontSize: 9, color: t.textMuted, lineHeight: 1.55 }}>
+                    {riskExplain.note}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div style={{ marginTop: 28, borderTop: `1px solid ${t.border}`, paddingTop: 12, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
+            <div style={{ fontSize: 9, color: t.textFaint }}>SENTINELA·RS v2.2 · Open-Meteo + INMET + CEMADEN + Lagoa RADAR + HidroSens + Ana HidroWeb + NOAA ENSO + INPE + Copernicus · Fonte CEMADEN: {CEMADEN_ATTRIBUTION}</div>
+          </div>
         </div>
-      </div>
 
-      <style>{`
+        <style>{`
         @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&display=swap');
         @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
         ::-webkit-scrollbar{width:5px}
         ::-webkit-scrollbar-track{background:transparent}
         ::-webkit-scrollbar-thumb{background:#1e293b;border-radius:3px}
       `}</style>
-    </div>
+      </div>
     </>
   );
 }
