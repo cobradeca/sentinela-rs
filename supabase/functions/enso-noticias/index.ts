@@ -64,7 +64,7 @@ async function get(url: string, timeout = 9000): Promise<string> {
 
 interface Raw { title: string; description: string; link: string; pub_date: string | null; image: string | null }
 interface Item { id: string; source_id: string; source_name: string; title: string; description: string; link: string; image: string | null; pub_date: string | null; translated: boolean }
-interface Result { source_id: string; source_name: string; ok: boolean; http_status: number | null; count: number; error?: string; items: Item[] }
+interface Result { source_id: string; source_name: string; ok: boolean; count: number; error?: string; items: Item[] }
 
 // ── Tradução OpenRouter ───────────────────────────────────────────────────────
 
@@ -105,7 +105,7 @@ async function translateBatch(rows: Raw[], key: string): Promise<Array<{ title: 
 }
 
 async function build(raw: Raw[], sid: string, sname: string, lang: "pt" | "en", key: string | null): Promise<Result> {
-  if (!raw.length) return { source_id: sid, source_name: sname, ok: true, http_status: 200, count: 0, items: [] };
+  if (!raw.length) return { source_id: sid, source_name: sname, ok: true, count: 0, items: [] };
 
   let titles = raw.map((r) => r.title);
   let descs = raw.map((r) => r.description);
@@ -128,7 +128,7 @@ async function build(raw: Raw[], sid: string, sname: string, lang: "pt" | "en", 
     link: r.link, image: r.image, pub_date: r.pub_date, translated,
   }));
 
-  return { source_id: sid, source_name: sname, ok: true, http_status: 200, count: items.length, items };
+  return { source_id: sid, source_name: sname, ok: true, count: items.length, items };
 }
 
 // ── ECMWF ─────────────────────────────────────────────────────────────────────
@@ -144,7 +144,7 @@ async function fetchGNews(): Promise<Result> {
   const apiKey = Deno.env.get("GNEWS_API_KEY") || null;
 
   if (!apiKey) {
-    return { source_id: SID, source_name: SNAME, ok: false, http_status: null, count: 0, error: "GNEWS_API_KEY não configurada", items: [] };
+    return { source_id: SID, source_name: SNAME, ok: false, count: 0, error: "GNEWS_API_KEY não configurada", items: [] };
   }
 
   try {
@@ -170,9 +170,9 @@ async function fetchGNews(): Promise<Result> {
       translated: true,
     }));
 
-    return { source_id: SID, source_name: SNAME, ok: true, http_status: 200, count: items.length, items };
+    return { source_id: SID, source_name: SNAME, ok: true, count: items.length, items };
   } catch (e) {
-    return { source_id: SID, source_name: SNAME, ok: false, http_status: null, count: 0, error: String(e instanceof Error ? e.message : e), items: [] };
+    return { source_id: SID, source_name: SNAME, ok: false, count: 0, error: String(e instanceof Error ? e.message : e), items: [] };
   }
 }
 
@@ -242,7 +242,7 @@ async function fetchCopernicus(key: string | null): Promise<Result> {
 
     return build(raw, SID, SNAME, "en", key);
   } catch (e) {
-    return { source_id: SID, source_name: SNAME, ok: false, http_status: null, count: 0, error: String(e instanceof Error ? e.message : e), items: [] };
+    return { source_id: SID, source_name: SNAME, ok: false, count: 0, error: String(e instanceof Error ? e.message : e), items: [] };
   }
 }
 
@@ -283,7 +283,7 @@ async function fetchCptec(): Promise<Result> {
 
     return build(raw, SID, SNAME, "pt", null);
   } catch (e) {
-    return { source_id: SID, source_name: SNAME, ok: false, http_status: null, count: 0, error: String(e instanceof Error ? e.message : e), items: [] };
+    return { source_id: SID, source_name: SNAME, ok: false, count: 0, error: String(e instanceof Error ? e.message : e), items: [] };
   }
 }
 
@@ -303,7 +303,7 @@ Deno.serve(async (req) => {
   }
 
   const errResult = (sid: string, sname: string): Result => ({
-    source_id: sid, source_name: sname, ok: false, http_status: null, count: 0, error: "timeout global", items: [],
+    source_id: sid, source_name: sname, ok: false, count: 0, error: "timeout global", items: [],
   });
 
   const [r1, r2, r3] = await Promise.allSettled([
@@ -313,7 +313,7 @@ Deno.serve(async (req) => {
   ]);
 
   const err = (sid: string, sname: string): Result => ({
-    source_id: sid, source_name: sname, ok: false, http_status: null, count: 0, error: "falha inesperada", items: [],
+    source_id: sid, source_name: sname, ok: false, count: 0, error: "falha inesperada", items: [],
   });
 
   const results: Result[] = [
