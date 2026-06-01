@@ -56,6 +56,8 @@ export function NoticiasEnsoTab({ ctx }) {
             cursor: "pointer",
             fontFamily: "inherit",
             fontSize: 9,
+            marginLeft: "auto",
+            flexShrink: 0,
           }}
         >
           {ensoNoticiasLoading ? "Buscando..." : "Atualizar"}
@@ -130,9 +132,9 @@ export function NoticiasEnsoTab({ ctx }) {
               transition: "background 0.15s",
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
-              <span style={{ fontSize: 9, color, fontWeight: 700 }}>{icon} {item.source_name}</span>
-              {when && <span style={{ fontSize: 9, color: t.textMuted }}>{when}</span>}
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 6, minWidth: 0 }}>
+              <span style={{ fontSize: 9, color, fontWeight: 700, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{icon} {item.source_name}</span>
+              {when && <span style={{ fontSize: 9, color: t.textMuted, flexShrink: 0 }}>{when}</span>}
             </div>
             <div style={{ fontSize: 13, fontWeight: 700, color: t.text, lineHeight: 1.35, marginBottom: 5 }}>{item.title}</div>
             {item.description && <div style={{ fontSize: 11, color: t.textMuted, lineHeight: 1.55 }}>{item.description}</div>}
