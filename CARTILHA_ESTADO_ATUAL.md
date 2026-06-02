@@ -1,213 +1,154 @@
 # Cartilha do Estado Atual do App Sentinela-RS
 
-Data da cartilha: 2026-05-27
+Data da cartilha: 2026-06-01
 
-Esta cartilha registra o estado atual do app local antes de novas mudancas. A partir deste ponto, qualquer alteracao futura deve ser comparada contra este documento e contra os arquivos existentes nesta pasta.
+Esta cartilha registra o estado atual do app após as sessões de refatoração de maio/junho de 2026.
+Qualquer alteração futura deve ser comparada contra este documento e contra os arquivos existentes.
 
-## Escopo
+---
 
-O projeto nesta pasta e o app Sentinela-RS. A analise abaixo considera somente os arquivos locais do projeto, sem usar prints, deploy publicado ou qualquer referencia externa ao diretorio.
+## Posicionamento do App
 
-Raiz local:
+O Sentinela-RS é um **painel informativo de contexto climático e ambiental do Rio Grande do Sul**.
+Ele NÃO emite alertas operacionais próprios. Alertas são exclusivamente os da Defesa Civil RS via RSS oficial.
+Todos os indicadores exibem aviso padronizado com link para Defesa Civil RS e números 199 / 193 Bombeiros.
 
-```text
-C:\HomeCloud\shared\Projetos\sentinela-rs
-```
+---
 
-## Estrutura Principal
+## Arquitetura
 
-- `src/App.jsx`: componente principal do app, com regras de risco, carregamento de dados, telas, cards e modais.
-- `src/main.jsx`: entrada React.
-- `src/styles/sentinela-ui.css`: camada visual global, com estilo escuro forte e overrides por seletor.
-- `supabase/functions/*`: Edge Functions usadas como proxies ou integracoes de dados.
-- `public/`: manifest, service worker e icones PWA.
-- `package.json`: app Vite + React.
+- **Frontend:** React/Vite, hospedado em GitHub Pages (cobradeca.github.io/sentinela-rs)
+- **Backend:** Supabase Edge Functions (sa-east-1), 19 funções ativas
+- **Autenticação:** Edge Functions com `verify_jwt = false` (sem autenticação pública)
+- **Cache:** Cache-Control nos headers das Edge Functions (6h ENSO, 5min Lagoa, etc.)
 
-## Estado Funcional Atual
+---
 
-O app local ja possui:
+## Cidades Monitoradas
 
-- Dashboard de municipios monitorados.
-- Aba de previsao com horizonte de 14 dias.
-- Seletor de municipio na previsao.
-- Aba Lagoa dos Patos com pontos de monitoramento.
-- Aba ENSO com leitura observada NOAA/CPC e probabilidade IRI/CCSR.
-- Aba Copernicus com produtos Water, Sentinel-1 e NDVI.
-- Aba Queimadas/APAs.
-- Aba Alertas.
-- Aba Fontes de Dados com saude das fontes.
-- Botao de modo claro/escuro, ainda parcial.
-- PWA com manifest, service worker e tentativa de push.
-
-## Municipios Monitorados
-
-No app atual, os municipios operacionais de previsao/risco sao:
-
-- Porto Alegre
-- Canoas
-- Sao Leopoldo
-- Lajeado
-- Caxias do Sul
-- Passo Fundo
-- Pelotas
-- Santa Maria
-- Rio Grande
-- Cachoeira do Sul
-
-Esses municipios ficam em `STATIONS_CIDADES` no `src/App.jsx`.
-
-## Lagoa dos Patos
-
-O app possui pontos especificos da Lagoa em `STATIONS_LAGOA`:
-
-- Itapua
-- Arambare
-- Sao Lourenco do Sul
-- Pelotas / Laranjal
-- Sao Jose do Norte
+Somente cidades que beiram a Lagoa dos Patos com régua e endpoint real:
 - Rio Grande / FURG CCMAR
+- São Lourenço do Sul
+- Arambaré
+- São José do Norte
+- Itapuã (norte da Lagoa)
+- Pelotas (HidroSens/UFPel)
 
-Fontes usadas:
+**Nenhuma expansão de cobertura geográfica sem decisão explícita do dono do projeto.**
 
-- RADAR Lagoa dos Patos via `supabase/functions/lagoa-patos-radar`.
-- HidroSens/UFPel para Pelotas/Laranjal via `supabase/functions/hidrosens-laranjal`.
-- ANA HidroWeb aparece como complementar/parcial para pontos com `anaCode`.
+---
 
-Observacao: o app ja separa `STATIONS_CIDADES` de `STATIONS_LAGOA`. A previsao por municipio usa cidades, e a aba Lagoa usa pontos da Lagoa.
+## Edge Functions — Estado Atual
 
-## Fontes Conectadas
+| Função | Status | Observação |
+|---|---|---|
+| ana-rs | ATIVA | ANA HidroWeb REST, complementar |
+| cemaden-rs | ATIVA | Acumulados por cidade |
+| copernicus-ems | ATIVA | Referência estrutural pós-evento |
+| copernicus-health | ATIVA | Health check Copernicus |
+| copernicus-ndvi | ATIVA | NDVI entorno Lagoa |
+| copernicus-sentinel1-water | ATIVA | Sentinel-1 água |
+| copernicus-water | ATIVA | Copernicus Water |
+| cptec-inpe-produtos | ATIVA | Produtos CPTEC/INPE |
+| defesa-civil-rs | ATIVA | RSS oficial Defesa Civil RS |
+| effis-wms-health | ATIVA | EFFIS referência estrutural |
+| enso-noticias | ATIVA v5+ | GNews BR + Copernicus C3S + CPTEC/INPE |
+| hidrosens-laranjal | ATIVA | Sensor UFPel Pelotas |
+| icmbio-ucs-rs | ATIVA | UCs RS |
+| inmet-previsao | ATIVA | Previsão INMET |
+| inpe-queimadas-rs | ATIVA | Proxy BDQueimadas |
+| iri-enso-probabilidades | ATIVA | Parser IRI com ok:false fallback |
+| lagoa-patos-radar | ATIVA | Sensores RADAR 5 estações |
+| noaa-enso | ATIVA | Índices NOAA/CPC |
+| poll-apis | DESATIVADA | Cron removido via migration 004 |
 
-### Operacionais ou chamadas diretamente pelo app
+---
 
-- Open-Meteo: previsao meteorologica 14 dias, chamada direto no navegador.
-- INMET: previsao oficial por municipio via `inmet-previsao`.
-- CEMADEN: acumulados observados via `cemaden-rs`, dependente de token `CEMADEN_PED_TOKEN`.
-- RADAR Lagoa dos Patos: sensores de nivel via `lagoa-patos-radar`.
-- HidroSens/UFPel: sensor Laranjal/Pelotas via `hidrosens-laranjal`.
-- NOAA/CPC ENSO: indices observados via `noaa-enso`.
-- IRI/CCSR ENSO: probabilidades via `iri-enso-probabilidades`.
-- CPTEC/INPE: produtos graficos via `cptec-inpe-produtos`.
-- Defesa Civil RS: RSS via `defesa-civil-rs`.
-- INPE BDQueimadas: via Edge Function `inpe-queimadas-rs`.
-- Copernicus Water: via `copernicus-water`, depende de credenciais Copernicus.
-- Copernicus Sentinel-1: via `copernicus-sentinel1-water`, depende de credenciais Copernicus.
-- Copernicus NDVI: via `copernicus-ndvi`, depende de credenciais Copernicus.
+## Regras das Edge Functions
 
-### Complementares, parciais ou dependentes
+- `enso-noticias`: verify_jwt = false (pública, sem Authorization header)
+- Demais: verify_jwt = false (padrão do projeto)
+- `poll-apis`: NÃO ativar sem revisão e aprovação explícita
 
-- ANA HidroWeb: existe `ana-rs`, mas a UI descreve como complementar/aguardando credencial.
-- Push proprio PWA: removido.
-- `send-alerts`: removida.
-- `poll-apis`: funcao mantida desativada; nao deve ser ativada sem revisao separada.
+---
 
-### Referenciais, nao operacionais
+## Secrets Configurados no Supabase
 
-- Copernicus EFFIS na aba Queimadas: atualmente aparece como risco estrutural/referencia por bioma, nao como integracao operacional em tempo real.
-- APAs/UCs: lista georreferenciada local, sem cruzamento operacional real por geocerca.
-- Qualidade do ar: citada como possivel integracao futura, nao conectada.
-- SPI/CHIRPS para seca: citado como integracao futura, nao conectado.
-- Copernicus Emergency/CEMS: marcado como nao ativo.
+| Secret | Uso |
+|---|---|
+| VAPID_PUBLIC_KEY | Órfão — push removido, pode ser deletado |
+| VAPID_PRIVATE_KEY | Órfão — push removido, pode ser deletado |
+| VAPID_SUBJECT | Órfão — push removido, pode ser deletado |
+| CEMADEN_PED_TOKEN | Token CEMADEN |
+| COPERNICUS_CLIENT_ID | Copernicus OAuth |
+| COPERNICUS_CLIENT_SECRET | Copernicus OAuth |
+| ANA_HIDROWEB_IDENTIFICADOR | ANA HidroWeb |
+| ANA_HIDROWEB_SENHA | ANA HidroWeb |
+| ANA_USERNAME | ANA |
+| ANA_PASSWORD | ANA |
+| SENTINELA_SERVICE_ROLE_KEY | Supabase service role |
+| OPENROUTER_API_KEY | Tradução notícias (modelo nvidia/nemotron free) |
+| GNEWS_API_KEY | GNews API — notícias BR sobre El Niño |
 
-## Regras de Risco
+---
 
-O risco principal e calculado em `getRiskLevel` usando:
+## Aba Notícias El Niño
 
-- Precipitacao acumulada em 14 dias.
-- Temperatura minima.
-- Vento maximo.
-- Nivel da Lagoa somente quando ha limiar proprio validado por fonte real.
+**Edge Function:** `enso-noticias` (verify_jwt = false)
 
-ENSO e tratado como contexto climatico e nao deve acionar alerta local sozinho.
+**Fontes:**
+- **GNews BR** — notícias em português de portais brasileiros (G1, CNN Brasil, INMET, etc.)
+  - Query: "El Niño" OR "La Niña" OR "ENOS", lang=pt, country=br
+  - Janela: mês atual + mês anterior
+  - API key: GNEWS_API_KEY (plano gratuito, 100 req/dia)
+- **Copernicus C3S** — scraping de climate.copernicus.eu/seasonal-forecasts
+  - Extrai highlight ENSO com imagem do plume Niño3.4
+  - Traduzido via OpenRouter (nvidia/nemotron free)
+- **CPTEC/INPE** — scraping de enos.cptec.inpe.br
+  - Só links textuais (sem .gif/.png)
+  - Já em português, sem tradução
 
-Na aba Alertas, entram apenas:
+**Tradução:** OpenRouter com `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free`
+**Cache:** Cache-Control public, max-age=21600 (6h)
+**Timeout global:** withTimeout 22s por fonte, get() 9s
 
-- `ALERTA`
-- `EMERGENCIA`
-- `CRITICO`
+---
 
-`ATENCAO` fica visivel nos cards, mas nao infla o contador de alertas ativos.
+## Alertas
 
-## Pontos Fortes Atuais
+- Aba Alertas exibe SOMENTE RSS da Defesa Civil RS
+- Sem alertas gerados pelo frontend
+- Sem push notifications (infraestrutura removida)
+- Sem send-alerts, sem usePush.js, sem VAPID ativo
 
-- Boa separacao conceitual entre municipios e Lagoa dos Patos.
-- Horizonte de previsao ja esta em 14 dias no frontend.
-- Uso de Edge Functions para varias fontes sensiveis a CORS ou credencial.
-- Politica de fallback explicitada na UI.
-- Fallback local para RADAR/HidroSens com aviso de ultima leitura valida.
-- Saude das fontes exibida na aba Fontes de Dados.
-- ENSO nao entra diretamente no score local, o que evita falso alerta operacional.
+---
 
-## Fragilidades Atuais
+## Migrations Aplicadas
 
-- `src/App.jsx` concentra muita responsabilidade: UI, regras, fontes, parsing, risco e estado.
-- `loadAllData` faz varias chamadas em sequencia, principalmente por estacao.
-- O helper `tracked` pode chamar uma fonte novamente no erro por causa de `typeof fn()`.
-- INPE BDQueimadas usa proxy/Edge Function.
-- Parser do IRI/CCSR depende de texto da pagina publica; e fragil se o texto mudar.
-- Copernicus EFFIS aparece no produto, mas nao esta conectado como dado operacional em tempo real.
-- Modo claro existe, mas o CSS global ainda forca uma identidade escura forte.
-- Historico da Lagoa usa Supabase `readings` quando disponivel e memoria de sessao como fallback.
-- Alertas exibidos no app sao apenas RSS oficial da Defesa Civil RS.
-- `poll-apis` permanece fora de producao operacional.
+| Migration | O que faz |
+|---|---|
+| 001_initial.sql | Schema base |
+| 003_remove_push_subscriptions.sql | Remove tabela push_subscriptions |
+| 004_disable_poll_alerts.sql | Remove cron poll-apis e limpa alertas não-oficiais |
 
-## Performance Atual
+---
 
-Principal gargalo:
+## Código Morto Conhecido
 
-- `loadAllData` carrega dados para `ALL_STATIONS` com fluxo majoritariamente serial.
+- `src/hooks/useDataSync.js` — existe mas não é importado no App.jsx. Pode ser removido em sessão futura.
+- Secrets VAPID_* — órfãos, podem ser deletados do Supabase.
 
-Melhorias recomendadas antes de crescer o app:
+---
 
-- Corrigir `tracked` para nao rechamar fonte ao falhar.
-- Paralelizar chamadas por estacao com `Promise.allSettled`.
-- Adicionar limite de concorrencia para nao saturar APIs.
-- Cachear Open-Meteo e INMET por municipio.
-- Carregar dados pesados sob demanda por aba.
-- Considerar uma Edge Function agregadora para reduzir chamadas do navegador.
-- Persistir historico e alertas no backend, nao apenas no navegador.
+## Regras Inegociáveis
 
-## Melhorias Ja Identificadas Para Proxima Fase
-
-1. Tornar cards de alerta clicaveis com explicacao dos parametros que geraram o alerta.
-2. Ajustar textos ENSO para mostrar apenas o evento dominante/proximo quando apropriado.
-3. Revisar a aba Queimadas para nao comunicar EFFIS como probabilidade operacional se nao houver API real.
-4. Validar se ha mais sensores reais da Lagoa antes de incluir novos pontos.
-5. Manter previsao focada em municipios, nao em pontos da Lagoa.
-6. Incluir novos municipios/regioes somente com base real verificavel no codigo/fonte.
-7. Consolidar modo claro/escuro para que o CSS global respeite o tema.
-8. Separar referencias historicas de dados operacionais em todas as abas.
-9. Criar proxy para INPE BDQueimadas.
-10. Revisar funcoes antigas antes de usar em producao.
-
-## Criterio Para Novas Mudancas
-
-Antes de incluir uma nova informacao operacional:
-
-- Deve haver fonte real identificada.
-- Deve haver horario ou periodo de referencia.
-- Deve ficar claro se e dado atual, fallback, complementar ou historico.
-- Fallback vencido nao deve gerar novo alerta.
-- ENSO, Copernicus contextual e produtos sazonais nao devem acionar alerta local sozinhos.
-
-## Regras Operacionais Vigentes
-
-As regras operacionais do app foram formalizadas em `REGRAS_OPERACIONAIS.md`.
-
-A regra-mae e:
-
-```text
-Nenhum dado operacional pode ser inventado, simulado ou mascarado.
-Se a fonte real falhar, o app deve dizer que falhou.
-Se houver fallback, deve dizer que e fallback.
-Se for calculo do app, deve dizer que e indicador derivado.
-Se for historico, deve dizer que nao e operacional.
-```
-
-## Atualizacao 2026-05-30
-
-- Push proprio, `send-alerts` e `usePush` foram removidos. Alertas exibidos no app passam a ser apenas RSS oficial da Defesa Civil RS.
-- `poll-apis` permanece desativada para automacao operacional; nao deve ser ativada sem revisao separada.
-- Nova aba `Noticias El Nino` adicionada ao app.
-- Nova Edge Function `enso-noticias` adicionada e publicada sem JWT.
-- A funcao agrega feeds verificados da NOAA ENSO Blog e Copernicus; ECMWF e CPTEC ficam marcados como indisponiveis enquanto nao houver RSS confirmado.
-- Traducao automatica usa `OPENROUTER_API_KEY` via Supabase Secret quando configurada; sem secret, entrega o texto original com `translation: none`.
+1. O app NÃO emite alertas operacionais próprios.
+2. Alertas são exclusivamente os da Defesa Civil RS.
+3. ENSO é contexto climático — jamais aciona alerta local sozinho.
+4. Nunca mascarar falha de fonte com dado simulado.
+5. Fallback vencido não dispara novo alerta.
+6. Dado real, fallback e indicador derivado sempre rotulados diferente na UI.
+7. Nunca persistir no Supabase sem migration SQL aprovada.
+8. poll-apis nunca ativa sem revisão e aprovação explícita.
+9. Cidades monitoradas: somente as da Lagoa dos Patos com régua e endpoint real.
+10. Notícias ENSO são informativas — nunca com linguagem de alerta operacional.
