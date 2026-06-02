@@ -31,6 +31,17 @@ function jsonResponse(body: Record<string, unknown>, status = 200, cache = "publ
   });
 }
 
+function publicErrorMessage(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error || "");
+  const lower = message.toLowerCase();
+
+  if (lower.includes("certificate") || lower.includes("certificado") || lower.includes("cert")) {
+    return "Fonte INPE BDQueimadas indisponivel por falha de certificado no servidor de origem.";
+  }
+
+  return "Fonte INPE BDQueimadas indisponivel no momento.";
+}
+
 function ymd(date: Date) {
   const y = date.getUTCFullYear();
   const m = String(date.getUTCMonth() + 1).padStart(2, "0");
@@ -177,7 +188,7 @@ Deno.serve(async (req) => {
     return jsonResponse({
       ok: false,
       source: "INPE BDQueimadas / Dados Abertos CSV",
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: publicErrorMessage(error),
       records: [],
       count: 0,
       fetched_at: new Date().toISOString(),

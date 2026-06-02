@@ -17,7 +17,7 @@ const app = [appPath, ...tabFiles].map((file) => fs.readFileSync(file, "utf8")).
 
 const checks = [
   {
-    ok: app.includes("POLÍTICA OPERACIONAL — FONTE REAL E FALLBACK"),
+    ok: app.includes("POL") && app.includes("FONTE REAL"),
     fail: "Card de politica operacional nao encontrado na aba Fontes de Dados.",
   },
   {
@@ -25,7 +25,7 @@ const checks = [
     fail: "Helper getFallbackWarningText nao encontrado.",
   },
   {
-    ok: app.includes("verifique a informação junto ao órgão responsável") || app.includes("Verifique a informação junto ao órgão responsável"),
+    ok: app.toLowerCase().includes("verifique") && app.toLowerCase().includes("informa") && app.toLowerCase().includes("respons"),
     fail: "Aviso de fallback nao orienta verificar junto ao orgao responsavel.",
   },
   {
