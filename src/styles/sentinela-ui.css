@@ -654,7 +654,7 @@ body[data-theme="light"] .sr-mobile-close {
   overflow-wrap: anywhere;
 }
 
-@media (max-width: 920px) {
+@media (max-width: 920px), (max-height: 520px) and (orientation: landscape) and (max-width: 1180px) {
   header::before {
     display: none;
   }
