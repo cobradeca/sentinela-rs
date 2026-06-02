@@ -1004,7 +1004,6 @@ export default function SentinelaRS() {
                 </div>
                 <h1 style={{ margin: "2px 0", fontSize: 26, fontWeight: 700, letterSpacing: -1, color: t.text }}>
                   SENTINELA<span style={{ color: t.accent }}>·RS</span>
-                  <span style={{ fontSize: 11, color: t.textMuted, fontWeight: 400, letterSpacing: 1, marginLeft: 10 }}>v2.2</span>
                 </h1>
               </div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
@@ -1115,7 +1114,7 @@ export default function SentinelaRS() {
           )}
 
           <div style={{ marginTop: 28, borderTop: `1px solid ${t.border}`, paddingTop: 12, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
-            <div style={{ fontSize: 9, color: t.textFaint }}>SENTINELA·RS v2.2 · Open-Meteo + INMET + CEMADEN + Lagoa RADAR + HidroSens + Ana HidroWeb + NOAA ENSO + INPE + Copernicus · Fonte CEMADEN: {CEMADEN_ATTRIBUTION}</div>
+            <div style={{ fontSize: 9, color: t.textFaint }}>SENTINELA·RS · Open-Meteo + INMET + CEMADEN + Lagoa RADAR + HidroSens + Ana HidroWeb + NOAA ENSO + INPE + Copernicus · Fonte CEMADEN: {CEMADEN_ATTRIBUTION}</div>
           </div>
         </div>
 

@@ -71,7 +71,7 @@ export function FontesDeDadosTab({ ctx }) {
               <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:8 }}>POLÍTICA OPERACIONAL — FONTE REAL</div>
               <div style={{ fontSize:11, color:t.textMuted, lineHeight:1.65 }}>
                 O Sentinela-RS organiza dados públicos e indicadores ambientais para acompanhamento. Os avisos oficiais são os da Defesa Civil RS. Em situação de risco, ligue 199.
-                Leituras reais, locais e indicadores derivados aparecem rotulados separadamente. Está ferramenta não dispara novo alerta automático; verifique a informação junto ao órgão responsável.
+                Leituras reais, locais e indicadores derivados aparecem rotulados separadamente. Esta ferramenta não dispara novo alerta automático; verifique a informação junto ao órgão responsável.
                 EFFIS WMS conectado é camada complementar e não aciona alerta para Sentinela-RS sem geocerca/foco validado.
               </div>
             </div>
