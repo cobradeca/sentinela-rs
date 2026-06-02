@@ -489,6 +489,21 @@ export default function SentinelaRS() {
     setSourceHealth({ ...next });
   }
 
+  function markSourcePending(name, startedAt, error = null) {
+    const next = {
+      ...sourceHealthRef.current,
+      [name]: {
+        ok: false,
+        pending: true,
+        lastOk: sourceHealthRef.current[name]?.lastOk || null,
+        latencyMs: Date.now() - startedAt,
+        error,
+      },
+    };
+    sourceHealthRef.current = next;
+    setSourceHealth({ ...next });
+  }
+
   const loadAllData = useCallback(async () => {
     setLoading(true);
     const results = {};
@@ -658,7 +673,11 @@ export default function SentinelaRS() {
       const startedAt = Date.now();
       const data = await fetchCopernicusWater("lagoa_patos", 30);
       if (!alive) return;
-      markSourceHealth("Copernicus Water", Boolean(data?.ok && typeof data?.water_percent === "number"), startedAt, data?.error || (data ? data.status : "sem resposta"));
+      if (data?.ok && typeof data?.water_percent === "number") {
+        markSourceHealth("Copernicus Water", true, startedAt, null);
+      } else {
+        markSourcePending("Copernicus Water", startedAt, data?.error || (data ? data.status : "sem resposta"));
+      }
       setCopernicusWater(data);
     }
 
@@ -678,7 +697,11 @@ export default function SentinelaRS() {
       const startedAt = Date.now();
       const data = await fetchCopernicusSentinel1("lagoa_patos", 18);
       if (!alive) return;
-      markSourceHealth("Copernicus Sentinel-1", Boolean(data?.water_like_percent !== undefined), startedAt, data?.error || (data ? data.status : "sem resposta"));
+      if (data?.water_like_percent !== undefined) {
+        markSourceHealth("Copernicus Sentinel-1", true, startedAt, null);
+      } else {
+        markSourcePending("Copernicus Sentinel-1", startedAt, data?.error || (data ? data.status : "sem resposta"));
+      }
       setCopernicusS1(data);
     }
 
@@ -718,7 +741,11 @@ export default function SentinelaRS() {
       const startedAt = Date.now();
       const data = await fetchCopernicusNdvi("entorno_lagoa_patos", 30);
       if (!alive) return;
-      markSourceHealth("Copernicus NDVI", Boolean(data?.ok && typeof data?.ndvi_mean === "number"), startedAt, data?.error || (data ? data.status : "sem resposta"));
+      if (data?.ok && typeof data?.ndvi_mean === "number") {
+        markSourceHealth("Copernicus NDVI", true, startedAt, null);
+      } else {
+        markSourcePending("Copernicus NDVI", startedAt, data?.error || (data ? data.status : "sem resposta"));
+      }
       setCopernicusNdvi(data);
     }
 

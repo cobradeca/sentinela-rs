@@ -249,7 +249,7 @@ export function CopernicusTab({ ctx }) {
                 </>
               ) : (
                 <div style={{ fontSize:10, color:t.textMuted, lineHeight:1.6 }}>
-                  Produto Sentinel-1 ainda não carregado nesta sessão. Se persistir, rode o diagnóstico do endpoint.
+                  Sentinel-1 ainda não carregado nesta sessão.
                 </div>
               )}
             </div>

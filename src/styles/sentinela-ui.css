@@ -503,6 +503,25 @@ div[style*="grid-template-columns: repeat(7"] {
   white-space: nowrap;
 }
 
+body[data-theme="light"] .sr-mobile-quick-btn,
+body[data-theme="light"] .sr-mobile-menu-trigger {
+  background: rgba(255, 255, 255, 0.86);
+  border-color: rgba(8, 145, 178, 0.34);
+  color: #0e7490;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+}
+
+body[data-theme="light"] .sr-mobile-quick-time {
+  color: #475569;
+  font-weight: 700;
+}
+
+body[data-theme="light"] .sr-mobile-close {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(8, 145, 178, 0.3);
+  color: #0e7490;
+}
+
 .sr-mobile-tabs {
   display: grid;
   gap: 8px;
@@ -745,10 +764,24 @@ div[style*="grid-template-columns: repeat(7"] {
     background: rgba(8, 20, 35, 0.88);
   }
 
+  body[data-theme="light"] .sr-mobile-menu-trigger {
+    color: #0e7490;
+    border-color: rgba(8, 145, 178, 0.34);
+    background: rgba(255, 255, 255, 0.86);
+  }
+
   .sr-mobile-close {
     color: #8be9ff;
     border-color: rgba(34, 211, 238, 0.35);
     background: rgba(8, 20, 35, 0.78);
+  }
+
+  body[data-theme="light"] .sr-mobile-drawer {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(241, 245, 249, 0.98)) !important;
+  }
+
+  body[data-theme="light"] .sr-mobile-drawer-backdrop {
+    background: rgba(15, 23, 42, 0.22);
   }
 
   div[style*="font-size: 8px"],

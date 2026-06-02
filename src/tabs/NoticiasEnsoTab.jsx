@@ -1,15 +1,15 @@
 import { DefesaCivilNotice } from "../components/DefesaCivilNotice";
 
 const SOURCE_COLORS = {
-  gnews:      "#38bdf8",
+  gnews: "#38bdf8",
   copernicus: "#34d399",
-  cptec:      "#fb923c",
+  cptec: "#fb923c",
 };
 
 const SOURCE_ICONS = {
-  gnews:      "📰",
+  gnews: "📰",
   copernicus: "🌍",
-  cptec:      "🇧🇷",
+  cptec: "🇧🇷",
 };
 
 function formatRelativeDate(value) {
@@ -27,6 +27,7 @@ export function NoticiasEnsoTab({ ctx }) {
   const { dark, ensoNoticias, ensoNoticiasLoading, loadEnsoNoticias, t } = ctx;
   const items = ensoNoticias?.items || [];
   const sources = ensoNoticias?.sources || [];
+  const failedSources = sources.filter((src) => !src.ok);
 
   return (
     <div style={{ display: "grid", gap: 12 }}>
@@ -64,24 +65,19 @@ export function NoticiasEnsoTab({ ctx }) {
 
       <DefesaCivilNotice t={t} dark={dark} compact />
 
-      {sources.length > 0 && (
+      {failedSources.length > 0 && (
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {sources.map((src) => {
-            const color = SOURCE_COLORS[src.id] || t.accent;
-            const statusOk = src.ok && (src.http_status === 200 || src.http_status === null);
-            return (
-              <div key={src.id} style={{
-                fontSize: 9,
-                padding: "3px 9px",
-                borderRadius: 999,
-                border: `1px solid ${statusOk ? color + "55" : "rgba(239,68,68,0.4)"}`,
-                color: statusOk ? color : "#ef4444",
-              }}>
-                {SOURCE_ICONS[src.id] || "📡"} {src.name}{": "}
-                {statusOk ? `${src.count} item${src.count === 1 ? "" : "s"}` : (src.error || "indisponível")}
-              </div>
-            );
-          })}
+          {failedSources.map((src) => (
+            <div key={src.id} style={{
+              fontSize: 9,
+              padding: "3px 9px",
+              borderRadius: 999,
+              border: "1px solid rgba(239,68,68,0.4)",
+              color: "#ef4444",
+            }}>
+              {SOURCE_ICONS[src.id] || "📡"} {src.name}: {src.error || "indisponível"}
+            </div>
+          ))}
         </div>
       )}
 
@@ -111,7 +107,7 @@ export function NoticiasEnsoTab({ ctx }) {
 
       {items.map((item) => {
         const color = SOURCE_COLORS[item.source_id] || t.accent;
-        const icon  = SOURCE_ICONS[item.source_id]  || "📡";
+        const icon = SOURCE_ICONS[item.source_id] || "📡";
         const when = formatRelativeDate(item.pub_date);
         return (
           <a

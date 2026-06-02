@@ -38,6 +38,37 @@ export const COPERNICUS_REFERENCE = {
   themes: [],
 };
 
+const COPERNICUS_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
+
+function readJsonCache(key, maxAgeMs = COPERNICUS_CACHE_MAX_AGE_MS) {
+  try {
+    if (typeof window === "undefined" || !window.localStorage) return null;
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    const savedAtMs = new Date(parsed.saved_at || 0).getTime();
+    if (!savedAtMs || Date.now() - savedAtMs > maxAgeMs) return null;
+    return {
+      ...parsed.data,
+      cached: true,
+      cache_saved_at: parsed.saved_at,
+      cache_age_minutes: Math.round((Date.now() - savedAtMs) / 60000),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function saveJsonCache(key, data) {
+  try {
+    if (typeof window === "undefined" || !window.localStorage || !data) return;
+    window.localStorage.setItem(key, JSON.stringify({
+      saved_at: new Date().toISOString(),
+      data,
+    }));
+  } catch {}
+}
+
 export async function fetchNoaaEnso() {
   try {
     const res = await fetch(NOAA_ENSO_FUNCTION_URL, { signal: AbortSignal.timeout(15000) });
@@ -67,47 +98,56 @@ export async function fetchCptecInpeProducts() {
 }
 
 export async function fetchCopernicusWater(aoi = "lagoa_patos", days = 30) {
+  const cacheKey = `sentinela_rs_copernicus_water_${aoi}_${days}`;
+  const cached = readJsonCache(cacheKey);
   try {
     const url = `${COPERNICUS_WATER_FUNCTION_URL}?aoi=${encodeURIComponent(aoi)}&days=${encodeURIComponent(days)}`;
-    const res = await fetch(url, { signal: AbortSignal.timeout(60000) });
-    if (!res.ok) return null;
+    const res = await fetch(url, { signal: AbortSignal.timeout(35000), cache: "no-store", headers: { Accept: "application/json" } });
+    if (!res.ok) return cached || null;
 
     const data = await res.json();
-    if (!data || data.ok !== true || typeof data.water_percent !== "number") return data || null;
+    if (!data || data.ok !== true || typeof data.water_percent !== "number") return data || cached || null;
 
+    saveJsonCache(cacheKey, data);
     return data;
   } catch {
-    return null;
+    return cached || null;
   }
 }
 
 export async function fetchCopernicusSentinel1(aoi = "lagoa_patos", days = 18) {
+  const cacheKey = `sentinela_rs_copernicus_s1_${aoi}_${days}`;
+  const cached = readJsonCache(cacheKey);
   try {
     const url = `${COPERNICUS_SENTINEL1_FUNCTION_URL}?aoi=${encodeURIComponent(aoi)}&days=${encodeURIComponent(days)}`;
-    const res = await fetch(url, { signal: AbortSignal.timeout(90000) });
-    if (!res.ok) return null;
+    const res = await fetch(url, { signal: AbortSignal.timeout(35000), cache: "no-store", headers: { Accept: "application/json" } });
+    if (!res.ok) return cached || null;
 
     const data = await res.json();
-    if (!data || typeof data.water_like_percent !== "number") return data || null;
+    if (!data || typeof data.water_like_percent !== "number") return data || cached || null;
 
+    saveJsonCache(cacheKey, data);
     return data;
   } catch {
-    return null;
+    return cached || null;
   }
 }
 
 export async function fetchCopernicusNdvi(aoi = "entorno_lagoa_patos", days = 30) {
+  const cacheKey = `sentinela_rs_copernicus_ndvi_${aoi}_${days}`;
+  const cached = readJsonCache(cacheKey);
   try {
     const url = `${COPERNICUS_NDVI_FUNCTION_URL}?aoi=${encodeURIComponent(aoi)}&days=${encodeURIComponent(days)}`;
-    const res = await fetch(url, { signal: AbortSignal.timeout(90000) });
-    if (!res.ok) return null;
+    const res = await fetch(url, { signal: AbortSignal.timeout(35000), cache: "no-store", headers: { Accept: "application/json" } });
+    if (!res.ok) return cached || null;
 
     const data = await res.json();
-    if (!data || typeof data.ndvi_mean !== "number") return data || null;
+    if (!data || typeof data.ndvi_mean !== "number") return data || cached || null;
 
+    saveJsonCache(cacheKey, data);
     return data;
   } catch {
-    return null;
+    return cached || null;
   }
 }
 

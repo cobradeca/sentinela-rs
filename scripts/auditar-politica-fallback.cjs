@@ -1,27 +1,32 @@
 const fs = require("fs");
 const path = require("path");
 
-const appPath = path.join(process.cwd(), "src", "App.jsx");
+const srcDir = path.join(process.cwd(), "src");
+const appPath = path.join(srcDir, "App.jsx");
+const tabsDir = path.join(srcDir, "tabs");
 
 if (!fs.existsSync(appPath)) {
-  console.error("ERRO: não encontrei src/App.jsx");
+  console.error("ERRO: nao encontrei src/App.jsx");
   process.exit(1);
 }
 
-const app = fs.readFileSync(appPath, "utf8");
+const tabFiles = fs.existsSync(tabsDir)
+  ? fs.readdirSync(tabsDir).filter((name) => name.endsWith(".jsx")).map((name) => path.join(tabsDir, name))
+  : [];
+const app = [appPath, ...tabFiles].map((file) => fs.readFileSync(file, "utf8")).join("\n");
 
 const checks = [
   {
     ok: app.includes("POLÍTICA OPERACIONAL — FONTE REAL E FALLBACK"),
-    fail: "Card de política operacional não encontrado na aba Fontes de Dados.",
+    fail: "Card de politica operacional nao encontrado na aba Fontes de Dados.",
   },
   {
     ok: app.includes("getFallbackWarningText"),
-    fail: "Helper getFallbackWarningText não encontrado.",
+    fail: "Helper getFallbackWarningText nao encontrado.",
   },
   {
-    ok: app.includes("Verifique a informação junto ao órgão responsável"),
-    fail: "Aviso de fallback não orienta verificar junto ao órgão responsável.",
+    ok: app.includes("verifique a informação junto ao órgão responsável") || app.includes("Verifique a informação junto ao órgão responsável"),
+    fail: "Aviso de fallback nao orienta verificar junto ao orgao responsavel.",
   },
   {
     ok: !app.includes('ANA HidroWeb (Telemetria)", st:"ATIVO"'),
@@ -29,31 +34,27 @@ const checks = [
   },
   {
     ok: !app.includes("Fallback local 6h ativado automaticamente"),
-    fail: "Fallback RADAR ainda está descrito como automático sem política.",
+    fail: "Fallback RADAR ainda esta descrito como automatico sem politica.",
   },
   {
     ok: !app.includes("Fallback local 6h."),
-    fail: "Fallback HidroSens ainda está descrito de forma genérica.",
+    fail: "Fallback HidroSens ainda esta descrito de forma generica.",
   },
 ];
 
 let failed = 0;
-
-console.log("Auditoria de política de fallback e fontes\n");
-
+console.log("Auditoria de politica de fallback e fontes\n");
 for (const check of checks) {
-  if (check.ok) {
-    console.log("✅ OK");
-  } else {
+  if (check.ok) console.log("OK");
+  else {
     failed++;
-    console.log("❌ " + check.fail);
+    console.log("FALHA " + check.fail);
   }
 }
 
 console.log("\nResultado:");
 if (failed) {
-  console.log(`❌ ${failed} falha(s) na política operacional.`);
+  console.log(`${failed} falha(s) na politica operacional.`);
   process.exit(1);
 }
-
-console.log("✅ Política de fallback/fonte operacional preservada.");
+console.log("Politica de fallback/fonte operacional preservada.");

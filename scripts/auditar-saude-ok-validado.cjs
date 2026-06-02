@@ -1,13 +1,19 @@
 const fs = require("fs");
 const path = require("path");
 
-const appPath = path.join(process.cwd(), "src", "App.jsx");
+const srcDir = path.join(process.cwd(), "src");
+const appPath = path.join(srcDir, "App.jsx");
+const tabsDir = path.join(srcDir, "tabs");
+
 if (!fs.existsSync(appPath)) {
-  console.error("ERRO: src/App.jsx não encontrado");
+  console.error("ERRO: src/App.jsx nao encontrado");
   process.exit(1);
 }
 
-const app = fs.readFileSync(appPath, "utf8");
+const tabFiles = fs.existsSync(tabsDir)
+  ? fs.readdirSync(tabsDir).filter((name) => name.endsWith(".jsx")).map((name) => path.join(tabsDir, name))
+  : [];
+const app = [appPath, ...tabFiles].map((file) => fs.readFileSync(file, "utf8")).join("\n");
 
 const checks = [
   ["helper central", app.includes("function getValidatedSourceHealth(name)")],
@@ -19,23 +25,22 @@ const checks = [
   ["Copernicus NDVI validado", app.includes('name === "Copernicus NDVI" && copernicusNdvi')],
   ["painel usa helper", app.includes("getValidatedSourceHealth(name)")],
   ["sem termo existe", !app.includes('"existe"') && !app.includes(">existe<")],
-  ["label OK", app.includes('ok ? "OK" : "Falhou"')],
+  ["label OK", app.includes('ok ? "OK"')],
 ];
 
 let fail = 0;
-console.log("Auditoria de saúde OK validado\n");
-
+console.log("Auditoria de saude OK validado\n");
 for (const [label, ok] of checks) {
-  if (ok) console.log("✅ " + label);
+  if (ok) console.log("OK " + label);
   else {
-    console.log("❌ " + label);
+    console.log("FALHA " + label);
     fail++;
   }
 }
 
 console.log("\nResultado:");
 if (fail) {
-  console.log(`❌ ${fail} falha(s).`);
+  console.log(`${fail} falha(s).`);
   process.exit(1);
 }
-console.log("✅ Painel de saúde usa OK para respostas validadas.");
+console.log("Painel de saude usa OK para respostas validadas.");

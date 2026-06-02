@@ -14,11 +14,17 @@ export function AlertasTab({ ctx }) {
     return order.indexOf(a.risk_level) - order.indexOf(b.risk_level);
   });
 
+  const smallCard = {
+    padding: "9px 10px",
+    background: dark ? "rgba(0,0,0,0.22)" : "rgba(255,255,255,0.55)",
+    border: `1px solid ${t.border}`,
+    borderRadius: 5,
+  };
+
   return (
-    <div>
+    <div style={{ display: "grid", gap: 12 }}>
       <div
         style={{
-          marginBottom: 14,
           padding: "12px 14px",
           background: dark ? "rgba(34,197,94,0.08)" : "rgba(22,163,74,0.06)",
           border: "1px solid rgba(34,197,94,0.35)",
@@ -28,7 +34,7 @@ export function AlertasTab({ ctx }) {
           lineHeight: 1.6,
         }}
       >
-        Esta aba mostra apenas avisos oficiais publicados pela Defesa Civil RS. Em emergencia, ligue 199.
+        <strong>Acompanhe os avisos oficiais da Defesa Civil RS.</strong> Em emergência, ligue 199. Para Bombeiros, 193. Para Brigada Militar, 190.
         <a
           href="https://www.defesacivil.rs.gov.br/"
           target="_blank"
@@ -37,6 +43,88 @@ export function AlertasTab({ ctx }) {
         >
           Abrir Defesa Civil RS
         </a>
+      </div>
+
+      <div
+        style={{
+          padding: "13px 15px",
+          background: dark ? "rgba(14,165,233,0.08)" : "rgba(14,165,233,0.06)",
+          border: "1px solid rgba(14,165,233,0.32)",
+          borderRadius: 6,
+          color: dark ? "#bae6fd" : "#075985",
+          lineHeight: 1.6,
+        }}
+      >
+        <div style={{ fontSize: 10, letterSpacing: 2, marginBottom: 8, color: t.textMuted }}>CANAIS OFICIAIS DA DEFESA CIVIL RS</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 8 }}>
+          {[
+            ["SMS 40199", "Envie o CEP para 40199 para receber avisos gratuitos no celular."],
+            ["Site oficial / RSS", "Últimos avisos e alertas oficiais exibidos nesta aba."],
+            ["Emergência", "Em situação de risco, ligue 199. Bombeiros: 193. Brigada Militar: 190."],
+          ].map(([title, text]) => (
+            <div key={title} style={smallCard}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: t.text }}>{title}</div>
+              <div style={{ fontSize: 10, color: t.textMuted, marginTop: 3 }}>{text}</div>
+            </div>
+          ))}
+          <div style={smallCard}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: t.text }}>WhatsApp oficial</div>
+            <div style={{ fontSize: 10, color: t.textMuted, marginTop: 3 }}>
+              Clique{" "}
+              <a
+                href="https://web.whatsapp.com/accept?channel_invite_code=0029VbAHjAn2f3EQlWU7nz2E&source_surface="
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: t.accent, fontWeight: 800, textDecoration: "underline" }}
+              >
+                aqui
+              </a>{" "}
+              e entre no canal do WhatsApp.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        style={{
+          padding: "13px 15px",
+          background: dark ? "rgba(234,179,8,0.07)" : "rgba(234,179,8,0.05)",
+          border: "1px solid rgba(234,179,8,0.28)",
+          borderRadius: 6,
+          color: dark ? "#fef08a" : "#854d0e",
+          fontSize: 11,
+          lineHeight: 1.7,
+        }}
+      >
+        <div style={{ fontSize: 10, letterSpacing: 2, marginBottom: 8, color: t.textMuted }}>COMO SE CADASTRAR NOS ALERTAS OFICIAIS</div>
+        <div>1. Abra o app de SMS do celular.</div>
+        <div>2. No destinatário, digite 40199.</div>
+        <div>3. No corpo da mensagem, digite o CEP que deseja monitorar.</div>
+        <div>4. Envie. Você pode cadastrar mais de um CEP.</div>
+      </div>
+
+      <div
+        style={{
+          padding: "13px 15px",
+          background: dark ? "rgba(255,255,255,0.025)" : "rgba(0,0,0,0.02)",
+          border: `1px solid ${t.border}`,
+          borderRadius: 6,
+        }}
+      >
+        <div style={{ fontSize: 10, letterSpacing: 2, marginBottom: 8, color: t.textMuted }}>DICAS OFICIAIS DE PREVENÇÃO</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))", gap: 8 }}>
+          {[
+            ["Chuva forte", "Evite sair, não atravesse ruas alagadas e acompanhe os avisos meteorológicos."],
+            ["Ventos fortes", "Fique longe de placas, postes, árvores e coberturas frágeis. Recolha objetos soltos."],
+            ["Inundações", "Guarde documentos e objetos de valor em locais altos e evite contato com água contaminada."],
+            ["Deslizamentos", "Observe rachaduras, postes inclinados e sinais de instabilidade. Busque local seguro."],
+          ].map(([title, text]) => (
+            <div key={title} style={{ ...smallCard, background: dark ? "rgba(0,0,0,0.22)" : t.bg }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: t.text }}>{title}</div>
+              <div style={{ fontSize: 10, color: t.textMuted, marginTop: 3, lineHeight: 1.5 }}>{text}</div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {orderedAlerts.length === 0 ? (
@@ -64,7 +152,7 @@ export function AlertasTab({ ctx }) {
             const risk = RISK_LEVELS[level] || RISK_LEVELS.ALERTA;
             const riskColor = getRiskColor(level);
             const riskBg = getRiskBg(level);
-            const when = alert.at ? formatDateTimeBR(alert.at) : "sem horario";
+            const when = alert.at ? formatDateTimeBR(alert.at) : "sem horário";
 
             return (
               <div
