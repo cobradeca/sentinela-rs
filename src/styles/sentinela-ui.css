@@ -664,7 +664,7 @@ body[data-theme="light"] .sr-mobile-close {
   }
 
   .sr-app-inner {
-    padding-top: 38px !important;
+    padding-top: 30px !important;
   }
 
   .sr-shell {
@@ -679,7 +679,6 @@ body[data-theme="light"] .sr-mobile-close {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-top: 4px;
     margin-bottom: 14px;
     flex-wrap: nowrap;
     overflow-x: auto;
