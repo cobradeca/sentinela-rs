@@ -6,14 +6,9 @@
   "start_url": "/sentinela-rs/",
   "scope": "/sentinela-rs/",
   "display": "standalone",
-  "display_override": [
-    "standalone",
-    "minimal-ui",
-    "browser"
-  ],
   "background_color": "#070b12",
   "theme_color": "#070b12",
-  "orientation": "any",
+  "orientation": "portrait",
   "lang": "pt-BR",
   "dir": "ltr",
   "prefer_related_applications": false,
@@ -46,6 +41,37 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Abrir o painel principal do Sentinela RS",
+      "url": "/sentinela-rs/",
+      "icons": [
+        {
+          "src": "/sentinela-rs/icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/sentinela-rs/screenshots/mobile-dashboard.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Dashboard mobile do Sentinela RS"
+    },
+    {
+      "src": "/sentinela-rs/screenshots/desktop-dashboard.png",
+      "sizes": "1365x768",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Dashboard desktop do Sentinela RS"
     }
   ]
 }
