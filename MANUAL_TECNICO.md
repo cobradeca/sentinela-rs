@@ -301,15 +301,16 @@ Produtos Copernicus sao contexto ou referencia tecnica, nao alerta oficial autom
 Usa:
 
 - INPE BDQueimadas para focos reais;
+- CENSIPAM Painel do Fogo para Eventos de Fogo consolidados em GeoJSON;
 - ICMBio para UCs/APAs;
 - EFFIS WMS como camada complementar.
 
 Status de UC deve ser:
 
-- Com foco: ao menos um foco INPE com coordenada valida esta dentro do raio tecnico do ponto de referencia;
-- Sem foco: nao ha informacao valida de foco INPE dentro do raio tecnico configurado.
+- Com foco: ao menos um foco INPE ou Evento de Fogo CENSIPAM recente esta dentro do raio tecnico do ponto de referencia;
+- Sem foco: nao ha informacao valida de foco recente dentro do raio tecnico configurado.
 
-O cruzamento usa distancia geodesica entre coordenadas reais dos focos e pontos de referencia cadastrados. Ele e um indicador derivado de proximidade, nao confirma incendio dentro da UC sem poligono oficial. Nome de municipio nao pode gerar destaque ou alerta.
+O cruzamento usa distancia geodesica entre coordenadas reais dos focos INPE, poligonos de Eventos de Fogo CENSIPAM e pontos de referencia cadastrados. Eventos CENSIPAM do mes atual so sustentam o status quando a ultima deteccao ocorreu nas ultimas 48 horas. Nome de municipio nao pode gerar destaque ou alerta.
 
 EFFIS/GWIS/FIRMS so deve virar alerta operacional quando houver cruzamento espacial validado para RS.
 

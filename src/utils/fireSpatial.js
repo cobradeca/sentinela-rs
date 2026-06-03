@@ -45,6 +45,72 @@ export function findNearbyFireFoci(area, fireRecords, defaultRadiusKm = DEFAULT_
     .sort((a, b) => a.distanceKm - b.distanceKm);
 }
 
+function pointInRing(point, ring) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i];
+    const [xj, yj] = ring[j];
+    const intersects = ((yi > point.lat) !== (yj > point.lat))
+      && (point.lon < ((xj - xi) * (point.lat - yi)) / ((yj - yi) || Number.EPSILON) + xi);
+    if (intersects) inside = !inside;
+  }
+  return inside;
+}
+
+function pointInPolygon(point, polygon) {
+  if (!Array.isArray(polygon?.[0]) || !pointInRing(point, polygon[0])) return false;
+  return !polygon.slice(1).some((hole) => pointInRing(point, hole));
+}
+
+function distanceToSegmentKm(point, a, b) {
+  const kmPerDegreeLat = 111.32;
+  const kmPerDegreeLon = 111.32 * Math.cos(point.lat * Math.PI / 180);
+  const ax = (a[0] - point.lon) * kmPerDegreeLon;
+  const ay = (a[1] - point.lat) * kmPerDegreeLat;
+  const bx = (b[0] - point.lon) * kmPerDegreeLon;
+  const by = (b[1] - point.lat) * kmPerDegreeLat;
+  const dx = bx - ax;
+  const dy = by - ay;
+  const lengthSquared = dx * dx + dy * dy;
+  const t = lengthSquared > 0 ? Math.max(0, Math.min(1, -(ax * dx + ay * dy) / lengthSquared)) : 0;
+  return Math.hypot(ax + t * dx, ay + t * dy);
+}
+
+function distanceToPolygonKm(point, polygon) {
+  if (pointInPolygon(point, polygon)) return 0;
+  return Math.min(
+    ...polygon.flatMap((ring) => ring.slice(1).map((coordinate, idx) => distanceToSegmentKm(point, ring[idx], coordinate)))
+  );
+}
+
+function eventPolygons(event) {
+  const geometry = event?.geometry;
+  if (geometry?.type === "Polygon") return [geometry.coordinates];
+  if (geometry?.type === "MultiPolygon") return geometry.coordinates;
+  return [];
+}
+
+export function findNearbyFireEvents(area, fireEvents, defaultRadiusKm = DEFAULT_FIRE_PROXIMITY_KM) {
+  const areaLat = numberOrNull(area?.lat);
+  const areaLon = numberOrNull(area?.lon);
+  const radiusKm = numberOrNull(area?.proximityRadiusKm) ?? defaultRadiusKm;
+
+  if (areaLat === null || areaLon === null || radiusKm <= 0 || !Array.isArray(fireEvents)) {
+    return [];
+  }
+
+  const point = { lat: areaLat, lon: areaLon };
+  return fireEvents
+    .map((event) => {
+      const polygons = eventPolygons(event);
+      if (polygons.length === 0) return null;
+      const distanceKm = Math.min(...polygons.map((polygon) => distanceToPolygonKm(point, polygon)));
+      return distanceKm <= radiusKm ? { event, distanceKm } : null;
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.distanceKm - b.distanceKm);
+}
+
 export function normalizeSpatialName(value) {
   return String(value || "")
     .normalize("NFD")

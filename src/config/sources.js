@@ -12,6 +12,7 @@ export const NOAA_ENSO_FUNCTION_URL = `${SUPABASE_FUNCTIONS_BASE_URL}/noaa-enso`
 export const IRI_ENSO_PROB_FUNCTION_URL = `${SUPABASE_FUNCTIONS_BASE_URL}/iri-enso-probabilidades`;
 export const CPTEC_INPE_PRODUCTS_FUNCTION_URL = `${SUPABASE_FUNCTIONS_BASE_URL}/cptec-inpe-produtos`;
 export const INPE_QUEIMADAS_RS_FUNCTION_URL = `${SUPABASE_FUNCTIONS_BASE_URL}/inpe-queimadas-rs`;
+export const CENSIPAM_FIRE_EVENTS_RS_FUNCTION_URL = `${SUPABASE_FUNCTIONS_BASE_URL}/censipam-fire-events-rs`;
 export const ICMBIO_UCS_RS_FUNCTION_URL = `${SUPABASE_FUNCTIONS_BASE_URL}/icmbio-ucs-rs`;
 export const EFFIS_WMS_HEALTH_FUNCTION_URL = `${SUPABASE_FUNCTIONS_BASE_URL}/effis-wms-health`;
 export const COPERNICUS_WATER_FUNCTION_URL = `${SUPABASE_FUNCTIONS_BASE_URL}/copernicus-water`;

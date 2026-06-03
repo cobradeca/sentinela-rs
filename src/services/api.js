@@ -9,6 +9,7 @@ import {
   COPERNICUS_SENTINEL1_FUNCTION_URL,
   COPERNICUS_WATER_FUNCTION_URL,
   CPTEC_INPE_PRODUCTS_FUNCTION_URL,
+  CENSIPAM_FIRE_EVENTS_RS_FUNCTION_URL,
   DEFESA_CIVIL_RS_FUNCTION_URL,
   ENSO_NOTICIAS_FUNCTION_URL,
   EFFIS_WMS_HEALTH_FUNCTION_URL,
@@ -420,6 +421,18 @@ export async function fetchQueimadas() {
   try {
     const res = await fetch(`${INPE_QUEIMADAS_RS_FUNCTION_URL}?days=2&limit=100`, {
       signal: AbortSignal.timeout(15000),
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch { return null; }
+}
+
+export async function fetchCensipamFireEventsRs() {
+  try {
+    const res = await fetch(CENSIPAM_FIRE_EVENTS_RS_FUNCTION_URL, {
+      signal: AbortSignal.timeout(20000),
       cache: "no-store",
       headers: { Accept: "application/json" },
     });

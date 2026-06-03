@@ -299,13 +299,14 @@ Esta aba acompanha focos de fogo e areas monitoradas.
 Fontes e camadas:
 
 - INPE BDQueimadas: focos reais detectados por satelite;
+- CENSIPAM Painel do Fogo: eventos consolidados com poligono, quantidade de deteccoes e area de influencia;
 - ICMBio: unidades de conservacao;
 - EFFIS/GWIS: camada complementar de perigo, focos ou area queimada.
 
 Como ler:
 
-- Com foco: existe foco INPE georreferenciado na area monitorada.
-- Sem foco: nao ha informacao valida de foco INPE na area monitorada.
+- Com foco: existe foco INPE georreferenciado ou Evento de Fogo CENSIPAM recente na area monitorada.
+- Sem foco: nao ha informacao valida de foco recente na area monitorada.
 - EFFIS pode aparecer como complemento, mas nao deve virar alerta no RS sem cruzamento espacial validado.
 
 O destaque de proximidade e um calculo do app sobre coordenadas reais. Ele nao confirma que o foco esta dentro da unidade de conservacao quando nao houver poligono oficial disponivel.

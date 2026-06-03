@@ -1,5 +1,5 @@
 import { DefesaCivilNotice } from "../components/DefesaCivilNotice";
-import { findLocalUcSpatialReference, findNearbyFireFoci } from "../utils/fireSpatial";
+import { findLocalUcSpatialReference, findNearbyFireEvents, findNearbyFireFoci } from "../utils/fireSpatial";
 export function QueimadasTab({ ctx }) {
   const {
     APAS_RS,
@@ -17,6 +17,7 @@ export function QueimadasTab({ ctx }) {
     copernicusNdvi,
     copernicusS1,
     copernicusWater,
+    censipamFireEvents,
     dark,
     dataStaleness,
     effisHealth,
@@ -68,13 +69,15 @@ export function QueimadasTab({ ctx }) {
     wmoEmoji
   } = ctx;
   const fireRecords = Array.isArray(queimadas) ? queimadas : (queimadas?.records || []);
+  const fireEvents = censipamFireEvents?.records || [];
+  const activeFireEvents = censipamFireEvents?.active_records_48h || [];
 
   return (
 
           <div style={{ display:"grid", gap:12 }}>
             <DefesaCivilNotice t={t} dark={dark} />
             <div style={{ padding:"10px 14px", background: dark?"rgba(249,115,22,0.08)":"rgba(249,115,22,0.05)", border:"1px solid rgba(249,115,22,0.3)", borderRadius:5, fontSize:10, color: dark?"#fdba74":"#c2410c", display:"flex", justifyContent:"space-between", alignItems:"center", gap:12, flexWrap:"wrap" }}>
-              <span>🔥 Monitoramento de focos nas últimas 48h com dados do <strong>INPE BDQueimadas</strong> e contexto do <strong>EFFIS/Copernicus</strong>.</span>
+              <span>🔥 Monitoramento de focos com dados do <strong>INPE BDQueimadas</strong> e eventos consolidados do <strong>CENSIPAM Painel do Fogo</strong>.</span>
               <button onClick={loadQueimadas} disabled={qLoading} style={{ background:"none", border:"1px solid rgba(249,115,22,0.5)", color:"#fdba74", padding:"5px 12px", borderRadius:4, cursor:"pointer", fontFamily:"inherit", fontSize:9, letterSpacing:1 }}>{qLoading ? "⏳ Consultando..." : "↻ Atualizar"}</button>
             </div>
             {!queimadas && !qLoading && (
@@ -91,8 +94,9 @@ export function QueimadasTab({ ctx }) {
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))", gap:8 }}>
                 {FIRE_MONITORED_AREAS_RS.map((area, idx)=>{
                   const nearbyFoci = findNearbyFireFoci(area, fireRecords);
-                  const nearest = nearbyFoci[0];
-                  const hasNearbyFire = nearbyFoci.length > 0;
+                  const nearbyEvents = findNearbyFireEvents(area, activeFireEvents);
+                  const nearestDistance = Math.min(nearbyFoci[0]?.distanceKm ?? Infinity, nearbyEvents[0]?.distanceKm ?? Infinity);
+                  const hasNearbyFire = nearbyFoci.length > 0 || nearbyEvents.length > 0;
                   return (
                   <div key={area.id} style={{ background:dark?"rgba(0,0,0,0.25)":t.bg, border:`1px solid ${hasNearbyFire ? "#f97316" : t.border}`, borderRadius:5, padding:"10px 12px" }}>
                     <div style={{ display:"flex", justifyContent:"space-between", gap:8, alignItems:"flex-start" }}>
@@ -107,12 +111,37 @@ export function QueimadasTab({ ctx }) {
                     <div style={{ fontSize:9, color:t.textMuted, lineHeight:1.45, marginTop:6 }}>{area.focus}</div>
                     <div style={{ fontSize:8, color:t.textFaint, marginTop:7 }}>
                       {area.lat.toFixed(2)}°, {area.lon.toFixed(2)}° · monitoramento em até {area.proximityRadiusKm} km
-                      {nearest ? ` · mais próximo: ${nearest.distanceKm.toFixed(1)} km` : ""}
+                      {Number.isFinite(nearestDistance) ? ` · mais próximo: ${nearestDistance.toFixed(1)} km` : ""}
                     </div>
                   </div>
                   );
                 })}
               </div>
+            </div>
+
+            <div style={{ ...s.card }}>
+              <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:12 }}>EVENTOS DE FOGO CENSIPAM — RS (MÊS ATUAL)</div>
+              {censipamFireEvents?.ok ? (
+                <div>
+                  <div style={{ fontSize:22, fontWeight:700, color:"#f97316", marginBottom:4 }}>{censipamFireEvents.count ?? fireEvents.length} eventos</div>
+                  <div style={{ fontSize:10, color:t.textMuted }}>
+                    Eventos consolidados pelo Painel do Fogo
+                    {censipamFireEvents.latest ? ` · última atualização: ${formatDateTimeBR(censipamFireEvents.latest)}` : ""}
+                  </div>
+                  {fireEvents.length > 0 && (
+                    <div style={{ marginTop:10, display:"grid", gap:5 }}>
+                      {fireEvents.slice(0,10).map((event) => (
+                        <div key={event.properties?.id_evento || event.id} style={{ display:"flex", justifyContent:"space-between", gap:10, padding:"5px 8px", background: dark?"rgba(0,0,0,0.3)":t.bg, borderRadius:3, fontSize:9, color:t.textMuted }}>
+                          <span>Evento {event.properties?.id_evento} · {event.properties?.qtd_deteccoes ?? "–"} detecções</span>
+                          <span>{typeof event.properties?.area_km2 === "number" ? `${event.properties.area_km2.toFixed(2)} km²` : "área não informada"}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div style={{ fontSize:10, color:t.textMuted }}>Eventos de Fogo CENSIPAM indisponíveis nesta sessão.</div>
+              )}
             </div>
 
             {/* Focos INPE */}
@@ -188,8 +217,9 @@ export function QueimadasTab({ ctx }) {
                     ? apa
                     : findLocalUcSpatialReference(apa, APAS_RS);
                   const nearbyFoci = spatialReference ? findNearbyFireFoci(spatialReference, fireRecords) : [];
-                  const nearest = nearbyFoci[0];
-                  const hasNearbyFire = nearbyFoci.length > 0;
+                  const nearbyEvents = spatialReference ? findNearbyFireEvents(spatialReference, activeFireEvents) : [];
+                  const nearestDistance = Math.min(nearbyFoci[0]?.distanceKm ?? Infinity, nearbyEvents[0]?.distanceKm ?? Infinity);
+                  const hasNearbyFire = nearbyFoci.length > 0 || nearbyEvents.length > 0;
                   return (
                   <div key={apa.id || apa.name} style={{ display:"grid", gridTemplateColumns:"1fr auto auto", gap:10, alignItems:"center", padding:"9px 12px", background: dark?"rgba(0,0,0,0.2)":t.bg, border:`1px solid ${hasNearbyFire ? "#f97316" : t.border}`, borderRadius:4 }}>
                     <div>
@@ -197,7 +227,7 @@ export function QueimadasTab({ ctx }) {
                       <div style={{ fontSize:9, color:t.textMuted }}>{apa.municipio || apa.municipios || apa.categoria}</div>
                     </div>
                     <div style={{ fontSize:9, color:t.textFaint }}>
-                      {nearest ? `${nearest.distanceKm.toFixed(1)} km` : apa.area_ha ? `${Math.round(apa.area_ha).toLocaleString("pt-BR")} ha` : "CNUC"}
+                      {Number.isFinite(nearestDistance) ? `${nearestDistance.toFixed(1)} km` : apa.area_ha ? `${Math.round(apa.area_ha).toLocaleString("pt-BR")} ha` : "CNUC"}
                     </div>
                     <div style={{ fontSize:8, padding:"2px 7px", border:`1px solid ${hasNearbyFire ? "#f97316" : "rgba(100,116,139,0.4)"}`, color:hasNearbyFire ? "#f97316" : "#94a3b8", borderRadius:3 }}>
                       {hasNearbyFire ? "Com foco" : "Sem foco"}

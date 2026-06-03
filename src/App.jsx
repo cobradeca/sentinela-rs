@@ -6,6 +6,7 @@ import { appendLagoaHistorySnapshot, loadLagoaHistory } from "./services/lagoaHi
 import {
   fetchAnaLevel,
   fetchCemadenAccumulations,
+  fetchCensipamFireEventsRs,
   fetchCopernicusEms,
   fetchCopernicusNdvi,
   fetchCopernicusSentinel1,
@@ -364,6 +365,7 @@ export default function SentinelaRS() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [alerts, setAlerts] = useState([]);
   const [queimadas, setQueimadas] = useState(null);
+  const [censipamFireEvents, setCensipamFireEvents] = useState(null);
   const [icmbioUcs, setIcmbioUcs] = useState(null);
   const [effisHealth, setEffisHealth] = useState(null);
   const [qLoading, setQLoading] = useState(false);
@@ -622,11 +624,13 @@ export default function SentinelaRS() {
   const loadQueimadas = useCallback(async () => {
     setQLoading(true);
     const startedAt = Date.now();
-    const [data, ucs, effis] = await Promise.all([fetchQueimadas(), fetchIcmbioUcsRs(), fetchEffisWmsHealth()]);
+    const [data, events, ucs, effis] = await Promise.all([fetchQueimadas(), fetchCensipamFireEventsRs(), fetchIcmbioUcsRs(), fetchEffisWmsHealth()]);
     markSourceHealth("INPE BDQueimadas", Boolean(data?.ok), startedAt, data?.ok ? null : data?.error || "sem resposta operacional");
+    markSourceHealth("CENSIPAM Painel do Fogo", Boolean(events?.ok), startedAt, events?.ok ? null : events?.error || "sem eventos validados");
     markSourceHealth("ICMBio/MMA CNUC", Boolean(ucs?.ok), startedAt, ucs?.ok ? null : ucs?.error || "sem cadastro validado");
     markSourceHealth("Copernicus EFFIS", Boolean(effis?.ok), startedAt, effis?.ok ? null : effis?.error || "WMS EFFIS sem resposta validada");
     setQueimadas(data);
+    setCensipamFireEvents(events);
     setIcmbioUcs(ucs);
     setEffisHealth(effis);
     setQLoading(false);
@@ -928,13 +932,13 @@ export default function SentinelaRS() {
 
   const tabCtx = useMemo(() => ({
     APAS_RS, CEMADEN_ATTRIBUTION, COPERNICUS_REFERENCE, FIRE_MONITORED_AREAS_RS, FreshnessBadge, HistorySparkline, RISK_LEVELS, STATIONS, STATIONS_CIDADES, STATIONS_LAGOA,
-    activeENSO, alerts, copernicusEms, copernicusNdvi, copernicusS1, copernicusWater, cptecProducts, dark, dataStaleness, dayNames, effisHealth,
+    activeENSO, alerts, censipamFireEvents, copernicusEms, copernicusNdvi, copernicusS1, copernicusWater, cptecProducts, dark, dataStaleness, dayNames, effisHealth,
     ensoClass, ensoDominantProb, ensoFirstForecast, ensoObservedAvailable, ensoObservedText, ensoProbabilityAvailable, ensoProbabilityText, expanded, explainCityRisk, explainDailyRisk, explainLagoaRisk,
     formatCemadenRain, formatDateTimeBR, formatProbability, formatSignedCelsius, getFallbackWarningText, getLagoaMaxMay2024, getLagoaMeasuredAt, getLagoaPointData, getLagoaSourceText,
     getResponsibleAgencyText, getRiskBg, getRiskColor, getRiskLevel, getValidatedSourceHealth, lagoaHistory, lagoaHistoryMeta, lagoaStatusColor, lagoaStatusLabel, lagoaSummary, lastUpdate,
     ensoNoticias, ensoNoticiasLoading, icmbioUcs, loadAllData, loadEnsoNoticias, loadQueimadas, percentValue, qLoading, queimadas, s, safeEnsoForecast, selData, selStation, setActiveTab, setExpanded, setExpandedCard, setRiskExplain, setSelStation, sourceHealth, stationData, t, wmoDesc, wmoEmoji,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [stationData, alerts, dark, activeTab, selStation, selData, loading, lastUpdate, sourceHealth, lagoaHistory, lagoaHistoryMeta, expanded, expandedCard, riskExplain, queimadas, qLoading, copernicusWater, copernicusS1, copernicusNdvi, copernicusEms, cptecProducts, effisHealth, icmbioUcs, activeENSO, ensoNoticias, ensoNoticiasLoading]);
+  }), [stationData, alerts, dark, activeTab, selStation, selData, loading, lastUpdate, sourceHealth, lagoaHistory, lagoaHistoryMeta, expanded, expandedCard, riskExplain, queimadas, censipamFireEvents, qLoading, copernicusWater, copernicusS1, copernicusNdvi, copernicusEms, cptecProducts, effisHealth, icmbioUcs, activeENSO, ensoNoticias, ensoNoticiasLoading]);
 
   const renderNavButton = (tab, compact = false) => (
     <button
