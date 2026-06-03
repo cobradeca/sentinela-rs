@@ -6,6 +6,7 @@
   "start_url": "/sentinela-rs/",
   "scope": "/sentinela-rs/",
   "display": "standalone",
+  "display_override": ["standalone"],
   "background_color": "#070b12",
   "theme_color": "#070b12",
   "orientation": "portrait",
@@ -15,6 +16,7 @@
   "related_applications": [
     {
       "platform": "play",
+      "id": "io.cobradeca.sentinela_rs",
       "url": "https://play.google.com/store/apps/details?id=io.cobradeca.sentinela_rs"
     }
   ],

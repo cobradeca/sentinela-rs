@@ -304,9 +304,12 @@ Fontes e camadas:
 
 Como ler:
 
-- Normal: o endpoint nao informou foco validado naquela regiao.
-- Alerta: o endpoint informou foco validado naquela regiao.
+- Sem foco proximo: nenhum foco INPE foi encontrado dentro do raio tecnico informado.
+- Foco proximo: existe foco INPE georreferenciado dentro do raio tecnico informado.
+- Sem geocerca: nao ha referencia espacial suficiente para classificar a UC.
 - EFFIS pode aparecer como complemento, mas nao deve virar alerta no RS sem cruzamento espacial validado.
+
+O destaque de proximidade e um calculo do app sobre coordenadas reais. Ele nao confirma que o foco esta dentro da unidade de conservacao quando nao houver poligono oficial disponivel.
 
 Traducoes dos termos:
 
