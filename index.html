@@ -21,13 +21,17 @@
   <body>
     <div id="root"></div>
 
+    
     <script>
       if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => {
-          navigator.serviceWorker.register("/sentinela-rs/sw.js", {
-            scope: "/sentinela-rs/"
-          });
-        });
+        navigator.serviceWorker
+          .register("/sentinela-rs/sw.js")
+          .then(() => {
+            if ("Notification" in window && Notification.permission === "default") {
+              Notification.requestPermission();
+            }
+          })
+          .catch((err) => console.log("SW registration failed: ", err));
       }
     </script>
   </body>
