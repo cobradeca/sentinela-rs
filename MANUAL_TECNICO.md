@@ -306,9 +306,8 @@ Usa:
 
 Status de UC deve ser:
 
-- Sem foco proximo: nenhum foco INPE com coordenada valida esta dentro do raio tecnico do ponto de referencia;
-- Foco proximo: ao menos um foco INPE esta dentro do raio tecnico configurado;
-- Sem geocerca: a UC oficial nao possui referencia espacial local compativel e nao pode ser classificada.
+- Com foco: ao menos um foco INPE com coordenada valida esta dentro do raio tecnico do ponto de referencia;
+- Sem foco: nao ha informacao valida de foco INPE dentro do raio tecnico configurado.
 
 O cruzamento usa distancia geodesica entre coordenadas reais dos focos e pontos de referencia cadastrados. Ele e um indicador derivado de proximidade, nao confirma incendio dentro da UC sem poligono oficial. Nome de municipio nao pode gerar destaque ou alerta.
 

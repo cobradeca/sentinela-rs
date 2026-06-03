@@ -101,7 +101,7 @@ export function QueimadasTab({ ctx }) {
                         <div style={{ fontSize:13, fontWeight:900, color:t.text }}>{area.name}</div>
                       </div>
                       <div style={{ fontSize:8, color:hasNearbyFire ? "#f97316" : "#94a3b8", border:`1px solid ${hasNearbyFire ? "#f97316" : "rgba(100,116,139,0.4)"}`, borderRadius:3, padding:"2px 6px" }}>
-                        {hasNearbyFire ? `${nearbyFoci.length} foco(s) próximo(s)` : "sem foco próximo"}
+                        {hasNearbyFire ? "Com foco" : "Sem foco"}
                       </div>
                     </div>
                     <div style={{ fontSize:9, color:t.textMuted, lineHeight:1.45, marginTop:6 }}>{area.focus}</div>
@@ -200,7 +200,7 @@ export function QueimadasTab({ ctx }) {
                       {nearest ? `${nearest.distanceKm.toFixed(1)} km` : apa.area_ha ? `${Math.round(apa.area_ha).toLocaleString("pt-BR")} ha` : "CNUC"}
                     </div>
                     <div style={{ fontSize:8, padding:"2px 7px", border:`1px solid ${hasNearbyFire ? "#f97316" : "rgba(100,116,139,0.4)"}`, color:hasNearbyFire ? "#f97316" : "#94a3b8", borderRadius:3 }}>
-                      {hasNearbyFire ? "Foco próximo" : spatialReference ? "Sem foco próximo" : "Em acompanhamento"}
+                      {hasNearbyFire ? "Com foco" : "Sem foco"}
                     </div>
                   </div>
                   );
