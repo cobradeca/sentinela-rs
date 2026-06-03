@@ -69,8 +69,13 @@ export function QueimadasTab({ ctx }) {
     wmoEmoji
   } = ctx;
   const fireRecords = Array.isArray(queimadas) ? queimadas : (queimadas?.records || []);
-  const fireEvents = censipamFireEvents?.records || [];
   const activeFireEvents = censipamFireEvents?.active_records_48h || [];
+  const censipamAffectedAreas = FIRE_MONITORED_AREAS_RS
+    .map((area) => {
+      const nearbyEvents = findNearbyFireEvents(area, activeFireEvents);
+      return nearbyEvents.length > 0 ? { area, nearestEvent: nearbyEvents[0] } : null;
+    })
+    .filter(Boolean);
 
   return (
 
@@ -120,22 +125,28 @@ export function QueimadasTab({ ctx }) {
             </div>
 
             <div style={{ ...s.card }}>
-              <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:12 }}>EVENTOS DE FOGO CENSIPAM — RS (MÊS ATUAL)</div>
+              <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:12 }}>ÁREAS COM EVENTO DE FOGO CENSIPAM — ÚLTIMAS 48H</div>
               {censipamFireEvents?.ok ? (
                 <div>
-                  <div style={{ fontSize:22, fontWeight:700, color:"#f97316", marginBottom:4 }}>{censipamFireEvents.count ?? fireEvents.length} eventos</div>
                   <div style={{ fontSize:10, color:t.textMuted }}>
-                    Eventos consolidados pelo Painel do Fogo
-                    {censipamFireEvents.latest ? ` · última atualização: ${formatDateTimeBR(censipamFireEvents.latest)}` : ""}
+                    Regiões monitoradas com evento consolidado pelo Painel do Fogo e detecção recente.
+                    {censipamFireEvents.latest ? ` · última detecção no RS: ${formatDateTimeBR(censipamFireEvents.latest)}` : ""}
                   </div>
-                  {fireEvents.length > 0 && (
+                  {censipamAffectedAreas.length > 0 ? (
                     <div style={{ marginTop:10, display:"grid", gap:5 }}>
-                      {fireEvents.slice(0,10).map((event) => (
-                        <div key={event.properties?.id_evento || event.id} style={{ display:"flex", justifyContent:"space-between", gap:10, padding:"5px 8px", background: dark?"rgba(0,0,0,0.3)":t.bg, borderRadius:3, fontSize:9, color:t.textMuted }}>
-                          <span>Evento {event.properties?.id_evento} · {event.properties?.qtd_deteccoes ?? "–"} detecções</span>
-                          <span>{typeof event.properties?.area_km2 === "number" ? `${event.properties.area_km2.toFixed(2)} km²` : "área não informada"}</span>
+                      {censipamAffectedAreas.map(({ area, nearestEvent }) => {
+                        const event = nearestEvent.event;
+                        return (
+                        <div key={area.id} style={{ display:"flex", justifyContent:"space-between", gap:10, padding:"7px 9px", background: dark?"rgba(249,115,22,0.08)":"rgba(249,115,22,0.05)", border:"1px solid rgba(249,115,22,0.25)", borderRadius:3, fontSize:9, color:t.textMuted }}>
+                          <span><strong style={{ color:t.text }}>{area.name}</strong> · última detecção: {formatDateTimeBR(event.properties?.dt_maxima)}</span>
+                          <span style={{ color:"#f97316", fontWeight:700 }}>Com foco</span>
                         </div>
-                      ))}
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div style={{ marginTop:10, padding:"8px 10px", background: dark?"rgba(34,197,94,0.07)":"rgba(34,197,94,0.06)", border:"1px solid rgba(34,197,94,0.22)", borderRadius:4, fontSize:9, color:t.textMuted }}>
+                      Nenhuma das áreas monitoradas está com Evento de Fogo CENSIPAM recente.
                     </div>
                   )}
                 </div>

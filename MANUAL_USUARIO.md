@@ -309,6 +309,8 @@ Como ler:
 - Sem foco: nao ha informacao valida de foco recente na area monitorada.
 - EFFIS pode aparecer como complemento, mas nao deve virar alerta no RS sem cruzamento espacial validado.
 
+A secao CENSIPAM exibe apenas as regioes monitoradas alcancadas por eventos com deteccao nas ultimas 48 horas. A ultima deteccao informa quando o evento foi observado pela fonte; nao confirma atividade em tempo real.
+
 O destaque de proximidade e um calculo do app sobre coordenadas reais. Ele nao confirma que o foco esta dentro da unidade de conservacao quando nao houver poligono oficial disponivel.
 
 Traducoes dos termos:
