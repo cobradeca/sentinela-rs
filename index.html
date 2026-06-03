@@ -26,11 +26,6 @@
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker
           .register("/sentinela-rs/sw.js")
-          .then(() => {
-            if ("Notification" in window && Notification.permission === "default") {
-              Notification.requestPermission();
-            }
-          })
           .catch((err) => console.log("SW registration failed: ", err));
       }
     </script>

@@ -24,20 +24,6 @@
     "weather",
     "news"
   ],
-  "shortcuts": [
-    {
-      "name": "Dashboard",
-      "short_name": "Dashboard",
-      "description": "Abrir dashboard principal",
-      "url": "/sentinela-rs/?tab=dashboard",
-      "icons": [
-        {
-          "src": "/sentinela-rs/icons/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
-    }
-  ],
   "screenshots": [
     {
       "src": "/sentinela-rs/screenshots/mobile-dashboard.png",
@@ -60,56 +46,6 @@
       "origin": "https://cobradeca.github.io"
     }
   ],
-  "background_sync": {
-    "sync_events": [
-      "sync-alertas",
-      "sync-dados"
-    ]
-  },
-  "share_target": {
-    "action": "/sentinela-rs/share",
-    "method": "POST",
-    "enctype": "application/json",
-    "params": {
-      "title": "titulo",
-      "text": "descricao",
-      "url": "url"
-    }
-  },
-  "periodic_background_sync": {
-    "min_interval": 3600000,
-    "tag": "update-alertas"
-  },
-  "protocol_handlers": [
-    {
-      "protocol": "mailto",
-      "url": "/sentinela-rs/?mailto=%s"
-    }
-  ],
-  "widgets": [
-    {
-      "name": "Alertas Sentinela",
-      "short_name": "Alertas",
-      "description": "Widget de alertas em tempo real",
-      "tag": "widget-alertas",
-      "screenshot": {
-        "src": "/sentinela-rs/icons/icon-192.png",
-        "sizes": "192x192"
-      },
-      "data": {
-        "refresh_interval": 600000
-      }
-    }
-  ],
-  "window_controls_overlay": {
-    "title_bar_color": "#070b12",
-    "icon_color": "#ffffff"
-  },
-  "push_notifications": {
-    "icon": "/sentinela-rs/icons/icon-192.png",
-    "badge": "/sentinela-rs/icons/icon-192.png",
-    "tag": "sentinela-alert"
-  },
   "icons": [
     {
       "src": "/sentinela-rs/icons/icon-192.png",
