@@ -1,5 +1,18 @@
 import { DefesaCivilNotice } from "../components/DefesaCivilNotice";
+import monitoredAreasGeojsonRaw from "../data/fire-monitored-areas.geojson?raw";
 import { findNearbyFireEvents, findNearbyFireFoci } from "../utils/fireSpatial";
+
+const MONITORED_AREA_GEOMETRIES = (() => {
+  try {
+    const geojson = JSON.parse(monitoredAreasGeojsonRaw);
+    return Object.fromEntries((geojson.features || []).map((feature) => [
+      feature.properties?.id,
+      feature,
+    ]).filter(([id]) => Boolean(id)));
+  } catch {
+    return {};
+  }
+})();
 
 function latestDetection(nearbyFoci, nearbyEvents) {
   const values = [
@@ -11,6 +24,22 @@ function latestDetection(nearbyFoci, nearbyEvents) {
     .filter(Number.isFinite);
 
   return values.length > 0 ? new Date(Math.max(...values)).toISOString() : null;
+}
+
+function monitoredAreaWithGeometry(area) {
+  const feature = MONITORED_AREA_GEOMETRIES[area.id];
+  if (!feature?.geometry) return area;
+  return {
+    ...area,
+    bufferKm: feature.properties?.bufferKm ?? area.proximityRadiusKm,
+    geometry: feature.geometry,
+  };
+}
+
+function distanceLabel(distanceKm) {
+  if (!Number.isFinite(distanceKm)) return "";
+  if (distanceKm < 0.1) return "dentro da área monitorada";
+  return `${distanceKm.toFixed(1)} km da área monitorada`;
 }
 
 export function QueimadasTab({ ctx }) {
@@ -30,7 +59,8 @@ export function QueimadasTab({ ctx }) {
   const activeFireEvents = censipamFireEvents?.active_records_48h || [];
   const sourceAvailable = Boolean(queimadas?.ok || censipamFireEvents?.ok);
   const sourcesReady = Boolean(queimadas?.ok && censipamFireEvents?.ok);
-  const monitoredAreas = FIRE_MONITORED_AREAS_RS.map((area) => {
+  const monitoredAreas = FIRE_MONITORED_AREAS_RS.map((baseArea) => {
+    const area = monitoredAreaWithGeometry(baseArea);
     const nearbyFoci = findNearbyFireFoci(area, fireRecords);
     const nearbyEvents = findNearbyFireEvents(area, activeFireEvents);
     const nearestDistance = Math.min(nearbyFoci[0]?.distanceKm ?? Infinity, nearbyEvents[0]?.distanceKm ?? Infinity);
@@ -53,16 +83,16 @@ export function QueimadasTab({ ctx }) {
       <DefesaCivilNotice t={t} dark={dark} />
 
       <div style={{ padding:"10px 14px", background: dark?"rgba(249,115,22,0.08)":"rgba(249,115,22,0.05)", border:"1px solid rgba(249,115,22,0.3)", borderRadius:5, fontSize:10, color: dark?"#fdba74":"#c2410c", display:"flex", justifyContent:"space-between", alignItems:"center", gap:12, flexWrap:"wrap" }}>
-        <span>🔥 Monitoramento das principais áreas de preservação ambiental no trajeto pelas rodovias <strong>BR-116</strong> e <strong>BR-471</strong>.</span>
+        <span>Monitoramento das principais áreas de preservação ambiental no trajeto pelas rodovias <strong>BR-116</strong> e <strong>BR-471</strong>.</span>
         <button onClick={loadQueimadas} disabled={qLoading} style={{ background:"none", border:"1px solid rgba(249,115,22,0.5)", color:"#fdba74", padding:"5px 12px", borderRadius:4, cursor:"pointer", fontFamily:"inherit", fontSize:9, letterSpacing:1 }}>
-          {qLoading ? "⏳ Consultando..." : "↻ Atualizar"}
+          {qLoading ? "Consultando..." : "Atualizar"}
         </button>
       </div>
 
       <div style={{ ...s.card }}>
         <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:4 }}>ÁREAS DE PRESERVAÇÃO MONITORADAS — BR-116 E BR-471</div>
         <div style={{ fontSize:9, color:t.textMuted, marginBottom:12, lineHeight:1.5 }}>
-          O status considera focos georreferenciados do INPE e Eventos de Fogo recentes do CENSIPAM próximos a cada área.
+          O status considera focos georreferenciados do INPE e Eventos de Fogo recentes do CENSIPAM nas áreas monitoradas ou próximos a elas.
         </div>
 
         {!sourceAvailable && !qLoading && (
@@ -88,7 +118,7 @@ export function QueimadasTab({ ctx }) {
 
               <div style={{ fontSize:8, color:t.textFaint, marginTop:7 }}>
                 {hasFire
-                  ? `${sources.join(" + ")} · última detecção: ${formatDateTimeBR(latest)}${Number.isFinite(nearestDistance) ? ` · ${nearestDistance.toFixed(1)} km` : ""}`
+                  ? `${sources.join(" + ")} · última detecção: ${formatDateTimeBR(latest)}${distanceLabel(nearestDistance) ? ` · ${distanceLabel(nearestDistance)}` : ""}`
                   : sourcesReady ? "Nenhum foco recente identificado na área monitorada." : "Não foi possível confirmar a situação desta área nesta sessão."}
               </div>
             </div>

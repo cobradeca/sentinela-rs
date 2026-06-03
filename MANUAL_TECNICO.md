@@ -302,13 +302,15 @@ Usa:
 
 - INPE BDQueimadas para focos reais;
 - CENSIPAM Painel do Fogo para Eventos de Fogo consolidados em GeoJSON;
+- `src/data/fire-monitored-areas.geojson` para os poligonos oficiais das areas monitoradas, extraidos do CNUC/MMA 2026_03 atualizado.
 
 Status de UC deve ser:
 
-- Com foco: ao menos um foco INPE ou Evento de Fogo CENSIPAM recente esta dentro do raio tecnico do ponto de referencia;
-- Sem foco: nao ha informacao valida de foco recente dentro do raio tecnico configurado.
+- Com foco: ao menos um foco INPE ou Evento de Fogo CENSIPAM recente cruza o poligono da area monitorada ou fica dentro do buffer operacional configurado;
+- Sem foco: as fontes responderam e nao ha informacao valida de foco recente no poligono ou buffer da area monitorada;
+- Sem leitura: alguma fonte necessaria nao respondeu e o app nao deve afirmar ausencia de foco.
 
-O cruzamento usa distancia geodesica entre coordenadas reais dos focos INPE, poligonos de Eventos de Fogo CENSIPAM e pontos de referencia cadastrados. Eventos CENSIPAM do mes atual so sustentam o status quando a ultima deteccao ocorreu nas ultimas 48 horas. Nome de municipio nao pode gerar destaque ou alerta.
+O cruzamento usa coordenadas reais dos focos INPE, poligonos de Eventos de Fogo CENSIPAM e poligonos oficiais das areas monitoradas. Eventos CENSIPAM do mes atual so sustentam o status quando a ultima deteccao ocorreu nas ultimas 48 horas. Nome de municipio nao pode gerar destaque ou alerta.
 
 A interface apresenta somente as areas de preservacao monitoradas ao longo do trajeto BR-116 e BR-471. Nao deve exibir total estadual de focos, lista estadual de municipios ou IDs de eventos isolados, pois esses dados nao representam necessariamente o trajeto.
 

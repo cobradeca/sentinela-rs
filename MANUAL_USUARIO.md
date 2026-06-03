@@ -303,12 +303,13 @@ Fontes e camadas:
 
 Como ler:
 
-- Com foco: existe foco INPE georreferenciado ou Evento de Fogo CENSIPAM recente na area monitorada.
-- Sem foco: nao ha informacao valida de foco recente na area monitorada.
+- Com foco: existe foco INPE georreferenciado ou Evento de Fogo CENSIPAM recente na area monitorada ou proximo dela.
+- Sem foco: as fontes responderam e nao ha informacao valida de foco recente na area monitorada.
+- Sem leitura: alguma fonte nao respondeu, entao o app nao confirma a situacao daquela area.
 
 O total estadual de focos nao e exibido nesta aba, porque nao representa necessariamente o trajeto monitorado. Quando houver foco, o card informa a fonte e o horario da ultima deteccao.
 
-O destaque de proximidade e um calculo do app sobre coordenadas reais. Ele nao confirma que o foco esta dentro da unidade de conservacao quando nao houver poligono oficial disponivel.
+O destaque e calculado sobre coordenadas reais das fontes de queimadas e os limites cadastrados das areas monitoradas.
 
 ## 14. Alertas
 
