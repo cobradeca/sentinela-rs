@@ -15,7 +15,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
     <title>Sentinela·RS</title>
-    <script type="module" crossorigin src="/sentinela-rs/assets/index-D6QMKNnD.js"></script>
+    <script type="module" crossorigin src="/sentinela-rs/assets/index-B04SJjtq.js"></script>
     <link rel="stylesheet" crossorigin href="/sentinela-rs/assets/index-Cmx2kg8Y.css">
   </head>
   <body>
@@ -25,7 +25,7 @@
     <script>
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker
-          .register("/sentinela-rs/sw.js")
+          .register("/sentinela-rs/sw.js", { scope: "/sentinela-rs/" })
           .catch((err) => console.log("SW registration failed: ", err));
       }
     </script>
