@@ -35,11 +35,9 @@ export const APAS_RS = [
 ];
 
 export const FIRE_MONITORED_AREAS_RS = [
-  { id:"delta_jacui", name:"Porto Alegre / Delta do Jacu\u00ed", lat:-30.03, lon:-51.23, proximityRadiusKm:10, focus:"interface urbana, banhados e fuma\u00e7a sobre a capital" },
-  { id:"itapua_viamao", name:"Viam\u00e3o / Itapu\u00e3", lat:-30.36, lon:-51.03, proximityRadiusKm:10, focus:"parques, campos, margem norte da Lagoa" },
-  { id:"lagoa_peixe", name:"Mostardas / Lagoa do Peixe", lat:-31.25, lon:-51.05, proximityRadiusKm:10, focus:"unidade de conserva\u00e7\u00e3o, restinga e banhados" },
-  { id:"sao_lourenco", name:"S\u00e3o Louren\u00e7o do Sul", lat:-31.36, lon:-51.98, proximityRadiusKm:10, focus:"margem oeste da Lagoa e \u00e1reas rurais" },
-  { id:"pelotas_laranjal", name:"Pelotas / Laranjal", lat:-31.77, lon:-52.34, proximityRadiusKm:10, focus:"orla, banhados e transi\u00e7\u00e3o urbano-rural" },
-  { id:"rio_grande_taim", name:"Rio Grande / Taim", lat:-32.55, lon:-52.60, proximityRadiusKm:10, focus:"ESEC Taim, campos, banhados e fuma\u00e7a costeira" },
-  { id:"santa_vitoria_chui", name:"Santa Vit\u00f3ria do Palmar / Chu\u00ed", lat:-33.52, lon:-53.37, proximityRadiusKm:10, focus:"extremo sul, campos e fronteira" },
+  { id:"apa_delta_jacui", region:"Regi\u00e3o Metropolitana de Porto Alegre", name:"APA Estadual Delta do Jacu\u00ed", lat:-30.03, lon:-51.23, proximityRadiusKm:10, focus:"ilhas, banhados, restingas e ecossistemas aqu\u00e1ticos no encontro dos rios que formam o Gua\u00edba" },
+  { id:"rebio_lami", region:"Regi\u00e3o Metropolitana de Porto Alegre", name:"Reserva Biol\u00f3gica do Lami Jos\u00e9 Lutzenberger", lat:-30.246898, lon:-51.109661, proximityRadiusKm:10, focus:"banhados, matas de restinga e fauna protegida no extremo sul de Porto Alegre" },
+  { id:"apa_lagoa_verde", region:"Regi\u00e3o da Costa Doce e Pelotas", name:"APA da Lagoa Verde", lat:-32.16, lon:-52.18, proximityRadiusKm:10, focus:"lagoa, arroios, banhados, campos litor\u00e2neos e matas de restinga em Rio Grande" },
+  { id:"esec_taim", region:"Regi\u00e3o do Extremo Sul", name:"Esta\u00e7\u00e3o Ecol\u00f3gica do Taim", lat:-32.538892, lon:-52.538846, proximityRadiusKm:10, focus:"banhados, lagoas, dunas e campos atravessados pela BR-471" },
+  { id:"albardao", region:"Regi\u00e3o do Extremo Sul", name:"Parque Nacional Marinho e APA do Albard\u00e3o", lat:-33.256238, lon:-52.827932, proximityRadiusKm:10, focus:"ecossistemas costeiros e marinhos protegidos em Santa Vit\u00f3ria do Palmar" },
 ];

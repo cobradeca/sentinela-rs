@@ -294,33 +294,21 @@ Se aparecer "Aguardando", significa que o produto ainda nao carregou naquela ses
 
 ## 13. Queimadas / APAs
 
-Esta aba acompanha focos de fogo e areas monitoradas.
+Esta aba acompanha focos de fogo nas principais areas de preservacao ambiental do trajeto pelas rodovias BR-116 e BR-471.
 
 Fontes e camadas:
 
 - INPE BDQueimadas: focos reais detectados por satelite;
 - CENSIPAM Painel do Fogo: eventos consolidados com poligono, quantidade de deteccoes e area de influencia;
-- ICMBio: unidades de conservacao;
-- EFFIS/GWIS: camada complementar de perigo, focos ou area queimada.
 
 Como ler:
 
 - Com foco: existe foco INPE georreferenciado ou Evento de Fogo CENSIPAM recente na area monitorada.
 - Sem foco: nao ha informacao valida de foco recente na area monitorada.
-- EFFIS pode aparecer como complemento, mas nao deve virar alerta no RS sem cruzamento espacial validado.
 
-A secao CENSIPAM exibe apenas as regioes monitoradas alcancadas por eventos com deteccao nas ultimas 48 horas. A ultima deteccao informa quando o evento foi observado pela fonte; nao confirma atividade em tempo real.
+O total estadual de focos nao e exibido nesta aba, porque nao representa necessariamente o trajeto monitorado. Quando houver foco, o card informa a fonte e o horario da ultima deteccao.
 
 O destaque de proximidade e um calculo do app sobre coordenadas reais. Ele nao confirma que o foco esta dentro da unidade de conservacao quando nao houver poligono oficial disponivel.
-
-Traducoes dos termos:
-
-```text
-Fire Danger Forecast: previsao de perigo meteorologico de fogo.
-Active Fires: focos ativos detectados por satelite.
-Burnt Areas: area queimada.
-Data request: solicitacao de dados.
-```
 
 ## 14. Alertas
 

@@ -302,8 +302,6 @@ Usa:
 
 - INPE BDQueimadas para focos reais;
 - CENSIPAM Painel do Fogo para Eventos de Fogo consolidados em GeoJSON;
-- ICMBio para UCs/APAs;
-- EFFIS WMS como camada complementar.
 
 Status de UC deve ser:
 
@@ -312,9 +310,7 @@ Status de UC deve ser:
 
 O cruzamento usa distancia geodesica entre coordenadas reais dos focos INPE, poligonos de Eventos de Fogo CENSIPAM e pontos de referencia cadastrados. Eventos CENSIPAM do mes atual so sustentam o status quando a ultima deteccao ocorreu nas ultimas 48 horas. Nome de municipio nao pode gerar destaque ou alerta.
 
-A interface nao lista IDs de eventos CENSIPAM isolados. Ela apresenta somente as areas monitoradas alcancadas pelos eventos recentes, com nome da regiao e horario da ultima deteccao.
-
-EFFIS/GWIS/FIRMS so deve virar alerta operacional quando houver cruzamento espacial validado para RS.
+A interface apresenta somente as areas de preservacao monitoradas ao longo do trajeto BR-116 e BR-471. Nao deve exibir total estadual de focos, lista estadual de municipios ou IDs de eventos isolados, pois esses dados nao representam necessariamente o trajeto.
 
 ### Alertas
 
