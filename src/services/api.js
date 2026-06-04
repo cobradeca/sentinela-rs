@@ -289,7 +289,7 @@ export async function fetchIriEnsoProbabilities() {
 }
 
 export async function fetchWeather14Days(lat, lon) {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max,weathercode&timezone=America%2FSao_Paulo&forecast_days=14`;
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,precipitation,wind_speed_10m,weather_code&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max,weathercode&timezone=America%2FSao_Paulo&forecast_days=14`;
   const res = await fetch(url, { signal: AbortSignal.timeout(12000) });
   if (!res.ok) throw new Error("Open-Meteo indisponível");
   return res.json();
@@ -515,18 +515,26 @@ export async function fetchEffisWmsHealth() {
 export async function fetchCemadenAccumulations() {
   try {
     const res = await fetch(CEMADEN_RS_FUNCTION_URL, { signal: AbortSignal.timeout(15000) });
-    if (!res.ok) return {};
+    if (!res.ok) return { __unavailable: true, __error: `CEMADEN HTTP ${res.status}` };
 
     const data = await res.json();
-    if (!data?.ok || !Array.isArray(data.cities)) return {};
+    if (!data?.ok || !Array.isArray(data.cities)) {
+      return { __unavailable: true, __error: data?.error || "CEMADEN sem retorno validado" };
+    }
+
+    const validCities = data.cities.filter((city) => city?.ok && city?.city_id);
+    if (validCities.length === 0 && data.cities.some((city) => city?.error)) {
+      return {
+        __unavailable: true,
+        __error: data.cities.find((city) => city?.error)?.error || "CEMADEN indisponível",
+      };
+    }
 
     return Object.fromEntries(
-      data.cities
-        .filter((city) => city?.ok && city?.city_id)
-        .map((city) => [city.city_id, city])
+      validCities.map((city) => [city.city_id, city])
     );
-  } catch {
-    return {};
+  } catch (err) {
+    return { __unavailable: true, __error: err?.message || "timeout" };
   }
 }
 

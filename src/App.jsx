@@ -255,6 +255,7 @@ function explainCityRisk(station, d, ensoText = "") {
   }
 
   if (d.cemaden) lines.push(`CEMADEN: ${formatCemadenRain(d.cemaden)}.`);
+  else if (d.cemadenUnavailable) lines.push("CEMADEN: fonte indisponível nesta consulta. Acompanhe o status em Fontes de Dados.");
   else lines.push("CEMADEN: sem estação ativa ou sem acumulado validado para esta cidade no período. Ausência de dado não significa ausência de chuva.");
 
   const riskLabel = RISK_LEVELS[d.risk]?.label || d.risk || "Indefinido";
@@ -583,6 +584,15 @@ export default function SentinelaRS() {
       tracked("HidroSens", fetchHidroSensLaranjalLevel),
     ]);
     const cemadenMap = cemadenResult.status === "fulfilled" ? (cemadenResult.value || {}) : {};
+    const cemadenUnavailable = Boolean(cemadenMap.__unavailable);
+    if (cemadenUnavailable) {
+      health["CEMADEN"] = {
+        ok: false,
+        lastOk: health["CEMADEN"]?.lastOk || null,
+        latencyMs: health["CEMADEN"]?.latencyMs || null,
+        error: cemadenMap.__error || "CEMADEN indisponível",
+      };
+    }
     const lagoaRadarMap = lagoaRadarResult.status === "fulfilled" ? (lagoaRadarResult.value || {}) : {};
     const hidrosensLaranjal = hidrosensResult.status === "fulfilled" ? hidrosensResult.value : null;
 
@@ -618,6 +628,9 @@ export default function SentinelaRS() {
         const precip = weather.daily?.precipitation_sum?.reduce((a, b) => a + b, 0) || 0;
         const tempMin = Math.min(...(weather.daily?.temperature_2m_min || [20]));
         const tempCurrent = typeof weather.current?.temperature_2m === "number" ? weather.current.temperature_2m : null;
+        const precipCurrent = typeof weather.current?.precipitation === "number" ? weather.current.precipitation : null;
+        const windCurrent = typeof weather.current?.wind_speed_10m === "number" ? weather.current.wind_speed_10m : null;
+        const weatherCurrentCode = typeof weather.current?.weather_code === "number" ? weather.current.weather_code : null;
         const windMax = Math.max(...(weather.daily?.windspeed_10m_max || [0]));
 
         // Nível real disponível: prioriza RADAR da Lagoa quando houver sensor validado.
@@ -651,7 +664,7 @@ export default function SentinelaRS() {
         const levelRisk = ((lagoa?.radar || lagoa?.hidrosens) && lagoa?.threshold_m && !lagoa?.isFallback && lagoa?.operational !== false) ? radarRiskToLevel(lagoa.levelStatus) : "NORMAL";
         const order = ["NORMAL", "ATENCAO", "ALERTA", "EMERGENCIA", "CRITICO"];
         const risk = order.indexOf(levelRisk) > order.indexOf(baseRisk) ? levelRisk : baseRisk;
-        results[st.id] = { weather, inmet, cemaden, lagoa, precip, tempMin, tempCurrent, windMax, risk, realLevel, radarLevel };
+        results[st.id] = { weather, inmet, cemaden, cemadenUnavailable, lagoa, precip, tempMin, tempCurrent, precipCurrent, windCurrent, weatherCurrentCode, windMax, risk, realLevel, radarLevel };
       } catch { results[st.id] = { error: true, risk: "NORMAL" }; }
     });
     const defesaStart = Date.now();
@@ -965,9 +978,9 @@ export default function SentinelaRS() {
           {/* Parâmetros */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 8, marginBottom: 14 }}>
             {[
-              { l: "Precip. 14d", v: `${d.precip?.toFixed(0)} mm`, alert: d.precip > 80 },
+              { l: "Chuva agora", v: typeof d.precipCurrent === "number" ? `${d.precipCurrent.toFixed(1)} mm` : "--", alert: false },
               { l: "Temp. atual", v: typeof d.tempCurrent === "number" ? `${d.tempCurrent.toFixed(1)} °C` : "--", alert: false },
-              { l: "Vento máx.", v: `${d.windMax?.toFixed(0)} km/h`, alert: d.windMax > 50 },
+              { l: "Vento atual", v: typeof d.windCurrent === "number" ? `${d.windCurrent.toFixed(0)} km/h` : "--", alert: false },
               { l: "Contexto climático", v: ensoObservedAvailable ? `${ensoClass.label} · ${formatSignedCelsius(activeENSO.nino34)}` : "ENSO indisponível", alert: false },
               ...(d.lagoa ? [
                 { l: "Nível lagoa", v: d.lagoa.isReal && d.lagoa.atual !== null ? `${d.lagoa.atual.toFixed(2)} m (${d.lagoa.source || "real"})` : "– (indisponível)", alert: false },
@@ -1131,7 +1144,7 @@ export default function SentinelaRS() {
 
             {/* Banner ENSO */}
             <div style={{ marginTop: 10, padding: "9px 14px", background: ensoBannerActive ? `${ensoBannerColor}12` : (dark ? "rgba(100,116,139,0.10)" : "rgba(100,116,139,0.08)"), border: `1px solid ${ensoBannerActive ? `${ensoBannerColor}55` : t.border}`, borderRadius: 4, fontSize: 11, color: ensoBannerActive ? ensoBannerColor : t.textMuted, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <strong>ENSO:</strong> {ensoObservedAvailable ? `${ensoClass.label} observado` : "observado indisponível"}{ensoDominantProb ? ` · ${ensoDominantProb.label} ${formatProbability(ensoDominantProb.value)}` : ""}.
+              <strong>ENSO:</strong> {ensoObservedAvailable ? `${ensoClass.label} observado` : "observado indisponível"}{ensoDominantProb ? ` · probabilidade ${ensoDominantProb.label} ${formatProbability(ensoDominantProb.value)}` : ""}.
               <button onClick={() => setActiveTab("enso")} style={{ background: "none", border: "none", color: t.accent, cursor: "pointer", fontSize: 11, padding: 0, fontFamily: "inherit" }}>Ver dados completos →</button>
             </div>
           </header>

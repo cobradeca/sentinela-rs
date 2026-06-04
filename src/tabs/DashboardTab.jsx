@@ -1,8 +1,6 @@
-import { DefesaCivilNotice } from "../components/DefesaCivilNotice";
 export function DashboardTab({ ctx }) {
   const {
     APAS_RS,
-    CEMADEN_ATTRIBUTION,
     COPERNICUS_REFERENCE,
     FIRE_MONITORED_AREAS_RS,
     HistorySparkline,
@@ -19,18 +17,12 @@ export function DashboardTab({ ctx }) {
     dark,
     dataStaleness,
     effisHealth,
-    ensoClass,
-    ensoDominantProb,
     ensoFirstForecast,
-    ensoObservedAvailable,
-    ensoProbabilityAvailable,
     ensoProbabilityText,
     explainCityRisk,
     explainDailyRisk,
     explainLagoaRisk,
-    formatCemadenRain,
     formatDateTimeBR,
-    formatProbability,
     formatSignedCelsius,
     getFallbackWarningText,
     getLagoaMaxMay2024,
@@ -57,7 +49,6 @@ export function DashboardTab({ ctx }) {
     setExpandedCard,
     setRiskExplain,
     setSelStation,
-    sourceHealth,
     stationData,
     t,
     wmoDesc,
@@ -76,7 +67,6 @@ export function DashboardTab({ ctx }) {
   return (
 
           <div>
-            <DefesaCivilNotice t={t} dark={dark} />
             <div style={{ ...s.card, marginBottom:12, border:`1px solid ${topAlertColor}55`, borderLeft:`4px solid ${topAlertColor}`, background: topOfficialAlert ? (dark ? "rgba(239,68,68,0.08)" : "rgba(239,68,68,0.05)") : (dark ? "rgba(34,197,94,0.06)" : "rgba(34,197,94,0.05)") }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12, flexWrap:"wrap" }}>
                 <div style={{ minWidth:220, flex:"1 1 300px" }}>
@@ -85,12 +75,10 @@ export function DashboardTab({ ctx }) {
                     {topOfficialAlert ? `${topAlertRisk.icon} ${topAlertRisk.label.toUpperCase()} - Defesa Civil RS` : "Sem aviso oficial ativo no RSS"}
                   </div>
                   <div style={{ fontSize:10, color:t.textMuted, lineHeight:1.55, marginTop:6 }}>
-                    {topOfficialAlert ? topOfficialAlert.message : "O risco geral do app e contexto ENSO sao indicadores calculados. Para emergencia, use os canais oficiais."}
+                    {topOfficialAlert ? topOfficialAlert.message : "Continue acompanhando os canais oficiais. Em emergência, use Defesa Civil, Bombeiros ou Brigada Militar."}
                   </div>
                   <div className="sr-source-badges" aria-label="Origem dos indicadores">
                     <span className="sr-source-badge is-official">Defesa Civil RS</span>
-                    <span className="sr-source-badge is-derived">Risco calculado</span>
-                    <span className="sr-source-badge is-context">ENSO contexto</span>
                   </div>
                 </div>
                 <div className="sr-emergency-actions">
@@ -173,18 +161,6 @@ export function DashboardTab({ ctx }) {
                       <div className="sr-section-eyebrow" style={{ fontSize:9 }}>{station.type.toUpperCase()}</div>
                       <div style={{ fontSize:14, fontWeight:700, color:t.text }}>{station.name}</div>
                       {station.rioRef && <div style={{ fontSize:8, color:t.textFaint, marginTop:1 }}>{station.rioRef}</div>}
-                      <div className="sr-source-badges" aria-label="Fontes da cidade">
-                        {d.inmet && <span className="sr-source-badge is-official">INMET</span>}
-                        <span className={`sr-source-badge ${d.cemaden ? "is-official" : ""}`}>CEMADEN</span>
-                      </div>
-                      {d.inmet && (
-                        <div className="sr-city-source-line" style={{ fontSize:8, color:t.accent, marginTop:3 }}>
-                          ● INMET: {d.inmet.resumo}
-                        </div>
-                      )}
-                      <div className="sr-city-source-line" title={CEMADEN_ATTRIBUTION} style={{ fontSize:8, color:d.cemaden ? "#22c55e" : t.textFaint, marginTop:3 }}>
-                        ● CEMADEN: {d.cemaden ? formatCemadenRain(d.cemaden) : "sem estação/acumulado validado"}
-                      </div>
                     </div>
                     <button
                       onClick={(e)=>{ e.stopPropagation(); setRiskExplain(explainCityRisk(station, d, ensoProbabilityText)); }}
@@ -198,10 +174,10 @@ export function DashboardTab({ ctx }) {
                   {d.error ? <div style={{ fontSize:10, color:"#ef4444" }}>Erro ao carregar</div> : (
                     <div className="sr-city-metrics" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:5 }}>
                       {[
-                        { l:"Precip. 14d", v:`${d.precip?.toFixed(0)}mm` },
+                        { l:"Condição", v: d.inmet?.resumo || (typeof d.weatherCurrentCode === "number" ? `${wmoEmoji(d.weatherCurrentCode)} ${wmoDesc(d.weatherCurrentCode)}` : "--") },
+                        { l:"Chuva agora", v: typeof d.precipCurrent === "number" ? `${d.precipCurrent.toFixed(1)}mm` : "--" },
                         { l:"Temp. atual",  v: typeof d.tempCurrent === "number" ? `${d.tempCurrent.toFixed(1)}°C` : "--" },
-                        { l:"Vento",       v:`${d.windMax?.toFixed(0)}km/h` },
-                        { l:"Contexto climático", v: ensoObservedAvailable ? `${ensoClass.icon} ${ensoClass.label}` : (ensoDominantProb ? `${ensoDominantProb.label} ${formatProbability(ensoDominantProb.value)}` : "ENSO indisponível"), highlight: ensoProbabilityAvailable || ensoObservedAvailable },
+                        { l:"Vento atual", v: typeof d.windCurrent === "number" ? `${d.windCurrent.toFixed(0)}km/h` : "--" },
                       ].map(item => (
                         <div className="sr-metric-tile" key={item.l} style={{ background: dark?"rgba(0,0,0,0.3)":t.bg, padding:"5px 7px", borderRadius:3 }}>
                           <div style={{ fontSize:9, fontWeight:600, color:t.textMuted }}>{item.l}</div>

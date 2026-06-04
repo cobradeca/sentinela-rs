@@ -26,25 +26,7 @@ export function AlertasTab({ ctx }) {
   const topRisk = RISK_LEVELS[topLevel] || RISK_LEVELS.NORMAL;
   const topColor = topOfficialAlert ? getRiskColor(topLevel) : "#22c55e";
 
-  const officialAlertsPanel = orderedAlerts.length === 0 ? (
-    <div
-      style={{
-        textAlign: "center",
-        padding: 42,
-        border: "1px solid rgba(34,197,94,0.3)",
-        borderRadius: 6,
-        background: "rgba(34,197,94,0.05)",
-      }}
-    >
-      <div style={{ fontSize: 30, marginBottom: 10 }}>✓</div>
-      <div style={{ fontSize: 14, color: "#22c55e", letterSpacing: 1.5 }}>
-        Sem aviso oficial ativo no RSS
-      </div>
-      <div style={{ fontSize: 12, color: t.textMuted, marginTop: 6 }}>
-        Continue acompanhando os canais oficiais da Defesa Civil RS.
-      </div>
-    </div>
-  ) : (
+  const officialAlertsPanel = orderedAlerts.length > 0 ? (
     <div style={{ display: "grid", gap: 10 }}>
       {orderedAlerts.map((alert, i) => {
         const level = alert.risk_level || "ALERTA";
@@ -85,7 +67,7 @@ export function AlertasTab({ ctx }) {
         );
       })}
     </div>
-  );
+  ) : null;
 
   return (
     <div style={{ display: "grid", gap: 12 }}>
@@ -109,8 +91,6 @@ export function AlertasTab({ ctx }) {
             </div>
             <div className="sr-source-badges" aria-label="Fontes dos avisos oficiais">
               <span className="sr-source-badge is-official">Defesa Civil RS</span>
-              <span className="sr-source-badge is-official">RSS oficial</span>
-              <span className="sr-source-badge is-derived">Canais 199/193/190</span>
             </div>
           </div>
           <div className="sr-emergency-actions">
@@ -123,28 +103,6 @@ export function AlertasTab({ ctx }) {
       </div>
 
       {officialAlertsPanel}
-
-      <div
-        style={{
-          padding: "12px 14px",
-          background: dark ? "rgba(34,197,94,0.08)" : "rgba(22,163,74,0.06)",
-          border: "1px solid rgba(34,197,94,0.35)",
-          borderRadius: 6,
-          fontSize: 12,
-          color: dark ? "#bbf7d0" : "#166534",
-          lineHeight: 1.6,
-        }}
-      >
-        <strong>Acompanhe os avisos oficiais da Defesa Civil RS.</strong> Em emergência, ligue 199. Para Bombeiros, 193. Para Brigada Militar, 190.
-        <a
-          href="https://www.defesacivil.rs.gov.br/"
-          target="_blank"
-          rel="noreferrer"
-          style={{ color: t.accent, marginLeft: 8 }}
-        >
-          Abrir Defesa Civil RS
-        </a>
-      </div>
 
       <div
         style={{
