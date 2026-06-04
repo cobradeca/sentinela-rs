@@ -1,0 +1,4 @@
+project_id = "ykaaxrzkfeaxatrnkkxj"
+
+[functions.enso-noticias]
+verify_jwt = false
