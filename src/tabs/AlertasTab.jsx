@@ -21,6 +21,11 @@ export function AlertasTab({ ctx }) {
     borderRadius: 5,
   };
 
+  const topOfficialAlert = orderedAlerts[0] || null;
+  const topLevel = topOfficialAlert?.risk_level || "NORMAL";
+  const topRisk = RISK_LEVELS[topLevel] || RISK_LEVELS.NORMAL;
+  const topColor = topOfficialAlert ? getRiskColor(topLevel) : "#22c55e";
+
   const officialAlertsPanel = orderedAlerts.length === 0 ? (
     <div
       style={{
@@ -84,6 +89,34 @@ export function AlertasTab({ ctx }) {
 
   return (
     <div style={{ display: "grid", gap: 12 }}>
+      <div
+        style={{
+          padding: "14px 15px",
+          background: topOfficialAlert ? (dark ? "rgba(239,68,68,0.09)" : "rgba(239,68,68,0.05)") : (dark ? "rgba(34,197,94,0.07)" : "rgba(34,197,94,0.05)"),
+          border: `1px solid ${topColor}55`,
+          borderLeft: `4px solid ${topColor}`,
+          borderRadius: 6,
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+          <div style={{ flex: "1 1 280px", minWidth: 220 }}>
+            <div style={{ fontSize: 10, letterSpacing: 2, color: t.textMuted }}>PRIORIDADE OPERACIONAL</div>
+            <div style={{ fontSize: 16, fontWeight: 900, color: topColor, marginTop: 4 }}>
+              {topOfficialAlert ? `${topRisk.icon} ${topRisk.label.toUpperCase()} - Defesa Civil RS` : "Sem aviso oficial ativo no RSS"}
+            </div>
+            <div style={{ fontSize: 11, color: t.textMuted, lineHeight: 1.55, marginTop: 7 }}>
+              {topOfficialAlert ? topOfficialAlert.message : "Continue acompanhando os canais oficiais. Em situacao de risco, ligue para os numeros abaixo."}
+            </div>
+          </div>
+          <div className="sr-emergency-actions">
+            <a className="sr-emergency-action-link" href="tel:199">199 Defesa Civil</a>
+            <a className="sr-emergency-action-link" href="tel:193">193 Bombeiros</a>
+            <a className="sr-emergency-action-link" href="tel:190">190 Brigada</a>
+            <a className="sr-emergency-action-link" href="https://www.defesacivil.rs.gov.br/" target="_blank" rel="noreferrer">Site oficial</a>
+          </div>
+        </div>
+      </div>
+
       {officialAlertsPanel}
 
       <div

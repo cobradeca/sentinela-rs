@@ -509,6 +509,36 @@ div[style*="grid-template-columns: repeat(7"] {
   white-space: nowrap;
 }
 
+.sr-emergency-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(120px, 1fr));
+  gap: 7px;
+  min-width: min(100%, 280px);
+}
+
+.sr-emergency-action-link {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(34, 211, 238, 0.38);
+  background: rgba(8, 20, 35, 0.78);
+  color: #8be9ff;
+  font-family: var(--sr-font-ui);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.sr-emergency-action-button {
+  width: 100%;
+}
+
 body[data-theme="light"] .sr-mobile-quick-btn,
 body[data-theme="light"] .sr-mobile-menu-trigger {
   background: rgba(255, 255, 255, 0.86);
@@ -520,6 +550,12 @@ body[data-theme="light"] .sr-mobile-menu-trigger {
 body[data-theme="light"] .sr-mobile-quick-time {
   color: #475569;
   font-weight: 700;
+}
+
+body[data-theme="light"] .sr-emergency-action-link {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(8, 145, 178, 0.32);
+  color: #0e7490;
 }
 
 body[data-theme="light"] .sr-mobile-close {

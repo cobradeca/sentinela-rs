@@ -64,10 +64,40 @@ export function DashboardTab({ ctx }) {
     wmoEmoji
   } = ctx;
 
+  const orderedAlerts = [...(alerts || [])].sort((a, b) => {
+    const order = ["CRITICO", "EMERGENCIA", "ALERTA", "ATENCAO", "NORMAL"];
+    return order.indexOf(a.risk_level) - order.indexOf(b.risk_level);
+  });
+  const topOfficialAlert = orderedAlerts[0] || null;
+  const topAlertLevel = topOfficialAlert?.risk_level || "NORMAL";
+  const topAlertRisk = RISK_LEVELS[topAlertLevel] || RISK_LEVELS.NORMAL;
+  const topAlertColor = topOfficialAlert ? getRiskColor(topAlertLevel) : "#22c55e";
+
   return (
 
           <div>
             <DefesaCivilNotice t={t} dark={dark} />
+            <div style={{ ...s.card, marginBottom:12, border:`1px solid ${topAlertColor}55`, borderLeft:`4px solid ${topAlertColor}`, background: topOfficialAlert ? (dark ? "rgba(239,68,68,0.08)" : "rgba(239,68,68,0.05)") : (dark ? "rgba(34,197,94,0.06)" : "rgba(34,197,94,0.05)") }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12, flexWrap:"wrap" }}>
+                <div style={{ minWidth:220, flex:"1 1 300px" }}>
+                  <div style={{ fontSize:9, color:t.textMuted, letterSpacing:2 }}>SITUACAO OFICIAL</div>
+                  <div style={{ fontSize:15, fontWeight:900, color:topAlertColor, marginTop:3 }}>
+                    {topOfficialAlert ? `${topAlertRisk.icon} ${topAlertRisk.label.toUpperCase()} - Defesa Civil RS` : "Sem aviso oficial ativo no RSS"}
+                  </div>
+                  <div style={{ fontSize:10, color:t.textMuted, lineHeight:1.55, marginTop:6 }}>
+                    {topOfficialAlert ? topOfficialAlert.message : "O risco geral do app e contexto ENSO sao indicadores calculados. Para emergencia, use os canais oficiais."}
+                  </div>
+                </div>
+                <div className="sr-emergency-actions">
+                  <a className="sr-emergency-action-link" href="tel:199">199 Defesa Civil</a>
+                  <a className="sr-emergency-action-link" href="tel:193">193 Bombeiros</a>
+                  <a className="sr-emergency-action-link" href="tel:190">190 Brigada</a>
+                  <button type="button" onClick={() => setActiveTab("alertas")} className="sr-emergency-action-link sr-emergency-action-button">
+                    Abrir alertas
+                  </button>
+                </div>
+              </div>
+            </div>
             <div
               role="button"
               tabIndex={0}
