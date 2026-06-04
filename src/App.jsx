@@ -17,6 +17,7 @@ import {
   fetchEffisWmsHealth,
   fetchHidroSensLaranjalLevel,
   fetchIcmbioUcsRs,
+  fetchInpeFireEventsRs,
   fetchInmetForecast,
   fetchIriEnsoProbabilities,
   fetchLagoaRadarLevels,
@@ -364,7 +365,9 @@ export default function SentinelaRS() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [alerts, setAlerts] = useState([]);
+  const [isOnline, setIsOnline] = useState(() => typeof navigator === "undefined" ? true : navigator.onLine);
   const [queimadas, setQueimadas] = useState(null);
+  const [inpeFireEvents, setInpeFireEvents] = useState(null);
   const [censipamFireEvents, setCensipamFireEvents] = useState(null);
   const [icmbioUcs, setIcmbioUcs] = useState(null);
   const [effisHealth, setEffisHealth] = useState(null);
@@ -391,6 +394,21 @@ export default function SentinelaRS() {
     return () => { delete document.body.dataset.theme; };
   }, [dark]);
 
+  useEffect(() => {
+    function syncOnlineState() {
+      setIsOnline(typeof navigator === "undefined" ? true : navigator.onLine);
+    }
+
+    window.addEventListener("online", syncOnlineState);
+    window.addEventListener("offline", syncOnlineState);
+    syncOnlineState();
+
+    return () => {
+      window.removeEventListener("online", syncOnlineState);
+      window.removeEventListener("offline", syncOnlineState);
+    };
+  }, []);
+
   // Cores dinâmicas por tema
   const t = dark ? {
     bg: "#070b12",
@@ -404,7 +422,7 @@ export default function SentinelaRS() {
     grid: "rgba(34,211,238,0.04)",
     tabActiveBg: "rgba(34,211,238,0.15)",
     tabActive: "#22d3ee",
-    tabInactive: "#64748b",
+    tabInactive: "#a9b8cb",
     cardBg: "rgba(255,255,255,0.03)",
     inputBg: "rgba(0,0,0,0.4)",
     barBg: "rgba(0,0,0,0.4)",
@@ -508,6 +526,7 @@ export default function SentinelaRS() {
 
   const loadAllData = useCallback(async () => {
     setLoading(true);
+    try {
     const results = {};
     const health = { ...sourceHealthRef.current };
     const t0 = Date.now();
@@ -561,8 +580,9 @@ export default function SentinelaRS() {
         const inmet = st.ibgeCode ? await (async () => {
           const start = Date.now();
           const r = await fetchInmetForecast(st.ibgeCode);
-          if (!health["INMET"]) health["INMET"] = { ok: r !== null, lastOk: r !== null ? new Date().toISOString() : health["INMET"]?.lastOk || null, latencyMs: Date.now() - start, error: r === null ? "sem resposta" : null };
-          return r;
+          const inmetOk = Boolean(r?.ok || (r && !r.error));
+          if (!health["INMET"]) health["INMET"] = { ok: inmetOk, lastOk: inmetOk ? new Date().toISOString() : health["INMET"]?.lastOk || null, latencyMs: Date.now() - start, error: inmetOk ? null : r?.error || "sem resposta" };
+          return inmetOk ? r : null;
         })() : null;
         const cemaden = cemadenMap[st.id] || null;
         const precip = weather.daily?.precipitation_sum?.reduce((a, b) => a + b, 0) || 0;
@@ -606,6 +626,7 @@ export default function SentinelaRS() {
     const defesaStart = Date.now();
     const officialAlerts = await fetchDefesaCivilAlerts();
     health["Defesa Civil RS"] = { ok: Array.isArray(officialAlerts), lastOk: Array.isArray(officialAlerts) ? new Date().toISOString() : health["Defesa Civil RS"]?.lastOk || null, latencyMs: Date.now() - defesaStart, error: null };
+    health["Carga geral"] = { ok: true, lastOk: new Date().toISOString(), latencyMs: Date.now() - t0, error: null };
 
     sourceHealthRef.current = health;
     setSourceHealth({ ...health });
@@ -618,18 +639,45 @@ export default function SentinelaRS() {
     });
     setAlerts(officialAlerts);
     setLastUpdate(new Date());
+    } catch (err) {
+      const nextHealth = {
+        ...sourceHealthRef.current,
+        "Carga geral": {
+          ok: false,
+          lastOk: sourceHealthRef.current["Carga geral"]?.lastOk || null,
+          latencyMs: null,
+          error: err?.message || "erro desconhecido ao atualizar dados",
+        },
+      };
+      sourceHealthRef.current = nextHealth;
+      setSourceHealth({ ...nextHealth });
+    } finally {
     setLoading(false);
+    }
   }, []);
 
   const loadQueimadas = useCallback(async () => {
     setQLoading(true);
     const startedAt = Date.now();
-    const [data, events, ucs, effis] = await Promise.all([fetchQueimadas(), fetchCensipamFireEventsRs(), fetchIcmbioUcsRs(), fetchEffisWmsHealth()]);
+    const [dataResult, inpeEventsResult, eventsResult, ucsResult, effisResult] = await Promise.allSettled([
+      fetchQueimadas(),
+      fetchInpeFireEventsRs(),
+      fetchCensipamFireEventsRs(),
+      fetchIcmbioUcsRs(),
+      fetchEffisWmsHealth(),
+    ]);
+    const data = dataResult.status === "fulfilled" ? dataResult.value : { ok: false, error: dataResult.reason?.message || "falha inesperada" };
+    const inpeEvents = inpeEventsResult.status === "fulfilled" ? inpeEventsResult.value : { ok: false, error: inpeEventsResult.reason?.message || "falha inesperada" };
+    const events = eventsResult.status === "fulfilled" ? eventsResult.value : { ok: false, error: eventsResult.reason?.message || "falha inesperada" };
+    const ucs = ucsResult.status === "fulfilled" ? ucsResult.value : { ok: false, error: ucsResult.reason?.message || "falha inesperada" };
+    const effis = effisResult.status === "fulfilled" ? effisResult.value : { ok: false, error: effisResult.reason?.message || "falha inesperada" };
     markSourceHealth("INPE BDQueimadas", Boolean(data?.ok), startedAt, data?.ok ? null : data?.error || "sem resposta operacional");
+    markSourceHealth("INPE Eventos de Fogo", Boolean(inpeEvents?.ok), startedAt, inpeEvents?.ok ? null : inpeEvents?.error || "sem eventos validados");
     markSourceHealth("CENSIPAM Painel do Fogo", Boolean(events?.ok), startedAt, events?.ok ? null : events?.error || "sem eventos validados");
     markSourceHealth("ICMBio/MMA CNUC", Boolean(ucs?.ok), startedAt, ucs?.ok ? null : ucs?.error || "sem cadastro validado");
     markSourceHealth("Copernicus EFFIS", Boolean(effis?.ok), startedAt, effis?.ok ? null : effis?.error || "WMS EFFIS sem resposta validada");
     setQueimadas(data);
+    setInpeFireEvents(inpeEvents);
     setCensipamFireEvents(events);
     setIcmbioUcs(ucs);
     setEffisHealth(effis);
@@ -656,8 +704,8 @@ export default function SentinelaRS() {
       const startedAt = Date.now();
       const data = await fetchCptecInpeProducts();
       if (!alive) return;
-      markSourceHealth("CPTEC/INPE", Boolean(data), startedAt, data ? null : "sem produto oficial validado");
-      if (!data) return;
+      markSourceHealth("CPTEC/INPE", Boolean(data?.ok), startedAt, data?.ok ? null : data?.error || "sem produto oficial validado");
+      if (!data?.ok) return;
       setCptecProducts(data);
     }
 
@@ -769,8 +817,8 @@ export default function SentinelaRS() {
       const startedAt = Date.now();
       const live = await fetchIriEnsoProbabilities();
       if (!alive) return;
-      markSourceHealth("IRI/CCSR ENSO", Boolean(live), startedAt, live ? null : "sem probabilidade validada");
-      if (!live) return;
+      markSourceHealth("IRI/CCSR ENSO", Boolean(live?.ok), startedAt, live?.ok ? null : live?.error || "sem probabilidade validada");
+      if (!live?.ok) return;
       setEnsoProbLive(live);
     }
 
@@ -845,6 +893,7 @@ export default function SentinelaRS() {
   const ensoBannerColor = ensoObservedAvailable ? ensoClass.color : (ensoDominantProb?.color || t.textMuted);
   const selData = stationData[selStation.id];
   const lagoaSummary = getLagoaSummary(stationData);
+  const officialHeaderAlert = alerts?.[0] || null;
 
   // TABS: previsão agora é 14 dias
   const TABS = [
@@ -936,9 +985,9 @@ export default function SentinelaRS() {
     ensoClass, ensoDominantProb, ensoFirstForecast, ensoObservedAvailable, ensoObservedText, ensoProbabilityAvailable, ensoProbabilityText, expanded, explainCityRisk, explainDailyRisk, explainLagoaRisk,
     formatCemadenRain, formatDateTimeBR, formatProbability, formatSignedCelsius, getFallbackWarningText, getLagoaMaxMay2024, getLagoaMeasuredAt, getLagoaPointData, getLagoaSourceText,
     getResponsibleAgencyText, getRiskBg, getRiskColor, getRiskLevel, getValidatedSourceHealth, lagoaHistory, lagoaHistoryMeta, lagoaStatusColor, lagoaStatusLabel, lagoaSummary, lastUpdate,
-    ensoNoticias, ensoNoticiasLoading, icmbioUcs, loadAllData, loadEnsoNoticias, loadQueimadas, percentValue, qLoading, queimadas, s, safeEnsoForecast, selData, selStation, setActiveTab, setExpanded, setExpandedCard, setRiskExplain, setSelStation, sourceHealth, stationData, t, wmoDesc, wmoEmoji,
+    ensoNoticias, ensoNoticiasLoading, icmbioUcs, inpeFireEvents, loadAllData, loadEnsoNoticias, loadQueimadas, percentValue, qLoading, queimadas, s, safeEnsoForecast, selData, selStation, setActiveTab, setExpanded, setExpandedCard, setRiskExplain, setSelStation, sourceHealth, stationData, t, wmoDesc, wmoEmoji,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [stationData, alerts, dark, activeTab, selStation, selData, loading, lastUpdate, sourceHealth, lagoaHistory, lagoaHistoryMeta, expanded, expandedCard, riskExplain, queimadas, censipamFireEvents, qLoading, copernicusWater, copernicusS1, copernicusNdvi, copernicusEms, cptecProducts, effisHealth, icmbioUcs, activeENSO, ensoNoticias, ensoNoticiasLoading]);
+  }), [stationData, alerts, dark, activeTab, selStation, selData, loading, lastUpdate, sourceHealth, lagoaHistory, lagoaHistoryMeta, expanded, expandedCard, riskExplain, queimadas, inpeFireEvents, censipamFireEvents, qLoading, copernicusWater, copernicusS1, copernicusNdvi, copernicusEms, cptecProducts, effisHealth, icmbioUcs, activeENSO, ensoNoticias, ensoNoticiasLoading]);
 
   const renderNavButton = (tab, compact = false) => (
     <button
@@ -959,6 +1008,8 @@ export default function SentinelaRS() {
         background: activeTab === tab.key ? t.tabActiveBg : "transparent",
         border: activeTab === tab.key ? `1px solid ${t.borderActive}` : `1px solid ${t.border}`,
         color: activeTab === tab.key ? t.tabActive : t.tabInactive,
+        fontWeight: activeTab === tab.key ? 800 : 700,
+        textShadow: dark ? "0 0 10px rgba(148, 210, 230, 0.18)" : "none",
         transition: "all 0.2s",
       }}
     >
@@ -991,11 +1042,11 @@ export default function SentinelaRS() {
               <span />
               <span />
             </button>
-            <button onClick={() => setDark(d => !d)} title={dark ? "Modo claro" : "Modo escuro"} className="sr-mobile-quick-btn">
+            <button type="button" onClick={() => setDark(d => !d)} title={dark ? "Modo claro" : "Modo escuro"} aria-label={dark ? "Ativar modo claro" : "Ativar modo escuro"} className="sr-mobile-quick-btn">
               {dark ? "☀️" : "🌙"}
             </button>
             <span className="sr-mobile-quick-time">{lastUpdate ? lastUpdate.toLocaleTimeString("pt-BR") : "--:--"}</span>
-            <button onClick={loadAllData} title="Atualizar" className="sr-mobile-quick-btn">↻</button>
+            <button type="button" onClick={loadAllData} disabled={loading} title="Atualizar dados" aria-label={loading ? "Atualizando dados" : "Atualizar dados"} className="sr-mobile-quick-btn">↻</button>
           </div>
 
           {/* ── HEADER ── */}
@@ -1011,20 +1062,38 @@ export default function SentinelaRS() {
                 </h1>
               </div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
-                <div style={{ padding: "5px 12px", borderRadius: 4, border: `1px solid ${RISK_LEVELS[overallRisk].color}`, background: getRiskBg(overallRisk), color: getRiskColor(overallRisk), fontSize: 12, fontWeight: 700, letterSpacing: 2 }}>
+                <div title="Indicador calculado pelo app. Nao substitui aviso oficial da Defesa Civil." style={{ padding: "5px 12px", borderRadius: 4, border: `1px solid ${RISK_LEVELS[overallRisk].color}`, background: getRiskBg(overallRisk), color: getRiskColor(overallRisk), fontSize: 12, fontWeight: 700, letterSpacing: 2 }}>
                   {RISK_LEVELS[overallRisk].icon} RISCO GERAL: {RISK_LEVELS[overallRisk].label.toUpperCase()}
+                </div>
+                <div style={{ fontSize: 8, color: t.textFaint, textAlign: "right", maxWidth: 260 }}>
+                  Indicador calculado. Avisos oficiais aparecem em separado.
                 </div>
                 <div className="sr-header-controls" style={{ display: "flex", gap: 6, alignItems: "center" }}>
                   {/* Toggle modo claro/escuro */}
-                  <button onClick={() => setDark(d => !d)} title={dark ? "Modo claro" : "Modo escuro"}
+                  <button type="button" onClick={() => setDark(d => !d)} title={dark ? "Modo claro" : "Modo escuro"} aria-label={dark ? "Ativar modo claro" : "Ativar modo escuro"}
                     style={{ padding: "6px 10px", borderRadius: 4, fontFamily: "inherit", fontSize: 11, cursor: "pointer", background: dark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)", border: `1px solid ${t.border}`, color: t.textMuted }}>
                     {dark ? "☀️" : "🌙"}
                   </button>
                   <span style={{ fontSize: 9, color: t.textFaint }}>{lastUpdate ? lastUpdate.toLocaleTimeString("pt-BR") : "..."}</span>
-                  <button onClick={loadAllData} style={{ background: "none", border: "none", color: t.accent, cursor: "pointer", fontSize: 12, padding: 0 }}>↻</button>
+                  <button type="button" onClick={loadAllData} disabled={loading} title="Atualizar dados" aria-label={loading ? "Atualizando dados" : "Atualizar dados"} style={{ background: "none", border: "none", color: loading ? t.textFaint : t.accent, cursor: loading ? "wait" : "pointer", fontSize: 12, padding: 0 }}>↻</button>
                 </div>
               </div>
             </div>
+
+            {officialHeaderAlert && (
+              <div style={{ marginTop: 10, padding: "10px 14px", background: dark ? "rgba(239,68,68,0.10)" : "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.45)", borderLeft: "4px solid #ef4444", borderRadius: 4, fontSize: 11, color: dark ? "#fecaca" : "#991b1b", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                <span><strong>Aviso oficial da Defesa Civil RS:</strong> {officialHeaderAlert.message}</span>
+                <button type="button" onClick={() => setActiveTab("alertas")} style={{ background: "none", border: "1px solid rgba(239,68,68,0.55)", color: dark ? "#fecaca" : "#991b1b", cursor: "pointer", borderRadius: 4, padding: "4px 9px", fontFamily: "inherit", fontSize: 10 }}>
+                  Abrir alertas
+                </button>
+              </div>
+            )}
+
+            {!isOnline && (
+              <div style={{ marginTop: 10, padding: "9px 14px", background: dark ? "rgba(234,179,8,0.10)" : "rgba(234,179,8,0.08)", border: "1px solid rgba(234,179,8,0.42)", borderRadius: 4, fontSize: 11, color: dark ? "#fef08a" : "#854d0e", lineHeight: 1.5 }}>
+                <strong>Modo offline:</strong> o app pode exibir dados em cache. Confirme avisos e emergencias pelos canais oficiais.
+              </div>
+            )}
 
             {/* Banner ENSO */}
             <div style={{ marginTop: 10, padding: "9px 14px", background: ensoBannerActive ? `${ensoBannerColor}12` : (dark ? "rgba(100,116,139,0.10)" : "rgba(100,116,139,0.08)"), border: `1px solid ${ensoBannerActive ? `${ensoBannerColor}55` : t.border}`, borderRadius: 4, fontSize: 11, color: ensoBannerActive ? ensoBannerColor : t.textMuted, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>

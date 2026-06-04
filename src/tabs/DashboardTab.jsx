@@ -69,7 +69,15 @@ export function DashboardTab({ ctx }) {
           <div>
             <DefesaCivilNotice t={t} dark={dark} />
             <div
+              role="button"
+              tabIndex={0}
               onClick={() => setActiveTab("lagoa")}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  setActiveTab("lagoa");
+                }
+              }}
               style={{ ...s.card, marginBottom:12, border:`1px solid ${lagoaSummary.above ? "#f9731655" : t.borderActive}`, cursor:"pointer" }}
             >
               <div style={{ display:"flex", justifyContent:"space-between", gap:12, alignItems:"flex-start", flexWrap:"wrap" }}>
@@ -106,8 +114,16 @@ export function DashboardTab({ ctx }) {
               const rColor = getRiskColor(d.risk);
               return (
                 <div key={station.id}
+                  role="button"
+                  tabIndex={0}
                   className="sr-city-card"
                   onClick={()=>setExpandedCard(station)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setExpandedCard(station);
+                    }
+                  }}
                   style={{ ...s.card, border:`1px solid ${d.risk!=="NORMAL"?rColor+"55":t.border}`, cursor:"pointer", position:"relative", overflow:"hidden", transition:"transform 0.15s,box-shadow 0.15s" }}
                   onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow=`0 6px 20px ${rColor}22`;}}
                   onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.boxShadow=t.shadowCard;}}>

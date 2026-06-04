@@ -312,7 +312,7 @@ Status de UC deve ser:
 
 O cruzamento usa coordenadas reais dos focos INPE, poligonos de Eventos de Fogo CENSIPAM e poligonos oficiais das areas monitoradas. Eventos CENSIPAM do mes atual so sustentam o status quando a ultima deteccao ocorreu nas ultimas 48 horas. Nome de municipio nao pode gerar destaque ou alerta.
 
-A interface apresenta somente as areas de preservacao monitoradas ao longo do trajeto BR-116 e BR-471. Nao deve exibir total estadual de focos, lista estadual de municipios ou IDs de eventos isolados, pois esses dados nao representam necessariamente o trajeto.
+A interface apresenta somente as areas de preservacao monitoradas ao longo do trajeto BR-116, BR-101 e BR-471. Nao deve exibir total estadual de focos, lista estadual de municipios ou IDs de eventos isolados, pois esses dados nao representam necessariamente o trajeto.
 
 ### Alertas
 

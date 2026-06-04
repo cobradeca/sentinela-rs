@@ -35,8 +35,12 @@ export const APAS_RS = [
 ];
 
 export const FIRE_MONITORED_AREAS_RS = [
+  { id:"apa_banhado_grande", region:"Corredor BR-101 / Regi\u00e3o Metropolitana", name:"APA Banhado Grande", lat:-29.85, lon:-50.85, proximityRadiusKm:10, focus:"banhados, campos \u00famidos e \u00e1reas de nascentes entre Glorinha, Gravata\u00ed, Santo Ant\u00f4nio da Patrulha e Viam\u00e3o" },
+  { id:"apa_rota_sol", region:"Corredor BR-101 / Serra e Litoral Norte", name:"APA Rota do Sol", lat:-29.40, lon:-50.10, proximityRadiusKm:10, focus:"matas com arauc\u00e1ria, escarpas, campos de altitude e transi\u00e7\u00e3o serra-litoral" },
+  { id:"parna_aparados", region:"Corredor BR-101 / Campos de Cima da Serra", name:"PARNA Aparados da Serra", lat:-29.15, lon:-50.07, proximityRadiusKm:10, focus:"c\u00e2nions, campos de altitude, mata atl\u00e2ntica e borda da serra em Cambar\u00e1 do Sul" },
   { id:"apa_delta_jacui", region:"Regi\u00e3o Metropolitana de Porto Alegre", name:"APA Estadual Delta do Jacu\u00ed", lat:-30.03, lon:-51.23, proximityRadiusKm:10, focus:"ilhas, banhados, restingas e ecossistemas aqu\u00e1ticos no encontro dos rios que formam o Gua\u00edba" },
   { id:"rebio_lami", region:"Regi\u00e3o Metropolitana de Porto Alegre", name:"Reserva Biol\u00f3gica do Lami Jos\u00e9 Lutzenberger", lat:-30.246898, lon:-51.109661, proximityRadiusKm:10, focus:"banhados, matas de restinga e fauna protegida no extremo sul de Porto Alegre" },
+  { id:"parna_lagoa_peixe", region:"Corredor BR-101 / Litoral M\u00e9dio", name:"PARNA Lagoa do Peixe", lat:-31.25, lon:-51.05, proximityRadiusKm:10, focus:"lagoa costeira, banhados, dunas e \u00e1rea estrat\u00e9gica para aves migrat\u00f3rias" },
   { id:"apa_lagoa_verde", region:"Regi\u00e3o da Costa Doce e Pelotas", name:"APA da Lagoa Verde", lat:-32.16, lon:-52.18, proximityRadiusKm:10, focus:"lagoa, arroios, banhados, campos litor\u00e2neos e matas de restinga em Rio Grande" },
   { id:"esec_taim", region:"Regi\u00e3o do Extremo Sul", name:"Esta\u00e7\u00e3o Ecol\u00f3gica do Taim", lat:-32.538892, lon:-52.538846, proximityRadiusKm:10, focus:"banhados, lagoas, dunas e campos atravessados pela BR-471" },
   { id:"albardao", region:"Regi\u00e3o do Extremo Sul", name:"Parque Nacional Marinho e APA do Albard\u00e3o", lat:-33.256238, lon:-52.827932, proximityRadiusKm:10, focus:"ecossistemas costeiros e marinhos protegidos em Santa Vit\u00f3ria do Palmar" },

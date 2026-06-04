@@ -126,8 +126,13 @@ button:active:not(:disabled) {
   transform: translateY(0);
 }
 
+button:disabled {
+  opacity: 0.65;
+}
+
 button:focus-visible,
-select:focus-visible {
+select:focus-visible,
+[role="button"]:focus-visible {
   outline: 2px solid var(--sr-cyan);
   outline-offset: 2px;
 }
@@ -457,6 +462,7 @@ div[style*="grid-template-columns: repeat(7"] {
   text-align: left;
   min-height: 42px;
   line-height: 1.25;
+  opacity: 1;
 }
 
 .sr-content {
@@ -756,6 +762,8 @@ body[data-theme="light"] .sr-mobile-close {
     min-height: 42px;
     line-height: 1.25;
     font-size: 14px !important;
+    opacity: 1;
+    text-shadow: 0 0 12px rgba(148, 210, 230, 0.22);
   }
 
   .sr-mobile-menu-trigger {

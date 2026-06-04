@@ -16,6 +16,7 @@ import {
   HIDROSENS_LARANJAL_FUNCTION_URL,
   ICMBIO_UCS_RS_FUNCTION_URL,
   INMET_PREVISAO_FUNCTION_URL,
+  INPE_FIRE_EVENTS_RS_FUNCTION_URL,
   INPE_QUEIMADAS_RS_FUNCTION_URL,
   IRI_ENSO_PROB_FUNCTION_URL,
   LAGOA_RADAR_FUNCTION_URL,
@@ -70,6 +71,30 @@ function saveJsonCache(key, data) {
   } catch {}
 }
 
+async function readJsonOrServiceError(response, source) {
+  if (!response.ok) {
+    return {
+      ok: false,
+      source,
+      status: response.status,
+      error: `${source} HTTP ${response.status}`,
+      fetched_at: new Date().toISOString(),
+    };
+  }
+
+  try {
+    return await response.json();
+  } catch {
+    return {
+      ok: false,
+      source,
+      status: response.status,
+      error: `${source} retornou JSON invalido`,
+      fetched_at: new Date().toISOString(),
+    };
+  }
+}
+
 export async function fetchNoaaEnso() {
   try {
     const res = await fetch(NOAA_ENSO_FUNCTION_URL, { signal: AbortSignal.timeout(15000) });
@@ -87,14 +112,16 @@ export async function fetchNoaaEnso() {
 export async function fetchCptecInpeProducts() {
   try {
     const res = await fetch(CPTEC_INPE_PRODUCTS_FUNCTION_URL, { signal: AbortSignal.timeout(20000) });
-    if (!res.ok) return null;
+    if (!res.ok) return { ok: false, products: [], error: `CPTEC/INPE HTTP ${res.status}`, fetched_at: new Date().toISOString() };
 
     const data = await res.json();
-    if (!data?.ok || !Array.isArray(data?.products)) return null;
+    if (!data?.ok || !Array.isArray(data?.products)) {
+      return { ok: false, products: [], error: data?.error || "CPTEC/INPE sem produtos validos", fetched_at: data?.fetched_at || new Date().toISOString() };
+    }
 
     return data;
-  } catch {
-    return null;
+  } catch (err) {
+    return { ok: false, products: [], error: err?.message || "timeout", fetched_at: new Date().toISOString() };
   }
 }
 
@@ -239,12 +266,15 @@ export async function fetchCopernicusEmsDirect() {
 export async function fetchIriEnsoProbabilities() {
   try {
     const res = await fetch(IRI_ENSO_PROB_FUNCTION_URL, { signal: AbortSignal.timeout(15000) });
-    if (!res.ok) return null;
+    if (!res.ok) return { ok: false, error: `IRI/CCSR HTTP ${res.status}`, prob: null, forecast: [], probabilityFetchedAt: new Date().toISOString() };
 
     const data = await res.json();
-    if (!data?.ok || !data?.prob || !Array.isArray(data?.forecast)) return null;
+    if (!data?.ok || !data?.prob || !Array.isArray(data?.forecast)) {
+      return { ok: false, error: data?.error || "IRI/CCSR sem probabilidade validada", prob: null, forecast: [], probabilityFetchedAt: data?.fetched_at || new Date().toISOString() };
+    }
 
     return {
+      ok: true,
       prob: data.prob,
       forecast: data.forecast,
       probabilitySource: data.source,
@@ -253,8 +283,8 @@ export async function fetchIriEnsoProbabilities() {
       probabilityFetchedAt: data.fetched_at,
       probabilityParsing: data.parsing,
     };
-  } catch {
-    return null;
+  } catch (err) {
+    return { ok: false, error: err?.message || "timeout", prob: null, forecast: [], probabilityFetchedAt: new Date().toISOString() };
   }
 }
 
@@ -424,9 +454,10 @@ export async function fetchQueimadas() {
       cache: "no-store",
       headers: { Accept: "application/json" },
     });
-    if (!res.ok) return null;
-    return res.json();
-  } catch { return null; }
+    return readJsonOrServiceError(res, "INPE BDQueimadas");
+  } catch (err) {
+    return { ok: false, source: "INPE BDQueimadas", error: err?.message || "timeout", fetched_at: new Date().toISOString() };
+  }
 }
 
 export async function fetchCensipamFireEventsRs() {
@@ -436,9 +467,23 @@ export async function fetchCensipamFireEventsRs() {
       cache: "no-store",
       headers: { Accept: "application/json" },
     });
-    if (!res.ok) return null;
-    return res.json();
-  } catch { return null; }
+    return readJsonOrServiceError(res, "CENSIPAM Painel do Fogo");
+  } catch (err) {
+    return { ok: false, source: "CENSIPAM Painel do Fogo", error: err?.message || "timeout", fetched_at: new Date().toISOString() };
+  }
+}
+
+export async function fetchInpeFireEventsRs() {
+  try {
+    const res = await fetch(INPE_FIRE_EVENTS_RS_FUNCTION_URL, {
+      signal: AbortSignal.timeout(25000),
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+    return readJsonOrServiceError(res, "INPE Eventos de Fogo");
+  } catch (err) {
+    return { ok: false, source: "INPE Eventos de Fogo", error: err?.message || "timeout", fetched_at: new Date().toISOString() };
+  }
 }
 
 export async function fetchIcmbioUcsRs() {
@@ -448,9 +493,10 @@ export async function fetchIcmbioUcsRs() {
       cache: "no-store",
       headers: { Accept: "application/json" },
     });
-    if (!res.ok) return null;
-    return res.json();
-  } catch { return null; }
+    return readJsonOrServiceError(res, "ICMBio/MMA CNUC");
+  } catch (err) {
+    return { ok: false, source: "ICMBio/MMA CNUC", error: err?.message || "timeout", fetched_at: new Date().toISOString() };
+  }
 }
 
 export async function fetchEffisWmsHealth() {
@@ -460,10 +506,9 @@ export async function fetchEffisWmsHealth() {
       cache: "no-store",
       headers: { Accept: "application/json" },
     });
-    if (!res.ok) return null;
-    return res.json();
-  } catch {
-    return null;
+    return readJsonOrServiceError(res, "Copernicus EFFIS");
+  } catch (err) {
+    return { ok: false, source: "Copernicus EFFIS", error: err?.message || "timeout", fetched_at: new Date().toISOString() };
   }
 }
 
@@ -494,18 +539,21 @@ export async function fetchInmetForecast(ibgeCode) {
       signal: AbortSignal.timeout(15000),
     });
 
-    if (!res.ok) return null;
+    if (!res.ok) return { ok: false, error: `INMET HTTP ${res.status}`, fetched_at: new Date().toISOString() };
 
     const data = await res.json();
-    if (!data?.ok || !data?.latest) return null;
+    if (!data?.ok || !data?.latest) {
+      return { ok: false, error: data?.error || "INMET sem previsao validada", fetched_at: data?.fetched_at || new Date().toISOString() };
+    }
 
     return {
       ...data.latest,
+      ok: true,
       proxied: true,
       fetched_at: data.fetched_at,
     };
-  } catch {
-    return null;
+  } catch (err) {
+    return { ok: false, error: err?.message || "timeout", fetched_at: new Date().toISOString() };
   }
 }
 

@@ -294,7 +294,7 @@ Se aparecer "Aguardando", significa que o produto ainda nao carregou naquela ses
 
 ## 13. Queimadas / APAs
 
-Esta aba acompanha focos de fogo nas principais areas de preservacao ambiental do trajeto pelas rodovias BR-116 e BR-471.
+Esta aba acompanha focos de fogo nas principais areas de preservacao ambiental do trajeto pelas rodovias BR-116, BR-101 e BR-471.
 
 Fontes e camadas:
 
