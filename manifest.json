@@ -40,6 +40,34 @@
       "form_factor": "wide"
     }
   ],
+  "shortcuts": [
+    {
+      "name": "Alertas oficiais",
+      "short_name": "Alertas",
+      "description": "Abrir avisos oficiais da Defesa Civil RS.",
+      "url": "/sentinela-rs/?tab=alertas",
+      "icons": [
+        {
+          "src": "/sentinela-rs/icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Queimadas e APAs",
+      "short_name": "Queimadas",
+      "description": "Abrir monitoramento de queimadas em areas protegidas.",
+      "url": "/sentinela-rs/?tab=queimadas",
+      "icons": [
+        {
+          "src": "/sentinela-rs/icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
   "launch_handler": {
     "client_mode": ["navigate-new"]
   },

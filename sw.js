@@ -1,4 +1,4 @@
-const CACHE_NAME = "sentinela-rs-v20260602-1";
+const CACHE_NAME = "sentinela-rs-v20260604-1";
 const APP_BASE = "/sentinela-rs/";
 
 const APP_SHELL = [
@@ -30,6 +30,7 @@ const STATIC_EXTENSIONS = [
   ".svg",
   ".ico",
   ".json",
+  ".geojson",
   ".woff",
   ".woff2"
 ];
