@@ -2,12 +2,14 @@ import { DefesaCivilNotice } from "../components/DefesaCivilNotice";
 
 const SOURCE_COLORS = {
   gnews: "#38bdf8",
+  metsul: "#f97316",
   copernicus: "#34d399",
   cptec: "#fb923c",
 };
 
 const SOURCE_ICONS = {
   gnews: "📰",
+  metsul: "🌦️",
   copernicus: "🌍",
   cptec: "🇧🇷",
 };

@@ -51,6 +51,25 @@ const AlertasTab = lazy(() => import("./tabs/AlertasTab").then((m) => ({ default
 const NoticiasEnsoTab = lazy(() => import("./tabs/NoticiasEnsoTab").then((m) => ({ default: m.NoticiasEnsoTab })));
 const FontesDeDadosTab = lazy(() => import("./tabs/FontesDeDadosTab").then((m) => ({ default: m.FontesDeDadosTab })));
 
+const TAB_KEYS = new Set([
+  "dashboard",
+  "previsao",
+  "lagoa",
+  "enso",
+  "noticias-enso",
+  "cptec",
+  "copernicus",
+  "queimadas",
+  "alertas",
+  "apis",
+]);
+
+function getInitialActiveTab() {
+  if (typeof window === "undefined") return "dashboard";
+  const tab = new URLSearchParams(window.location.search).get("tab");
+  return TAB_KEYS.has(tab) ? tab : "dashboard";
+}
+
 class TabErrorBoundary extends Component {
   constructor(props) {
     super(props);
@@ -362,7 +381,7 @@ export default function SentinelaRS() {
   const [lagoaHistory, setLagoaHistory] = useState({});
   const [lagoaHistoryMeta, setLagoaHistoryMeta] = useState({ source: "sessão atual", persistent: false });
   const [selStation, setSelStation] = useState(STATIONS_CIDADES[0]); // POA default
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] = useState(getInitialActiveTab);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [alerts, setAlerts] = useState([]);
   const [isOnline, setIsOnline] = useState(() => typeof navigator === "undefined" ? true : navigator.onLine);
@@ -408,6 +427,17 @@ export default function SentinelaRS() {
       window.removeEventListener("offline", syncOnlineState);
     };
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (activeTab === "dashboard") {
+      url.searchParams.delete("tab");
+    } else {
+      url.searchParams.set("tab", activeTab);
+    }
+    window.history.replaceState(null, "", url);
+  }, [activeTab]);
 
   // Cores dinâmicas por tema
   const t = dark ? {
@@ -587,6 +617,7 @@ export default function SentinelaRS() {
         const cemaden = cemadenMap[st.id] || null;
         const precip = weather.daily?.precipitation_sum?.reduce((a, b) => a + b, 0) || 0;
         const tempMin = Math.min(...(weather.daily?.temperature_2m_min || [20]));
+        const tempCurrent = typeof weather.current?.temperature_2m === "number" ? weather.current.temperature_2m : null;
         const windMax = Math.max(...(weather.daily?.windspeed_10m_max || [0]));
 
         // Nível real disponível: prioriza RADAR da Lagoa quando houver sensor validado.
@@ -620,7 +651,7 @@ export default function SentinelaRS() {
         const levelRisk = ((lagoa?.radar || lagoa?.hidrosens) && lagoa?.threshold_m && !lagoa?.isFallback && lagoa?.operational !== false) ? radarRiskToLevel(lagoa.levelStatus) : "NORMAL";
         const order = ["NORMAL", "ATENCAO", "ALERTA", "EMERGENCIA", "CRITICO"];
         const risk = order.indexOf(levelRisk) > order.indexOf(baseRisk) ? levelRisk : baseRisk;
-        results[st.id] = { weather, inmet, cemaden, lagoa, precip, tempMin, windMax, risk, realLevel, radarLevel };
+        results[st.id] = { weather, inmet, cemaden, lagoa, precip, tempMin, tempCurrent, windMax, risk, realLevel, radarLevel };
       } catch { results[st.id] = { error: true, risk: "NORMAL" }; }
     });
     const defesaStart = Date.now();
@@ -935,7 +966,7 @@ export default function SentinelaRS() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 8, marginBottom: 14 }}>
             {[
               { l: "Precip. 14d", v: `${d.precip?.toFixed(0)} mm`, alert: d.precip > 80 },
-              { l: "Temp. mínima", v: `${d.tempMin?.toFixed(1)} °C`, alert: d.tempMin < 5 },
+              { l: "Temp. atual", v: typeof d.tempCurrent === "number" ? `${d.tempCurrent.toFixed(1)} °C` : "--", alert: false },
               { l: "Vento máx.", v: `${d.windMax?.toFixed(0)} km/h`, alert: d.windMax > 50 },
               { l: "Contexto climático", v: ensoObservedAvailable ? `${ensoClass.label} · ${formatSignedCelsius(activeENSO.nino34)}` : "ENSO indisponível", alert: false },
               ...(d.lagoa ? [
@@ -1090,8 +1121,11 @@ export default function SentinelaRS() {
             )}
 
             {!isOnline && (
-              <div style={{ marginTop: 10, padding: "9px 14px", background: dark ? "rgba(234,179,8,0.10)" : "rgba(234,179,8,0.08)", border: "1px solid rgba(234,179,8,0.42)", borderRadius: 4, fontSize: 11, color: dark ? "#fef08a" : "#854d0e", lineHeight: 1.5 }}>
-                <strong>Modo offline:</strong> o app pode exibir dados em cache. Confirme avisos e emergencias pelos canais oficiais.
+              <div style={{ marginTop: 10, padding: "10px 14px", background: dark ? "rgba(234,179,8,0.10)" : "rgba(234,179,8,0.08)", border: "1px solid rgba(234,179,8,0.42)", borderLeft: "4px solid #eab308", borderRadius: 4, fontSize: 11, color: dark ? "#fef08a" : "#854d0e", lineHeight: 1.5, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                <span><strong>Modo degradado/offline:</strong> dados podem estar em cache e algumas fontes podem nao atualizar. Para emergencia, use Defesa Civil 199, Bombeiros 193 ou Brigada 190.</span>
+                <button type="button" onClick={() => setActiveTab("alertas")} style={{ background: "none", border: "1px solid rgba(234,179,8,0.55)", color: dark ? "#fef08a" : "#854d0e", cursor: "pointer", borderRadius: 4, padding: "4px 9px", fontFamily: "inherit", fontSize: 10 }}>
+                  Abrir alertas
+                </button>
               </div>
             )}
 

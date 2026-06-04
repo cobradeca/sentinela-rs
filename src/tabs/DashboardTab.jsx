@@ -199,7 +199,7 @@ export function DashboardTab({ ctx }) {
                     <div className="sr-city-metrics" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:5 }}>
                       {[
                         { l:"Precip. 14d", v:`${d.precip?.toFixed(0)}mm` },
-                        { l:"Temp. mín.",  v:`${d.tempMin?.toFixed(1)}°C` },
+                        { l:"Temp. atual",  v: typeof d.tempCurrent === "number" ? `${d.tempCurrent.toFixed(1)}°C` : "--" },
                         { l:"Vento",       v:`${d.windMax?.toFixed(0)}km/h` },
                         { l:"Contexto climático", v: ensoObservedAvailable ? `${ensoClass.icon} ${ensoClass.label}` : (ensoDominantProb ? `${ensoDominantProb.label} ${formatProbability(ensoDominantProb.value)}` : "ENSO indisponível"), highlight: ensoProbabilityAvailable || ensoObservedAvailable },
                       ].map(item => (

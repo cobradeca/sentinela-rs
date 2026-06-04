@@ -289,7 +289,7 @@ export async function fetchIriEnsoProbabilities() {
 }
 
 export async function fetchWeather14Days(lat, lon) {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max,weathercode&timezone=America%2FSao_Paulo&forecast_days=14`;
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max,weathercode&timezone=America%2FSao_Paulo&forecast_days=14`;
   const res = await fetch(url, { signal: AbortSignal.timeout(12000) });
   if (!res.ok) throw new Error("Open-Meteo indisponível");
   return res.json();

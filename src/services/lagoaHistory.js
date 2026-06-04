@@ -68,7 +68,7 @@ export async function loadLagoaHistory(stationIds) {
     sessionHistory = normalizeHistory({ ...sessionHistory, ...fromSupabase });
     return {
       history: sessionHistory,
-      source: Object.keys(fromSupabase).length ? "Supabase/readings" : "sessão atual",
+      source: Object.keys(fromSupabase).length ? "histórico operacional" : "sessão atual",
       persistent: Object.keys(fromSupabase).length > 0,
     };
   } catch (error) {

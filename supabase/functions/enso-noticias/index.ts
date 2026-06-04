@@ -209,6 +209,38 @@ async function fetchGNews(): Promise<Result> {
 // A página tem seção "Highlights of the latest seasonal forecasts" com texto ENSO
 // e imagem do plume Niño3.4
 
+async function fetchMetsul(): Promise<Result> {
+  const SID = "metsul", SNAME = "MetSul";
+  const FEED = "https://metsul.com/feed/";
+
+  try {
+    const xml = await get(FEED, 12000);
+    const raw: Raw[] = [];
+    const itemRe = /<item\b[\s\S]*?<\/item>/gi;
+    let match;
+
+    while ((match = itemRe.exec(xml)) !== null && raw.length < 12) {
+      const item = match[0];
+      const title = clean(item.match(/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/i)?.[1] || item.match(/<title>([\s\S]*?)<\/title>/i)?.[1] || "");
+      const description = clean(item.match(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/i)?.[1] || item.match(/<description>([\s\S]*?)<\/description>/i)?.[1] || "");
+      const link = clean(item.match(/<link>([\s\S]*?)<\/link>/i)?.[1] || "");
+      const pubDateRaw = clean(item.match(/<pubDate>([\s\S]*?)<\/pubDate>/i)?.[1] || "");
+      const pubDate = pubDateRaw ? new Date(pubDateRaw) : null;
+      const pub_date = pubDate && !Number.isNaN(pubDate.getTime()) ? pubDate.toISOString() : null;
+      const image = item.match(/<media:content[^>]+url="([^"]+)"/i)?.[1] ||
+        item.match(/<enclosure[^>]+url="([^"]+)"/i)?.[1] ||
+        null;
+
+      if (!title || !link || !isEnso(title, description)) continue;
+      raw.push({ title, description, link, pub_date, image });
+    }
+
+    return build(raw, SID, SNAME, "pt", null);
+  } catch (e) {
+    return { source_id: SID, source_name: SNAME, ok: false, http_status: null, count: 0, error: String(e instanceof Error ? e.message : e), items: [] };
+  }
+}
+
 async function fetchCopernicus(key: string | null): Promise<Result> {
   const SID = "copernicus", SNAME = "Copernicus C3S";
   const PAGE = "https://climate.copernicus.eu/seasonal-forecasts";
@@ -334,8 +366,9 @@ Deno.serve(async (req) => {
     source_id: sid, source_name: sname, ok: false, http_status: null, count: 0, error: "timeout global", items: [],
   });
 
-  const [r1, r2, r3] = await Promise.allSettled([
+  const [r1, r2, r3, r4] = await Promise.allSettled([
     withTimeout(fetchGNews(),          15000, errResult("gnews",      "Notícias BR")),
+    withTimeout(fetchMetsul(),         15000, errResult("metsul",     "MetSul")),
     withTimeout(fetchCopernicus(key), 22000, errResult("copernicus", "Copernicus C3S")),
     withTimeout(fetchCptec(),         22000, errResult("cptec",      "CPTEC/INPE")),
   ]);
@@ -346,8 +379,9 @@ Deno.serve(async (req) => {
 
   const results: Result[] = [
     r1.status === "fulfilled" ? r1.value : err("gnews", "Notícias BR"),
-    r2.status === "fulfilled" ? r2.value : err("copernicus", "Copernicus C3S"),
-    r3.status === "fulfilled" ? r3.value : err("cptec", "CPTEC/INPE"),
+    r2.status === "fulfilled" ? r2.value : err("metsul", "MetSul"),
+    r3.status === "fulfilled" ? r3.value : err("copernicus", "Copernicus C3S"),
+    r4.status === "fulfilled" ? r4.value : err("cptec", "CPTEC/INPE"),
   ];
 
   const items = results

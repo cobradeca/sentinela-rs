@@ -116,12 +116,12 @@ export function QueimadasTab({ ctx }) {
     };
   }, []);
 
-  const fireRecords = Array.isArray(queimadas) ? queimadas : (queimadas?.records || []);
-  const activeInpeFireEvents = inpeFireEvents?.active_records || [];
-  const activeFireEvents = censipamFireEvents?.active_records_48h || [];
   const sourceAvailable = Boolean(queimadas?.ok || inpeFireEvents?.ok || censipamFireEvents?.ok);
   const sourcesReady = Boolean(queimadas?.ok && inpeFireEvents?.ok && censipamFireEvents?.ok);
   const monitoredAreas = useMemo(() => FIRE_MONITORED_AREAS_RS.map((baseArea) => {
+    const fireRecords = Array.isArray(queimadas) ? queimadas : (queimadas?.records || []);
+    const activeInpeFireEvents = inpeFireEvents?.active_records || [];
+    const activeFireEvents = censipamFireEvents?.active_records_48h || [];
     const area = monitoredAreaWithGeometry(baseArea, monitoredAreaGeometries);
     const nearbyFoci = findNearbyFireFoci(area, fireRecords);
     const nearbyInpeEvents = findNearbyFireEvents(area, activeInpeFireEvents);
@@ -143,7 +143,7 @@ export function QueimadasTab({ ctx }) {
       status,
       latest: latestDetection(nearbyFoci, nearbyInpeEvents, nearbyEvents),
     };
-  }), [FIRE_MONITORED_AREAS_RS, activeFireEvents, activeInpeFireEvents, fireRecords, monitoredAreaGeometries, sourcesReady]);
+  }), [FIRE_MONITORED_AREAS_RS, censipamFireEvents, inpeFireEvents, monitoredAreaGeometries, queimadas, sourcesReady]);
   const fireStats = {
     total: monitoredAreas.length,
     probable: monitoredAreas.filter(({ hasFire }) => hasFire).length,
