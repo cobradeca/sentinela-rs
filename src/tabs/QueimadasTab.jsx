@@ -1,18 +1,22 @@
+import { useEffect, useMemo, useState } from "react";
 import { DefesaCivilNotice } from "../components/DefesaCivilNotice";
-import monitoredAreasGeojsonRaw from "../data/fire-monitored-areas.geojson?raw";
+import monitoredAreasGeojsonUrl from "../data/fire-monitored-areas.geojson?url";
 import { findNearbyFireEvents, findNearbyFireFoci } from "../utils/fireSpatial";
 
-const MONITORED_AREA_GEOMETRIES = (() => {
-  try {
-    const geojson = JSON.parse(monitoredAreasGeojsonRaw);
-    return Object.fromEntries((geojson.features || []).map((feature) => [
-      feature.properties?.id,
-      feature,
-    ]).filter(([id]) => Boolean(id)));
-  } catch {
-    return {};
+let monitoredAreaGeometriesPromise = null;
+
+function loadMonitoredAreaGeometries() {
+  if (!monitoredAreaGeometriesPromise) {
+    monitoredAreaGeometriesPromise = fetch(monitoredAreasGeojsonUrl)
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error("geojson indisponivel")))
+      .then((geojson) => Object.fromEntries((geojson.features || []).map((feature) => [
+        feature.properties?.id,
+        feature,
+      ]).filter(([id]) => Boolean(id))))
+      .catch(() => ({}));
   }
-})();
+  return monitoredAreaGeometriesPromise;
+}
 
 function latestDetection(nearbyFoci, nearbyInpeEvents, nearbyCensipamEvents) {
   const values = [
@@ -27,8 +31,8 @@ function latestDetection(nearbyFoci, nearbyInpeEvents, nearbyCensipamEvents) {
   return values.length > 0 ? new Date(Math.max(...values)).toISOString() : null;
 }
 
-function monitoredAreaWithGeometry(area) {
-  const feature = MONITORED_AREA_GEOMETRIES[area.id];
+function monitoredAreaWithGeometry(area, monitoredAreaGeometries) {
+  const feature = monitoredAreaGeometries[area.id];
   if (!feature?.geometry) return area;
   return {
     ...area,
@@ -100,14 +104,25 @@ export function QueimadasTab({ ctx }) {
     s,
     t,
   } = ctx;
+  const [monitoredAreaGeometries, setMonitoredAreaGeometries] = useState({});
+
+  useEffect(() => {
+    let active = true;
+    loadMonitoredAreaGeometries().then((geometries) => {
+      if (active) setMonitoredAreaGeometries(geometries);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const fireRecords = Array.isArray(queimadas) ? queimadas : (queimadas?.records || []);
   const activeInpeFireEvents = inpeFireEvents?.active_records || [];
   const activeFireEvents = censipamFireEvents?.active_records_48h || [];
   const sourceAvailable = Boolean(queimadas?.ok || inpeFireEvents?.ok || censipamFireEvents?.ok);
   const sourcesReady = Boolean(queimadas?.ok && inpeFireEvents?.ok && censipamFireEvents?.ok);
-  const monitoredAreas = FIRE_MONITORED_AREAS_RS.map((baseArea) => {
-    const area = monitoredAreaWithGeometry(baseArea);
+  const monitoredAreas = useMemo(() => FIRE_MONITORED_AREAS_RS.map((baseArea) => {
+    const area = monitoredAreaWithGeometry(baseArea, monitoredAreaGeometries);
     const nearbyFoci = findNearbyFireFoci(area, fireRecords);
     const nearbyInpeEvents = findNearbyFireEvents(area, activeInpeFireEvents);
     const nearbyEvents = findNearbyFireEvents(area, activeFireEvents);
@@ -128,7 +143,7 @@ export function QueimadasTab({ ctx }) {
       status,
       latest: latestDetection(nearbyFoci, nearbyInpeEvents, nearbyEvents),
     };
-  });
+  }), [FIRE_MONITORED_AREAS_RS, activeFireEvents, activeInpeFireEvents, fireRecords, monitoredAreaGeometries, sourcesReady]);
   const fireStats = {
     total: monitoredAreas.length,
     probable: monitoredAreas.filter(({ hasFire }) => hasFire).length,
