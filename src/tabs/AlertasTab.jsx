@@ -100,12 +100,17 @@ export function AlertasTab({ ctx }) {
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
           <div style={{ flex: "1 1 280px", minWidth: 220 }}>
-            <div style={{ fontSize: 10, letterSpacing: 2, color: t.textMuted }}>PRIORIDADE OPERACIONAL</div>
+            <div className="sr-section-eyebrow">PRIORIDADE OPERACIONAL</div>
             <div style={{ fontSize: 16, fontWeight: 900, color: topColor, marginTop: 4 }}>
               {topOfficialAlert ? `${topRisk.icon} ${topRisk.label.toUpperCase()} - Defesa Civil RS` : "Sem aviso oficial ativo no RSS"}
             </div>
             <div style={{ fontSize: 11, color: t.textMuted, lineHeight: 1.55, marginTop: 7 }}>
               {topOfficialAlert ? topOfficialAlert.message : "Continue acompanhando os canais oficiais. Em situacao de risco, ligue para os numeros abaixo."}
+            </div>
+            <div className="sr-source-badges" aria-label="Fontes dos avisos oficiais">
+              <span className="sr-source-badge is-official">Defesa Civil RS</span>
+              <span className="sr-source-badge is-official">RSS oficial</span>
+              <span className="sr-source-badge is-derived">Canais 199/193/190</span>
             </div>
           </div>
           <div className="sr-emergency-actions">
@@ -151,7 +156,7 @@ export function AlertasTab({ ctx }) {
           lineHeight: 1.6,
         }}
       >
-        <div style={{ fontSize: 10, letterSpacing: 2, marginBottom: 8, color: t.textMuted }}>CANAIS OFICIAIS DA DEFESA CIVIL RS</div>
+        <div className="sr-section-eyebrow" style={{ marginBottom: 8 }}>CANAIS OFICIAIS DA DEFESA CIVIL RS</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 8 }}>
           {[
             ["SMS 40199", "Envie o CEP para 40199 para receber avisos gratuitos no celular."],

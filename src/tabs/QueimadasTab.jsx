@@ -129,6 +129,13 @@ export function QueimadasTab({ ctx }) {
       latest: latestDetection(nearbyFoci, nearbyInpeEvents, nearbyEvents),
     };
   });
+  const fireStats = {
+    total: monitoredAreas.length,
+    probable: monitoredAreas.filter(({ hasFire }) => hasFire).length,
+    thermal: monitoredAreas.filter(({ hasThermalAlert }) => hasThermalAlert).length,
+    clear: monitoredAreas.filter(({ status }) => status.level === "clear").length,
+    unknown: monitoredAreas.filter(({ status }) => status.level === "unknown").length,
+  };
 
   return (
     <div style={{ display:"grid", gap:12 }}>
@@ -136,6 +143,12 @@ export function QueimadasTab({ ctx }) {
 
       <div style={{ padding:"10px 14px", background: dark?"rgba(249,115,22,0.08)":"rgba(249,115,22,0.05)", border:"1px solid rgba(249,115,22,0.3)", borderRadius:5, fontSize:10, color: dark?"#fdba74":"#c2410c", display:"flex", justifyContent:"space-between", alignItems:"center", gap:12, flexWrap:"wrap" }}>
         <span>Monitoramento das principais áreas de preservação ambiental no trajeto pelas rodovias <strong>BR-116</strong>, <strong>BR-101</strong> e <strong>BR-471</strong>.</span>
+        <div className="sr-source-badges" aria-label="Fontes do monitoramento de queimadas" style={{ flex:"1 1 100%" }}>
+          <span className="sr-source-badge is-official">INPE focos</span>
+          <span className="sr-source-badge is-official">INPE Eventos</span>
+          <span className="sr-source-badge is-derived">CENSIPAM</span>
+          <span className="sr-source-badge is-context">Geocerca</span>
+        </div>
         <button onClick={loadQueimadas} disabled={qLoading} style={{ background:"none", border:"1px solid rgba(249,115,22,0.5)", color:"#fdba74", padding:"5px 12px", borderRadius:4, cursor:"pointer", fontFamily:"inherit", fontSize:9, letterSpacing:1 }}>
           {qLoading ? "Consultando..." : "Atualizar"}
         </button>
@@ -147,6 +160,25 @@ export function QueimadasTab({ ctx }) {
           O status considera focos georreferenciados do INPE, Eventos de Fogo do INPE e Eventos de Fogo recentes do CENSIPAM nas áreas monitoradas ou próximos a elas.
         </div>
 
+        <div className="sr-mini-stat-grid" aria-label="Resumo das areas monitoradas">
+          <div className="sr-mini-stat">
+            <div className="sr-mini-stat-label">Areas</div>
+            <div className="sr-mini-stat-value">{fireStats.total}</div>
+          </div>
+          <div className="sr-mini-stat">
+            <div className="sr-mini-stat-label">Fogo provavel</div>
+            <div className="sr-mini-stat-value" style={{ color:fireStats.probable ? "#f97316" : "#22c55e" }}>{fireStats.probable}</div>
+          </div>
+          <div className="sr-mini-stat">
+            <div className="sr-mini-stat-label">Alerta termico</div>
+            <div className="sr-mini-stat-value" style={{ color:fireStats.thermal ? "#eab308" : "#22c55e" }}>{fireStats.thermal}</div>
+          </div>
+          <div className="sr-mini-stat">
+            <div className="sr-mini-stat-label">{fireStats.unknown ? "Sem leitura" : "Sem foco"}</div>
+            <div className="sr-mini-stat-value" style={{ color:fireStats.unknown ? "#94a3b8" : "#22c55e" }}>{fireStats.unknown || fireStats.clear}</div>
+          </div>
+        </div>
+
         {!sourceAvailable && !qLoading && (
           <div style={{ marginBottom:10, padding:"8px 10px", background: dark?"rgba(234,179,8,0.07)":"rgba(234,179,8,0.06)", border:"1px solid rgba(234,179,8,0.22)", borderRadius:4, fontSize:9, color:t.textMuted }}>
             As fontes de focos estão indisponíveis nesta sessão. Atualize para tentar novamente.
@@ -155,18 +187,24 @@ export function QueimadasTab({ ctx }) {
 
         <div style={{ display:"grid", gap:8 }}>
           {monitoredAreas.map(({ area, hasFire, hasThermalAlert, nearestDistance, sources, status, latest }) => (
-            <div key={area.id} style={{ background:dark?"rgba(0,0,0,0.25)":t.bg, border:`1px solid ${hasFire || hasThermalAlert ? status.borderColor : t.border}`, borderRadius:5, padding:"10px 12px" }}>
+            <div key={area.id} className="sr-fire-card" style={{ "--sr-fire-accent": status.borderColor, background:dark?"rgba(0,0,0,0.25)":t.bg, border:`1px solid ${hasFire || hasThermalAlert ? status.borderColor : t.border}`, borderRadius:5, padding:"10px 12px 10px 15px" }}>
               <div style={{ display:"flex", justifyContent:"space-between", gap:8, alignItems:"flex-start" }}>
                 <div>
                   <div style={{ fontSize:8, color:t.textFaint, letterSpacing:1.3 }}>{area.region}</div>
                   <div style={{ fontSize:13, fontWeight:900, color:t.text, marginTop:2 }}>{area.name}</div>
                 </div>
-                <div style={{ fontSize:8, fontWeight:700, color:status.color, border:`1px solid ${status.borderColor}`, borderRadius:3, padding:"2px 7px", whiteSpace:"nowrap" }}>
+                <div className="sr-fire-status-pill" style={{ color:status.color, border:`1px solid ${status.borderColor}` }}>
                   {status.label}
                 </div>
               </div>
 
               <div style={{ fontSize:9, color:t.textMuted, lineHeight:1.45, marginTop:6 }}>{area.focus}</div>
+
+              <div className="sr-source-badges" aria-label={`Fontes para ${area.name}`}>
+                {(sources.length ? sources : ["sem fonte ativa"]).map((source) => (
+                  <span key={source} className={`sr-source-badge ${source === "sem fonte ativa" ? "" : "is-official"}`}>{source}</span>
+                ))}
+              </div>
 
               <div style={{ fontSize:8, color:t.textFaint, marginTop:7 }}>
                 {hasFire || hasThermalAlert

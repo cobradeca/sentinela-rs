@@ -80,12 +80,17 @@ export function DashboardTab({ ctx }) {
             <div style={{ ...s.card, marginBottom:12, border:`1px solid ${topAlertColor}55`, borderLeft:`4px solid ${topAlertColor}`, background: topOfficialAlert ? (dark ? "rgba(239,68,68,0.08)" : "rgba(239,68,68,0.05)") : (dark ? "rgba(34,197,94,0.06)" : "rgba(34,197,94,0.05)") }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12, flexWrap:"wrap" }}>
                 <div style={{ minWidth:220, flex:"1 1 300px" }}>
-                  <div style={{ fontSize:9, color:t.textMuted, letterSpacing:2 }}>SITUACAO OFICIAL</div>
+                  <div className="sr-section-eyebrow">SITUACAO OFICIAL</div>
                   <div style={{ fontSize:15, fontWeight:900, color:topAlertColor, marginTop:3 }}>
                     {topOfficialAlert ? `${topAlertRisk.icon} ${topAlertRisk.label.toUpperCase()} - Defesa Civil RS` : "Sem aviso oficial ativo no RSS"}
                   </div>
                   <div style={{ fontSize:10, color:t.textMuted, lineHeight:1.55, marginTop:6 }}>
                     {topOfficialAlert ? topOfficialAlert.message : "O risco geral do app e contexto ENSO sao indicadores calculados. Para emergencia, use os canais oficiais."}
+                  </div>
+                  <div className="sr-source-badges" aria-label="Origem dos indicadores">
+                    <span className="sr-source-badge is-official">Defesa Civil RS</span>
+                    <span className="sr-source-badge is-derived">Risco calculado</span>
+                    <span className="sr-source-badge is-context">ENSO contexto</span>
                   </div>
                 </div>
                 <div className="sr-emergency-actions">
@@ -112,23 +117,28 @@ export function DashboardTab({ ctx }) {
             >
               <div style={{ display:"flex", justifyContent:"space-between", gap:12, alignItems:"flex-start", flexWrap:"wrap" }}>
                 <div>
-                  <div style={{ fontSize:9, color:t.textMuted, letterSpacing:2 }}>LAGOA DOS PATOS</div>
+                  <div className="sr-section-eyebrow">LAGOA DOS PATOS</div>
                   <div style={{ fontSize:15, fontWeight:800, color:t.text, marginTop:2 }}>Monitoramento de nível</div>
                   <div style={{ fontSize:9, color:t.textMuted, marginTop:5 }}>
                     {lagoaSummary.monitored}/{lagoaSummary.total} pontos com leitura real · RADAR + HidroSens · Ana HidroWeb
                   </div>
+                  <div className="sr-source-badges" aria-label="Fontes do nivel da lagoa">
+                    <span className="sr-source-badge is-derived">RADAR</span>
+                    <span className="sr-source-badge is-derived">HidroSens</span>
+                    <span className="sr-source-badge is-official">ANA HidroWeb</span>
+                  </div>
                 </div>
-                <div style={{ display:"grid", gridTemplateColumns:"repeat(3, minmax(80px, 1fr))", gap:8, minWidth:260 }}>
-                  <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"8px 10px", borderRadius:5 }}>
-                    <div style={{ fontSize:8, color:t.textMuted }}>Acima da cota</div>
-                    <div style={{ fontSize:15, fontWeight:800, color:lagoaSummary.above ? "#f97316" : "#22c55e" }}>{lagoaSummary.above}</div>
+                <div className="sr-mini-stat-grid" style={{ gridTemplateColumns:"repeat(3, minmax(80px, 1fr))", minWidth:260, margin:0 }}>
+                  <div className="sr-mini-stat" style={{ background:dark?"rgba(0,0,0,0.3)":t.bg }}>
+                    <div className="sr-mini-stat-label">Acima da cota</div>
+                    <div className="sr-mini-stat-value" style={{ color:lagoaSummary.above ? "#f97316" : "#22c55e" }}>{lagoaSummary.above}</div>
                   </div>
-                  <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"8px 10px", borderRadius:5 }}>
-                    <div style={{ fontSize:8, color:t.textMuted }}>Atenção</div>
-                    <div style={{ fontSize:15, fontWeight:800, color:lagoaSummary.attention ? "#eab308" : "#22c55e" }}>{lagoaSummary.attention}</div>
+                  <div className="sr-mini-stat" style={{ background:dark?"rgba(0,0,0,0.3)":t.bg }}>
+                    <div className="sr-mini-stat-label">Atencao</div>
+                    <div className="sr-mini-stat-value" style={{ color:lagoaSummary.attention ? "#eab308" : "#22c55e" }}>{lagoaSummary.attention}</div>
                   </div>
-                  <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"8px 10px", borderRadius:5 }}>
-                    <div style={{ fontSize:8, color:t.textMuted }}>Última leitura</div>
+                  <div className="sr-mini-stat" style={{ background:dark?"rgba(0,0,0,0.3)":t.bg }}>
+                    <div className="sr-mini-stat-label">Ultima leitura</div>
                     <div style={{ fontSize:10, fontWeight:700, color:t.text }}>{lagoaSummary.latest ? formatDateTimeBR(lagoaSummary.latest) : "—"}</div>
                   </div>
                 </div>
@@ -160,9 +170,13 @@ export function DashboardTab({ ctx }) {
                   {d.risk!=="NORMAL" && <div style={{ position:"absolute", top:0, right:0, width:3, height:"100%", background:rColor, opacity:0.8 }} />}
                   <div className="sr-city-card-head" style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8 }}>
                     <div className="sr-city-card-title">
-                      <div style={{ fontSize:9, color:t.textMuted, letterSpacing:2 }}>{station.type.toUpperCase()}</div>
+                      <div className="sr-section-eyebrow" style={{ fontSize:9 }}>{station.type.toUpperCase()}</div>
                       <div style={{ fontSize:14, fontWeight:700, color:t.text }}>{station.name}</div>
                       {station.rioRef && <div style={{ fontSize:8, color:t.textFaint, marginTop:1 }}>{station.rioRef}</div>}
+                      <div className="sr-source-badges" aria-label="Fontes da cidade">
+                        {d.inmet && <span className="sr-source-badge is-official">INMET</span>}
+                        <span className={`sr-source-badge ${d.cemaden ? "is-official" : ""}`}>CEMADEN</span>
+                      </div>
                       {d.inmet && (
                         <div className="sr-city-source-line" style={{ fontSize:8, color:t.accent, marginTop:3 }}>
                           ● INMET: {d.inmet.resumo}
