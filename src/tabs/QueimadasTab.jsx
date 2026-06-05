@@ -216,9 +216,10 @@ export function QueimadasTab({ ctx }) {
               <div style={{ fontSize:9, color:t.textMuted, lineHeight:1.45, marginTop:6 }}>{area.focus}</div>
 
               <div className="sr-source-badges" aria-label={`Fontes para ${area.name}`}>
-                {(sources.length ? sources : ["sem fonte ativa"]).map((source) => (
-                  <span key={source} className={`sr-source-badge ${source === "sem fonte ativa" ? "" : "is-official"}`}>{source}</span>
-                ))}
+                <span className="sr-source-badge is-official">INPE focos</span>
+                <span className="sr-source-badge is-official">INPE Eventos</span>
+                <span className="sr-source-badge is-derived">CENSIPAM</span>
+                <span className="sr-source-badge is-context">Geocerca</span>
               </div>
 
               <div style={{ fontSize:8, color:t.textFaint, marginTop:7 }}>
