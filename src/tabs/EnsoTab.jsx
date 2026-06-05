@@ -139,8 +139,8 @@ export function EnsoTab({ ctx }) {
                 };
                 const lines = [
                   { key:"en", label:"El Niño",  labelOffset:-8, ...mkLine("en","#f97316") },
-                  { key:"nu", label:"Neutro",   labelOffset:0, ...mkLine("nu","#22c55e") },
-                  { key:"ln", label:"La Niña",  labelOffset:10, ...mkLine("ln","#3b82f6") },
+                  { key:"nu", label:"Neutro",   labelOffset:-22, ...mkLine("nu","#22c55e") },
+                  { key:"ln", label:"La Niña",  labelOffset:16, ...mkLine("ln","#3b82f6") },
                 ];
                 const yGridVals = [0, 0.25, 0.5, 0.75, 1.0];
                 return (
