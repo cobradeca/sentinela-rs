@@ -278,6 +278,7 @@ export async function fetchIriEnsoProbabilities() {
       prob: data.prob,
       forecast: data.forecast,
       probabilitySource: data.source,
+      probabilitySourceUrl: data.source_url || null,
       probabilityReferenceDate: data.referenceDate,
       probabilityDynamic: true,
       probabilityFetchedAt: data.fetched_at,

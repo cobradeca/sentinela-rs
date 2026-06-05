@@ -125,7 +125,7 @@ export function EnsoTab({ ctx }) {
               </div>
               {safeEnsoForecast(activeENSO.forecast).length >= 2 ? (() => {
                 const pts = safeEnsoForecast(activeENSO.forecast);
-                const W = 620, H = 196, padL = 42, padR = 86, padT = 18, padB = 52;
+                const W = 620, H = 210, padL = 42, padR = 86, padT = 20, padB = 68;
                 const innerW = W - padL - padR;
                 const innerH = H - padT - padB;
                 const xOf = (i) => padL + (i / (pts.length - 1)) * innerW;
@@ -143,18 +143,10 @@ export function EnsoTab({ ctx }) {
                   { key:"ln", label:"La Niña",  labelOffset:16, ...mkLine("ln","#3b82f6") },
                 ];
                 const pointLabelY = (f, key) => {
-                  const current = f[key];
-                  const values = [
-                    { key:"en", value:f.en },
-                    { key:"nu", value:f.nu },
-                    { key:"ln", value:f.ln },
-                  ].filter((item) => typeof item.value === "number" && Number.isFinite(item.value));
-                  const sorted = [...values].sort((a, b) => b.value - a.value);
-                  const rank = sorted.findIndex((item) => item.key === key);
-                  const y = yOf(current);
-                  if (rank === 0) return Math.max(8, y - 8);
-                  if (rank === sorted.length - 1) return Math.min(padT + innerH + 13, y + 13);
-                  return y < padT + innerH / 2 ? Math.max(8, y - 8) : Math.min(padT + innerH + 13, y + 13);
+                  const y = yOf(f[key]);
+                  if (key === "nu") return Math.max(8, y - 12);
+                  if (key === "ln") return Math.min(padT + innerH + 22, y + 22);
+                  return Math.max(8, y - 8);
                 };
                 const yGridVals = [0, 0.25, 0.5, 0.75, 1.0];
                 return (
@@ -171,7 +163,7 @@ export function EnsoTab({ ctx }) {
                       {pts.map((f,i) => (
                         <g key={i}>
                           <line x1={xOf(i)} x2={xOf(i)} y1={padT} y2={padT+innerH} stroke={dark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.05)"} strokeWidth="1"/>
-                          <text x={xOf(i)} y={padT+innerH+30} textAnchor="middle" fontSize="7" fill={dark?"#64748b":"#94a3b8"}>{f.p}</text>
+                          <text x={xOf(i)} y={padT+innerH+42} textAnchor="middle" fontSize="7" fill={dark?"#64748b":"#94a3b8"}>{f.p}</text>
                         </g>
                       ))}
                       {/* limiar 50% */}
@@ -193,6 +185,9 @@ export function EnsoTab({ ctx }) {
                         </g>
                       ))}
                     </svg>
+                    <div style={{ marginTop:6, fontSize:8, color:t.textFaint, lineHeight:1.5 }}>
+                      Fonte do gráfico: {activeENSO.probabilitySource || "IRI/CCSR ENSO Forecast"}{activeENSO.probabilitySourceUrl ? ` · ${activeENSO.probabilitySourceUrl}` : ""}. Curvas derivadas por parser textual do Sentinela-RS a partir do Quick Look; não representam tabela oficial trimestral estruturada.
+                    </div>
                     {/* tabela compacta abaixo */}
                     <div style={{ display:"grid", gap:5, marginTop:10 }}>
                       {pts.map((f,i) => (

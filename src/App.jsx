@@ -943,6 +943,7 @@ export default function SentinelaRS() {
     prob: ensoProbLive?.prob || null,
     forecast: ensoProbLive?.forecast || [],
     probabilitySource: ensoProbLive?.probabilitySource || null,
+    probabilitySourceUrl: ensoProbLive?.probabilitySourceUrl || null,
     probabilityReferenceDate: ensoProbLive?.probabilityReferenceDate || null,
     probabilityDynamic: Boolean(ensoProbLive),
     probabilityFetchedAt: ensoProbLive?.probabilityFetchedAt || null,
