@@ -190,9 +190,6 @@ export function EnsoTab({ ctx }) {
                         </g>
                       ))}
                     </svg>
-                    <div style={{ marginTop:-8, fontSize:8, color:t.textFaint, lineHeight:1.5 }}>
-                      Fonte do gráfico: {activeENSO.probabilitySource || "IRI/CCSR ENSO Forecast"}{activeENSO.probabilitySourceUrl ? ` · ${activeENSO.probabilitySourceUrl}` : ""}. Curvas derivadas por parser textual do Sentinela-RS a partir do Quick Look; não representam tabela oficial trimestral estruturada.
-                    </div>
                     {/* tabela compacta abaixo */}
                     <div style={{ display:"grid", gap:5, marginTop:18 }}>
                       {pts.map((f,i) => (
@@ -210,7 +207,7 @@ export function EnsoTab({ ctx }) {
                 <div style={{ fontSize:10, color:t.textMuted }}>Sem previsão probabilística validada no momento. A curva aparece quando a Edge Function IRI/CCSR retornar dados.</div>
               )}
               <div style={{ fontSize:8, color:t.textFaint, marginTop:8 }}>
-                Fonte: {activeENSO.probabilitySource || "IRI/CCSR"} · Referência: {activeENSO.probabilityReferenceDate || "indisponível"} · Consulta: {activeENSO.probabilityFetchedAt ? formatDateTimeBR(activeENSO.probabilityFetchedAt) : "sem horário"}
+                Fonte: {activeENSO.probabilitySource || "IRI/CCSR"}{activeENSO.probabilitySourceUrl ? ` · ${activeENSO.probabilitySourceUrl}` : ""} · Referência: {activeENSO.probabilityReferenceDate || "indisponível"} · Consulta: {activeENSO.probabilityFetchedAt ? formatDateTimeBR(activeENSO.probabilityFetchedAt) : "sem horário"} · Curvas derivadas por parser textual do Sentinela-RS a partir do Quick Look; não representam tabela oficial trimestral estruturada.
               </div>
             </div>
 
