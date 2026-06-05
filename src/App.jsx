@@ -743,8 +743,12 @@ export default function SentinelaRS() {
     health["Defesa Civil RS"] = { ok: Array.isArray(officialAlerts), lastOk: Array.isArray(officialAlerts) ? new Date().toISOString() : health["Defesa Civil RS"]?.lastOk || null, latencyMs: Date.now() - defesaStart, error: null };
     health["Carga geral"] = { ok: true, lastOk: new Date().toISOString(), latencyMs: Date.now() - t0, error: null };
 
-    sourceHealthRef.current = health;
-    setSourceHealth({ ...health });
+    const mergedHealth = {
+      ...sourceHealthRef.current,
+      ...health,
+    };
+    sourceHealthRef.current = mergedHealth;
+    setSourceHealth({ ...mergedHealth });
     setStationData(results);
     setLagoaHistory(nextLagoaHistory);
     setLagoaHistoryMeta({
