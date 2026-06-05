@@ -5,7 +5,6 @@ import { Sparkline as HistorySparkline } from "./components/Sparkline";
 import { appendLagoaHistorySnapshot, loadLagoaHistory } from "./services/lagoaHistory";
 import {
   fetchAnaLevel,
-  fetchCemadenAccumulations,
   fetchCensipamFireEventsRs,
   fetchCopernicusEms,
   fetchCopernicusNdvi,
@@ -26,7 +25,7 @@ import {
   fetchWeather14Days,
 } from "./services/api";
 import { APAS_RS, ALL_STATIONS, FIRE_MONITORED_AREAS_RS, STATIONS, STATIONS_CIDADES, STATIONS_LAGOA } from "./config/stations";
-import { CEMADEN_ATTRIBUTION, COPERNICUS_REFERENCE, ENSO_UNAVAILABLE } from "./config/sources";
+import { COPERNICUS_REFERENCE, ENSO_UNAVAILABLE } from "./config/sources";
 import { RISK_LEVELS, getRiskLevel } from "./utils/risk";
 import {
   classifyENSO,
@@ -153,7 +152,6 @@ function getResponsibleAgencyText(source) {
   if (text.includes("HIDROSENS")) return "HidroSens/UFPel";
   if (text.includes("RADAR")) return "Rede RADAR Lagoa dos Patos";
   if (text.includes("ANA")) return "ANA HidroWeb";
-  if (text.includes("CEMADEN")) return "CEMADEN/MCTI";
   if (text.includes("INMET")) return "INMET";
   if (text.includes("DEFESA")) return "Defesa Civil RS";
   if (text.includes("COPERNICUS")) return "Copernicus Data Space / Sentinel Hub";
@@ -204,19 +202,28 @@ function getLagoaSummary(stationData) {
 }
 
 
-// ANA HidroWeb — nível real via Supabase Edge Function.
-// A função ana-rs consulta a ANA com datas reais, lê <Nivel> e converte cm → m.
-// CEMADEN — chuva observada por acumulados recentes.
-// O token fica no Supabase Secret CEMADEN_PED_TOKEN, nunca no App.jsx.
-function formatCemadenRain(cemaden) {
-  if (!cemaden) return "";
-  const acc24 = typeof cemaden.max_acc24hr === "number" ? cemaden.max_acc24hr : null;
-  const acc6 = typeof cemaden.max_acc6hr === "number" ? cemaden.max_acc6hr : null;
+// ANA HidroWeb permanece como fonte complementar de nível.
+// Chuva observada usa Open-Meteo hourly precipitation com past_days=1.
+function getObservedPrecip24h(weather) {
+  const times = weather?.hourly?.time || [];
+  const values = weather?.hourly?.precipitation || [];
+  const referenceMs = new Date(weather?.current?.time || Date.now()).getTime();
+  if (!times.length || !values.length || !Number.isFinite(referenceMs)) return null;
 
-  if (acc24 !== null) return `chuva observada 24h ${acc24.toFixed(1)}mm`;
-  if (acc6 !== null) return `chuva observada 6h ${acc6.toFixed(1)}mm`;
+  const startMs = referenceMs - 24 * 60 * 60 * 1000;
+  let total = 0;
+  let count = 0;
 
-  return "chuva observada disponível";
+  for (let i = 0; i < times.length; i++) {
+    const tMs = new Date(times[i]).getTime();
+    const value = Number(values[i]);
+    if (Number.isFinite(tMs) && tMs > startMs && tMs <= referenceMs && Number.isFinite(value)) {
+      total += value;
+      count += 1;
+    }
+  }
+
+  return count ? total : null;
 }
 
 function explainCityRisk(station, d, ensoText = "") {
@@ -230,6 +237,7 @@ function explainCityRisk(station, d, ensoText = "") {
 
   const lines = [];
   const precip = typeof d.precip === "number" ? d.precip : null;
+  const observedPrecip24h = typeof d.observedPrecip24h === "number" ? d.observedPrecip24h : null;
   const tempMin = typeof d.tempMin === "number" ? d.tempMin : null;
   const windMax = typeof d.windMax === "number" ? d.windMax : null;
 
@@ -254,16 +262,18 @@ function explainCityRisk(station, d, ensoText = "") {
     else lines.push(`O vento previsto chega a ${windMax.toFixed(0)}km/h, baixo demais para aumentar o nível de atenção.`);
   }
 
-  if (d.cemaden) lines.push(`CEMADEN: ${formatCemadenRain(d.cemaden)}.`);
-  else if (d.cemadenUnavailable) lines.push("CEMADEN: fonte indisponível nesta consulta. Acompanhe o status em Fontes de Dados.");
-  else lines.push("CEMADEN: sem estação ativa ou sem acumulado validado para esta cidade no período. Ausência de dado não significa ausência de chuva.");
+  if (observedPrecip24h !== null) {
+    lines.push(`Open-Meteo observado: acumulado estimado de ${observedPrecip24h.toFixed(1)}mm nas últimas 24h.`);
+  } else {
+    lines.push("Open-Meteo observado: acumulado de 24h indisponível nesta consulta.");
+  }
 
   const riskLabel = RISK_LEVELS[d.risk]?.label || d.risk || "Indefinido";
 
   return {
     title: `${station?.name || "Cidade"} — ${riskLabel}`,
     lines,
-    note: `Regra: status calculado por parâmetros locais — chuva prevista, temperatura mínima, vento, CEMADEN e nível quando houver estação. ENSO é contexto climático${ensoText ? ` (${ensoText})` : ""}; não aciona alerta local sozinho.`
+    note: `Regra: status calculado por parâmetros locais — chuva prevista, chuva observada Open-Meteo, temperatura mínima, vento e nível quando houver estação. ENSO é contexto climático${ensoText ? ` (${ensoText})` : ""}; não aciona alerta local sozinho.`
   };
 }
 
@@ -578,21 +588,10 @@ export default function SentinelaRS() {
       }
     }
 
-    const [cemadenResult, lagoaRadarResult, hidrosensResult] = await Promise.allSettled([
-      tracked("CEMADEN", fetchCemadenAccumulations),
+    const [lagoaRadarResult, hidrosensResult] = await Promise.allSettled([
       tracked("RADAR Lagoa", fetchLagoaRadarLevels),
       tracked("HidroSens", fetchHidroSensLaranjalLevel),
     ]);
-    const cemadenMap = cemadenResult.status === "fulfilled" ? (cemadenResult.value || {}) : {};
-    const cemadenUnavailable = Boolean(cemadenMap.__unavailable);
-    if (cemadenUnavailable) {
-      health["CEMADEN"] = {
-        ok: false,
-        lastOk: health["CEMADEN"]?.lastOk || null,
-        latencyMs: health["CEMADEN"]?.latencyMs || null,
-        error: cemadenMap.__error || "CEMADEN indisponível",
-      };
-    }
     const lagoaRadarMap = lagoaRadarResult.status === "fulfilled" ? (lagoaRadarResult.value || {}) : {};
     const hidrosensLaranjal = hidrosensResult.status === "fulfilled" ? hidrosensResult.value : null;
 
@@ -624,8 +623,8 @@ export default function SentinelaRS() {
           if (!health["INMET"]) health["INMET"] = { ok: inmetOk, lastOk: inmetOk ? new Date().toISOString() : health["INMET"]?.lastOk || null, latencyMs: Date.now() - start, error: inmetOk ? null : r?.error || "sem resposta" };
           return inmetOk ? r : null;
         })() : null;
-        const cemaden = cemadenMap[st.id] || null;
         const precip = weather.daily?.precipitation_sum?.reduce((a, b) => a + b, 0) || 0;
+        const observedPrecip24h = getObservedPrecip24h(weather);
         const tempMin = Math.min(...(weather.daily?.temperature_2m_min || [20]));
         const tempCurrent = typeof weather.current?.temperature_2m === "number" ? weather.current.temperature_2m : null;
         const precipCurrent = typeof weather.current?.precipitation === "number" ? weather.current.precipitation : null;
@@ -664,7 +663,7 @@ export default function SentinelaRS() {
         const levelRisk = ((lagoa?.radar || lagoa?.hidrosens) && lagoa?.threshold_m && !lagoa?.isFallback && lagoa?.operational !== false) ? radarRiskToLevel(lagoa.levelStatus) : "NORMAL";
         const order = ["NORMAL", "ATENCAO", "ALERTA", "EMERGENCIA", "CRITICO"];
         const risk = order.indexOf(levelRisk) > order.indexOf(baseRisk) ? levelRisk : baseRisk;
-        results[st.id] = { weather, inmet, cemaden, cemadenUnavailable, lagoa, precip, tempMin, tempCurrent, precipCurrent, windCurrent, weatherCurrentCode, windMax, risk, realLevel, radarLevel };
+        results[st.id] = { weather, inmet, lagoa, precip, observedPrecip24h, tempMin, tempCurrent, precipCurrent, windCurrent, weatherCurrentCode, windMax, risk, realLevel, radarLevel };
       } catch { results[st.id] = { error: true, risk: "NORMAL" }; }
     });
     const defesaStart = Date.now();
@@ -1024,10 +1023,10 @@ export default function SentinelaRS() {
   }
 
   const tabCtx = useMemo(() => ({
-    APAS_RS, CEMADEN_ATTRIBUTION, COPERNICUS_REFERENCE, FIRE_MONITORED_AREAS_RS, FreshnessBadge, HistorySparkline, RISK_LEVELS, STATIONS, STATIONS_CIDADES, STATIONS_LAGOA,
+    APAS_RS, COPERNICUS_REFERENCE, FIRE_MONITORED_AREAS_RS, FreshnessBadge, HistorySparkline, RISK_LEVELS, STATIONS, STATIONS_CIDADES, STATIONS_LAGOA,
     activeENSO, alerts, censipamFireEvents, copernicusEms, copernicusNdvi, copernicusS1, copernicusWater, cptecProducts, dark, dataStaleness, dayNames, effisHealth,
     ensoClass, ensoDominantProb, ensoFirstForecast, ensoObservedAvailable, ensoObservedText, ensoProbabilityAvailable, ensoProbabilityText, expanded, explainCityRisk, explainDailyRisk, explainLagoaRisk,
-    formatCemadenRain, formatDateTimeBR, formatProbability, formatSignedCelsius, getFallbackWarningText, getLagoaMaxMay2024, getLagoaMeasuredAt, getLagoaPointData, getLagoaSourceText,
+    formatDateTimeBR, formatProbability, formatSignedCelsius, getFallbackWarningText, getLagoaMaxMay2024, getLagoaMeasuredAt, getLagoaPointData, getLagoaSourceText,
     getResponsibleAgencyText, getRiskBg, getRiskColor, getRiskLevel, getValidatedSourceHealth, lagoaHistory, lagoaHistoryMeta, lagoaStatusColor, lagoaStatusLabel, lagoaSummary, lastUpdate,
     ensoNoticias, ensoNoticiasLoading, icmbioUcs, inpeFireEvents, loadAllData, loadEnsoNoticias, loadQueimadas, percentValue, qLoading, queimadas, s, safeEnsoForecast, selData, selStation, setActiveTab, setExpanded, setExpandedCard, setRiskExplain, setSelStation, sourceHealth, stationData, t, wmoDesc, wmoEmoji,
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1234,7 +1233,7 @@ export default function SentinelaRS() {
           )}
 
           <div style={{ marginTop: 28, borderTop: `1px solid ${t.border}`, paddingTop: 12, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
-            <div style={{ fontSize: 9, color: t.textFaint }}>SENTINELA·RS · Open-Meteo + INMET + CEMADEN + Lagoa RADAR + HidroSens + Ana HidroWeb + NOAA ENSO + INPE + Copernicus · Fonte CEMADEN: {CEMADEN_ATTRIBUTION}</div>
+            <div style={{ fontSize: 9, color: t.textFaint }}>SENTINELA·RS · Open-Meteo + INMET + Lagoa RADAR + HidroSens + Ana HidroWeb + NOAA ENSO + INPE + Copernicus</div>
           </div>
         </div>
 

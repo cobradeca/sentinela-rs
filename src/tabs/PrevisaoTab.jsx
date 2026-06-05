@@ -2,7 +2,6 @@ import { DefesaCivilNotice } from "../components/DefesaCivilNotice";
 export function PrevisaoTab({ ctx }) {
   const {
     APAS_RS,
-    CEMADEN_ATTRIBUTION,
     COPERNICUS_REFERENCE,
     FIRE_MONITORED_AREAS_RS,
     HistorySparkline,
@@ -29,7 +28,6 @@ export function PrevisaoTab({ ctx }) {
     explainCityRisk,
     explainDailyRisk,
     explainLagoaRisk,
-    formatCemadenRain,
     formatDateTimeBR,
     formatProbability,
     formatSignedCelsius,

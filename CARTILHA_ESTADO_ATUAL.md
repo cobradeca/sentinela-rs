@@ -43,7 +43,7 @@ Somente cidades que beiram a Lagoa dos Patos com régua e endpoint real:
 | Função | Status | Observação |
 |---|---|---|
 | ana-rs | ATIVA | ANA HidroWeb REST, complementar |
-| cemaden-rs | ATIVA | Acumulados por cidade |
+| cemaden-rs | DESCONTINUADA NO APP | Token revogado/401; fluxo substituÃ­do por chuva observada Open-Meteo |
 | copernicus-ems | ATIVA | Referência estrutural pós-evento |
 | copernicus-health | ATIVA | Health check Copernicus |
 | copernicus-ndvi | ATIVA | NDVI entorno Lagoa |
@@ -79,7 +79,7 @@ Somente cidades que beiram a Lagoa dos Patos com régua e endpoint real:
 | VAPID_PUBLIC_KEY | Órfão — push removido, pode ser deletado |
 | VAPID_PRIVATE_KEY | Órfão — push removido, pode ser deletado |
 | VAPID_SUBJECT | Órfão — push removido, pode ser deletado |
-| CEMADEN_PED_TOKEN | Token CEMADEN |
+| CEMADEN_PED_TOKEN | Obsoleto no app â€” fonte CEMADEN removida do fluxo principal |
 | COPERNICUS_CLIENT_ID | Copernicus OAuth |
 | COPERNICUS_CLIENT_SECRET | Copernicus OAuth |
 | ANA_HIDROWEB_IDENTIFICADOR | ANA HidroWeb |

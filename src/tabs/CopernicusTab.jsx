@@ -2,7 +2,6 @@ import { DefesaCivilNotice } from "../components/DefesaCivilNotice";
 export function CopernicusTab({ ctx }) {
   const {
     APAS_RS,
-    CEMADEN_ATTRIBUTION,
     COPERNICUS_REFERENCE,
     FIRE_MONITORED_AREAS_RS,
     HistorySparkline,
@@ -28,7 +27,6 @@ export function CopernicusTab({ ctx }) {
     explainCityRisk,
     explainDailyRisk,
     explainLagoaRisk,
-    formatCemadenRain,
     formatDateTimeBR,
     formatProbability,
     formatSignedCelsius,
@@ -69,7 +67,7 @@ export function CopernicusTab({ ctx }) {
           <div style={{ display:"grid", gap:12 }}>
             <DefesaCivilNotice t={t} dark={dark} />
             <div style={{ padding:"10px 14px", background: dark?"rgba(139,92,246,0.08)":"rgba(139,92,246,0.05)", border:"1px solid rgba(139,92,246,0.3)", borderRadius:5, fontSize:10, color: dark?"#c4b5fd":"#7c3aed" }}>
-              🛰️ <strong>Copernicus — produtos reais ativos.</strong> Sentinel-2 observa água e vegetação quando há céu útil. Sentinel-1 usa radar e ajuda mesmo com nuvens ou à noite. As cores dos números destacam o tipo do indicador e a qualidade da leitura; não são alerta oficial. A decisão operacional continua dependendo de Defesa Civil, CEMADEN, RADAR Lagoa, HidroSens e demais fontes responsáveis.
+              🛰️ <strong>Copernicus — produtos reais ativos.</strong> Sentinel-2 observa água e vegetação quando há céu útil. Sentinel-1 usa radar e ajuda mesmo com nuvens ou à noite. As cores dos números destacam o tipo do indicador e a qualidade da leitura; não são alerta oficial. A decisão operacional continua dependendo de Defesa Civil, Open-Meteo observado, RADAR Lagoa, HidroSens e demais fontes responsáveis.
             </div>
 
             <div style={{ ...s.card, border:`1px solid ${copernicusEms?.ok ? "#22c55e55" : "#eab30855"}` }}>
@@ -153,7 +151,7 @@ export function CopernicusTab({ ctx }) {
                   {/* BLOCO: aviso de cobertura insuficiente */}
                   {typeof copernicusWater.valid_coverage_percent === "number" && copernicusWater.valid_coverage_percent < 30 && (
                     <div style={{ marginBottom:10, padding:"8px 10px", background: dark?"rgba(239,68,68,0.08)":"rgba(239,68,68,0.06)", border:"1px solid rgba(239,68,68,0.4)", borderRadius:4, fontSize:9, color:dark?"#fca5a5":"#b91c1c", lineHeight:1.5 }}>
-                      ⛅ <strong>Cobertura válida insuficiente: {copernicusWater.valid_coverage_percent}%</strong> — alta nebulosidade no período. O indicador de água superficial ({copernicusWater.water_percent}%) pode não ser representativo. Use Sentinel-1 SAR como referência complementar e confirme com Defesa Civil, CEMADEN e RADAR Lagoa.
+                      ⛅ <strong>Cobertura válida insuficiente: {copernicusWater.valid_coverage_percent}%</strong> — alta nebulosidade no período. O indicador de água superficial ({copernicusWater.water_percent}%) pode não ser representativo. Use Sentinel-1 SAR como referência complementar e confirme com Defesa Civil, Open-Meteo observado e RADAR Lagoa.
                     </div>
                   )}
                   <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))", gap:8 }}>
@@ -241,7 +239,7 @@ export function CopernicusTab({ ctx }) {
                     O Sentinel-1 mede o retorno do sinal de radar. Superfícies de água costumam devolver pouco sinal, por isso aparecem como “compatíveis com água”. Esse é um bom apoio quando há nuvens, mas pode confundir áreas urbanas, vegetação inundada, vento sobre a água e sombras de relevo.
                   </div>
                   <div style={{ marginTop:8, padding:"8px 10px", background: dark?"rgba(234,179,8,0.06)":"rgba(234,179,8,0.05)", border:"1px solid rgba(234,179,8,0.25)", borderRadius:4, fontSize:9, color:dark?"#fef08a":"#854d0e", lineHeight:1.5 }}>
-                    ⚠ {copernicusS1.limitation || "Indicador SAR de baixa retroespalhamento compatível com água. Pode falhar em áreas urbanas, vegetação inundada, vento forte sobre água e sombras de relevo. Confirmar com Defesa Civil, CEMADEN, RADAR Lagoa e HidroSens."}
+                    ⚠ {copernicusS1.limitation || "Indicador SAR de baixa retroespalhamento compatível com água. Pode falhar em áreas urbanas, vegetação inundada, vento forte sobre água e sombras de relevo. Confirmar com Defesa Civil, Open-Meteo observado, RADAR Lagoa e HidroSens."}
                   </div>
                   <div style={{ marginTop:6, fontSize:8, color:t.textFaint }}>
                     Fonte: {copernicusS1.source} · Método: {copernicusS1.method}

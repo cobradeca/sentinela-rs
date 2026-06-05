@@ -1,7 +1,6 @@
 export function FontesDeDadosTab({ ctx }) {
   const {
     APAS_RS,
-    CEMADEN_ATTRIBUTION,
     COPERNICUS_REFERENCE,
     FIRE_MONITORED_AREAS_RS,
     HistorySparkline,
@@ -28,7 +27,6 @@ export function FontesDeDadosTab({ ctx }) {
     explainCityRisk,
     explainDailyRisk,
     explainLagoaRisk,
-    formatCemadenRain,
     formatDateTimeBR,
     formatProbability,
     formatSignedCelsius,
@@ -81,7 +79,7 @@ export function FontesDeDadosTab({ ctx }) {
               <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:10 }}>SAÚDE DAS FONTES — ÚLTIMA VERIFICAÇÃO</div>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))", gap:8 }}>
                 {[
-                  "Open-Meteo","INMET","CEMADEN","RADAR Lagoa","HidroSens","Defesa Civil RS",
+                  "Open-Meteo","INMET","RADAR Lagoa","HidroSens","Defesa Civil RS",
                   "NOAA/CPC ENSO","IRI/CCSR ENSO","CPTEC/INPE","INPE BDQueimadas","INPE Eventos de Fogo","CENSIPAM Painel do Fogo","Copernicus EFFIS","Copernicus Water","Copernicus Sentinel-1","Copernicus NDVI","Copernicus EMS","ANA HidroWeb","Carga geral",
                 ].map(name => {
                   const h = getValidatedSourceHealth(name);

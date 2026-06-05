@@ -2,7 +2,6 @@ import { DefesaCivilNotice } from "../components/DefesaCivilNotice";
 export function CptecTab({ ctx }) {
   const {
     APAS_RS,
-    CEMADEN_ATTRIBUTION,
     COPERNICUS_REFERENCE,
     FIRE_MONITORED_AREAS_RS,
     HistorySparkline,
@@ -29,7 +28,6 @@ export function CptecTab({ ctx }) {
     explainCityRisk,
     explainDailyRisk,
     explainLagoaRisk,
-    formatCemadenRain,
     formatDateTimeBR,
     formatProbability,
     formatSignedCelsius,
@@ -73,7 +71,7 @@ export function CptecTab({ ctx }) {
               <div style={{ fontSize:9, color:t.textMuted, letterSpacing:2 }}>CPTEC/INPE</div>
               <div style={{ fontSize:20, fontWeight:900, color:t.text, marginTop:2 }}>Produtos sazonais e subsazonais oficiais</div>
               <div style={{ fontSize:10, color:t.textMuted, marginTop:5 }}>
-                Mapas oficiais do CPTEC/INPE para tendência climática. Eles ajudam a entender o cenário das próximas semanas ou meses, mas não substituem alerta local da Defesa Civil, CEMADEN, INMET ou sensores de nível.
+                Mapas oficiais do CPTEC/INPE para tendência climática. Eles ajudam a entender o cenário das próximas semanas ou meses, mas não substituem alerta local da Defesa Civil, INMET, Open-Meteo observado ou sensores de nível.
               </div>
               <div style={{ marginTop:8, display:"flex", gap:8, flexWrap:"wrap", fontSize:9 }}>
                 <span style={{ padding:"4px 8px", border:`1px solid ${cptecProducts?.ok ? "#22c55e" : "#64748b"}`, color:cptecProducts?.ok ? "#22c55e" : t.textMuted, borderRadius:4 }}>

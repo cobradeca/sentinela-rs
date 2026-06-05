@@ -2,7 +2,6 @@ import { DefesaCivilNotice } from "../components/DefesaCivilNotice";
 export function EnsoTab({ ctx }) {
   const {
     APAS_RS,
-    CEMADEN_ATTRIBUTION,
     COPERNICUS_REFERENCE,
     FIRE_MONITORED_AREAS_RS,
     HistorySparkline,
@@ -29,7 +28,6 @@ export function EnsoTab({ ctx }) {
     explainCityRisk,
     explainDailyRisk,
     explainLagoaRisk,
-    formatCemadenRain,
     formatDateTimeBR,
     formatProbability,
     formatSignedCelsius,
@@ -200,7 +198,7 @@ export function EnsoTab({ ctx }) {
             <div style={{ padding:12, background: dark?"rgba(234,179,8,0.06)":"rgba(234,179,8,0.05)", border:"1px solid rgba(234,179,8,0.25)", borderRadius:5 }}>
               <div style={{ fontSize:10, color:"#eab308", letterSpacing:2, marginBottom:6 }}>REGRA OPERACIONAL</div>
               <div style={{ fontSize:10, color:t.textMuted, lineHeight:1.6 }}>
-                ENSO e CPTEC são contexto climático. Não geram alerta local sozinhos. Alertas operacionais dependem de Defesa Civil, chuva observada CEMADEN, previsão oficial INMET/Open-Meteo e níveis reais da Lagoa/RADAR/HidroSens.
+                ENSO e CPTEC são contexto climático. Não geram alerta local sozinhos. Alertas operacionais dependem de Defesa Civil, chuva observada Open-Meteo, previsão INMET/Open-Meteo e níveis reais da Lagoa/RADAR/HidroSens.
               </div>
             </div>
           </div>
