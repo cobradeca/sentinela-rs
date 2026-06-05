@@ -459,10 +459,28 @@ div[style*="grid-template-columns: repeat(7"] {
 
 .sr-side-tab-button {
   width: 100%;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: start;
+  column-gap: 6px;
   text-align: left;
   min-height: 42px;
   line-height: 1.25;
   opacity: 1;
+}
+
+.sr-tab-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  line-height: 1.25;
+}
+
+.sr-tab-label {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .sr-content {
@@ -955,6 +973,10 @@ body[data-theme="light"] .sr-mobile-close {
 
   .sr-mobile-tab-button {
     width: 100%;
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr);
+    align-items: start;
+    column-gap: 8px;
     text-align: left;
     min-height: 42px;
     line-height: 1.25;

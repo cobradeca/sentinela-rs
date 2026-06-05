@@ -1101,33 +1101,39 @@ export default function SentinelaRS() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [stationData, alerts, dark, activeTab, selStation, selData, loading, lastUpdate, sourceHealth, lagoaHistory, lagoaHistoryMeta, expanded, expandedCard, riskExplain, queimadas, inpeFireEvents, censipamFireEvents, qLoading, copernicusWater, copernicusS1, copernicusNdvi, copernicusEms, cptecProducts, effisHealth, icmbioUcs, activeENSO, ensoNoticias, ensoNoticiasLoading]);
 
-  const renderNavButton = (tab, compact = false) => (
-    <button
-      key={tab.key}
-      onClick={() => {
-        setActiveTab(tab.key);
-        setMobileMenuOpen(false);
-      }}
-      className={compact ? "sr-mobile-tab-button" : "sr-side-tab-button"}
-      style={{
-        padding: compact ? "8px 12px" : "10px 12px",
-        fontSize: 12,
-        fontFamily: "inherit",
-        letterSpacing: 1,
-        cursor: "pointer",
-        borderRadius: 6,
-        textAlign: "left",
-        background: activeTab === tab.key ? t.tabActiveBg : "transparent",
-        border: activeTab === tab.key ? `1px solid ${t.borderActive}` : `1px solid ${t.border}`,
-        color: activeTab === tab.key ? t.tabActive : t.tabInactive,
-        fontWeight: activeTab === tab.key ? 800 : 700,
-        textShadow: dark ? "0 0 10px rgba(148, 210, 230, 0.18)" : "none",
-        transition: "all 0.2s",
-      }}
-    >
-      {tab.label}
-    </button>
-  );
+  const renderNavButton = (tab, compact = false) => {
+    const [icon, ...labelParts] = tab.label.split(" ");
+    const labelText = labelParts.join(" ");
+
+    return (
+      <button
+        key={tab.key}
+        onClick={() => {
+          setActiveTab(tab.key);
+          setMobileMenuOpen(false);
+        }}
+        className={compact ? "sr-mobile-tab-button" : "sr-side-tab-button"}
+        style={{
+          padding: compact ? "8px 12px" : "10px 12px",
+          fontSize: 12,
+          fontFamily: "inherit",
+          letterSpacing: 1,
+          cursor: "pointer",
+          borderRadius: 6,
+          textAlign: "left",
+          background: activeTab === tab.key ? t.tabActiveBg : "transparent",
+          border: activeTab === tab.key ? `1px solid ${t.borderActive}` : `1px solid ${t.border}`,
+          color: activeTab === tab.key ? t.tabActive : t.tabInactive,
+          fontWeight: activeTab === tab.key ? 800 : 700,
+          textShadow: dark ? "0 0 10px rgba(148, 210, 230, 0.18)" : "none",
+          transition: "all 0.2s",
+        }}
+      >
+        <span className="sr-tab-icon" aria-hidden="true">{icon}</span>
+        <span className="sr-tab-label">{labelText}</span>
+      </button>
+    );
+  };
 
   return (
     <>
