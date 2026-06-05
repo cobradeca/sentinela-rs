@@ -125,7 +125,7 @@ export function EnsoTab({ ctx }) {
               </div>
               {safeEnsoForecast(activeENSO.forecast).length >= 2 ? (() => {
                 const pts = safeEnsoForecast(activeENSO.forecast);
-                const W = 620, H = 178, padL = 42, padR = 86, padT = 16, padB = 38;
+                const W = 620, H = 196, padL = 42, padR = 86, padT = 18, padB = 52;
                 const innerW = W - padL - padR;
                 const innerH = H - padT - padB;
                 const xOf = (i) => padL + (i / (pts.length - 1)) * innerW;
@@ -142,6 +142,20 @@ export function EnsoTab({ ctx }) {
                   { key:"nu", label:"Neutro",   labelOffset:-22, ...mkLine("nu","#22c55e") },
                   { key:"ln", label:"La Niña",  labelOffset:16, ...mkLine("ln","#3b82f6") },
                 ];
+                const pointLabelY = (f, key) => {
+                  const current = f[key];
+                  const values = [
+                    { key:"en", value:f.en },
+                    { key:"nu", value:f.nu },
+                    { key:"ln", value:f.ln },
+                  ].filter((item) => typeof item.value === "number" && Number.isFinite(item.value));
+                  const sorted = [...values].sort((a, b) => b.value - a.value);
+                  const rank = sorted.findIndex((item) => item.key === key);
+                  const y = yOf(current);
+                  if (rank === 0) return Math.max(8, y - 8);
+                  if (rank === sorted.length - 1) return Math.min(padT + innerH + 13, y + 13);
+                  return y < padT + innerH / 2 ? Math.max(8, y - 8) : Math.min(padT + innerH + 13, y + 13);
+                };
                 const yGridVals = [0, 0.25, 0.5, 0.75, 1.0];
                 return (
                   <div>
@@ -157,7 +171,7 @@ export function EnsoTab({ ctx }) {
                       {pts.map((f,i) => (
                         <g key={i}>
                           <line x1={xOf(i)} x2={xOf(i)} y1={padT} y2={padT+innerH} stroke={dark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.05)"} strokeWidth="1"/>
-                          <text x={xOf(i)} y={padT+innerH+14} textAnchor="middle" fontSize="7" fill={dark?"#64748b":"#94a3b8"}>{f.p}</text>
+                          <text x={xOf(i)} y={padT+innerH+30} textAnchor="middle" fontSize="7" fill={dark?"#64748b":"#94a3b8"}>{f.p}</text>
                         </g>
                       ))}
                       {/* limiar 50% */}
@@ -169,8 +183,13 @@ export function EnsoTab({ ctx }) {
                           {pts.map((f,i) => (
                             <circle key={i} cx={xOf(i)} cy={yOf(f[ln.key])} r="3" fill={ln.color} opacity="0.85"/>
                           ))}
+                          {pts.map((f,i) => (
+                            <text key={`label-${i}`} x={xOf(i)} y={pointLabelY(f, ln.key)} textAnchor="middle" fontSize="7" fill={ln.color} fontWeight="700">
+                              {typeof f[ln.key] === "number" ? Math.round(f[ln.key]*100)+"%" : ""}
+                            </text>
+                          ))}
                           {/* label no final */}
-                          <text x={Math.min(W - padR + 8, ln.lastX + 6)} y={Math.max(padT + 8, Math.min(H - padB - 6, ln.lastY + 3 + ln.labelOffset))} fontSize="8" fill={ln.color} fontWeight="700">{ln.label} {typeof ln.lastV === "number" ? Math.round(ln.lastV*100)+"%" : ""}</text>
+                          <text x={Math.min(W - padR + 8, ln.lastX + 6)} y={Math.max(padT + 8, Math.min(H - padB - 6, ln.lastY + 3 + ln.labelOffset))} fontSize="8" fill={ln.color} fontWeight="700">{ln.label}</text>
                         </g>
                       ))}
                     </svg>
