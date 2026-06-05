@@ -97,7 +97,7 @@ export function FontesDeDadosTab({ ctx }) {
                       </div>
                       {h && (
                         <>
-                          <div style={{ fontSize:8, color:t.textMuted }}>Latência: {typeof h.latencyMs === "number" ? h.latencyMs + "ms" : "OK"}</div>
+                          <div style={{ fontSize:8, color:t.textMuted }}>Latência: {pending ? "sem consulta recente" : (typeof h.latencyMs === "number" ? h.latencyMs + "ms" : "OK")}</div>
                           {h.lastOk && <div style={{ fontSize:8, color:t.textFaint }}>Último OK: {formatDateTimeBR(h.lastOk)}</div>}
                           {h.error && !ok && !pending && (
                             <div style={{ fontSize:8, color:anaComplementar ? "#eab308" : "#ef4444", marginTop:2 }}>

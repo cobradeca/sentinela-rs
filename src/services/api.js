@@ -100,7 +100,10 @@ export async function fetchNoaaEnso() {
     const data = await res.json();
     if (!data?.ok || !data?.enso) return null;
 
-    return data.enso;
+    return {
+      ...data.enso,
+      fetchedAt: data.fetched_at || data.enso?.fetchedAt || null,
+    };
   } catch {
     return null;
   }

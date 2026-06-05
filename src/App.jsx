@@ -553,12 +553,12 @@ export default function SentinelaRS() {
     return null;
   }
 
-  function markSourceHealth(name, ok, startedAt, error = null) {
+  function markSourceHealth(name, ok, startedAt, error = null, lastOk = null) {
     const next = {
       ...sourceHealthRef.current,
       [name]: {
         ok: Boolean(ok),
-        lastOk: ok ? new Date().toISOString() : sourceHealthRef.current[name]?.lastOk || null,
+        lastOk: ok ? (lastOk || new Date().toISOString()) : sourceHealthRef.current[name]?.lastOk || null,
         latencyMs: Date.now() - startedAt,
         error,
       },
@@ -898,7 +898,7 @@ export default function SentinelaRS() {
       const startedAt = Date.now();
       const live = await fetchNoaaEnso();
       if (!alive) return;
-      markSourceHealth("NOAA/CPC ENSO", Boolean(live), startedAt, live ? null : "sem índice observado validado");
+      markSourceHealth("NOAA/CPC ENSO", Boolean(live), startedAt, live ? null : "sem índice observado validado", live?.fetchedAt);
       if (!live) return;
 
       setEnsoLive(live);
