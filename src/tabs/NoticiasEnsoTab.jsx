@@ -33,6 +33,8 @@ export function NoticiasEnsoTab({ ctx }) {
 
   return (
     <div style={{ display: "grid", gap: 12 }}>
+      <DefesaCivilNotice t={t} dark={dark} compact />
+
       <div style={{
         padding: "12px 14px",
         background: dark ? "rgba(56,189,248,0.07)" : "rgba(14,165,233,0.06)",
@@ -64,8 +66,6 @@ export function NoticiasEnsoTab({ ctx }) {
           {ensoNoticiasLoading ? "Buscando..." : "Atualizar"}
         </button>
       </div>
-
-      <DefesaCivilNotice t={t} dark={dark} compact />
 
       {failedSources.length > 0 && (
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
