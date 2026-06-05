@@ -425,7 +425,7 @@ export async function fetchLagoaRadarLevels() {
 export async function fetchAnaLevel(anaCode) {
   try {
     const res = await fetch(`${ANA_RS_FUNCTION_URL}?codEstacao=${encodeURIComponent(anaCode)}`, {
-      signal: AbortSignal.timeout(12000),
+      signal: AbortSignal.timeout(6000),
       cache: "no-store",
       headers: { Accept: "application/json" },
     });
