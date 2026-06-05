@@ -94,7 +94,7 @@ export function PrevisaoTab({ ctx }) {
                     const w=selData.weather.daily.windspeed_10m_max?.[dayIndex]||0;
                     const c=selData.weather.daily.weathercode?.[dayIndex]||0;
                     const baseDr=getRiskLevel(p*1.5,tn,w);
-                    const dr=["CRITICO","EMERGENCIA","ALERTA"].includes(baseDr) ? baseDr : ((p>=10||w>=30||tn<5) ? "ATENCAO" : baseDr);
+                    const dr=(baseDr!=="NORMAL" || p>=10 || w>=30 || tn<5) ? "MONITORAR" : "NORMAL";
                     const r=RISK_LEVELS[dr];
                     const rColor=getRiskColor(dr);
                     return (
@@ -140,15 +140,15 @@ export function PrevisaoTab({ ctx }) {
                 </div>
                 <div
                   onClick={()=>setRiskExplain(explainCityRisk(selStation, selData, ensoProbabilityText))}
-                  title="Clique para entender a análise de risco"
+                  title="Clique para entender a análise de monitoramento"
                   style={{ padding:14, background:getRiskBg(selData.risk), border:`1px solid ${getRiskColor(selData.risk)}44`, borderRadius:5, cursor:"pointer" }}
                 >
-                  <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:8 }}>ANÁLISE DE RISCO — 14 DIAS</div>
+                  <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:8 }}>ANÁLISE DE MONITORAMENTO — 14 DIAS</div>
                   <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))", gap:8 }}>
                     {[
-                      { l:"Precipitação", v:`${selData.precip?.toFixed(0)} mm`, a:selData.precip>80 },
+                      { l:"Precipitação", v:`${selData.precip?.toFixed(0)} mm`, a:selData.precip>20 },
                       { l:"Temp. mínima", v:`${selData.tempMin?.toFixed(1)}°C`,  a:selData.tempMin<5 },
-                      { l:"Vento máx.",   v:`${selData.windMax?.toFixed(0)} km/h`, a:selData.windMax>50 },
+                      { l:"Vento máx.",   v:`${selData.windMax?.toFixed(0)} km/h`, a:selData.windMax>30 },
                       { l:"Contexto climático",v: ensoObservedAvailable ? `${ensoClass.label} (Niño 3.4 ${formatSignedCelsius(activeENSO.nino34)})` : (ensoDominantProb ? `${ensoDominantProb.label} ${formatProbability(ensoDominantProb.value)}` : "ENSO indisponível"), a:false },
                     ].map(item=>(
                       <div key={item.l} style={{ display:"flex", justifyContent:"space-between" }}>

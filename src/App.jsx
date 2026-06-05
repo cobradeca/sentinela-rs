@@ -308,23 +308,23 @@ function explainCityRisk(station, d, ensoText = "") {
 
   if (precip !== null) {
     if (precip > 150) lines.push(`A previsão soma ${precip.toFixed(0)}mm de chuva em 14 dias, um volume muito alto para acompanhar de perto.`);
-    else if (precip > 80) lines.push(`A previsão soma ${precip.toFixed(0)}mm de chuva em 14 dias, volume alto o suficiente para elevar a atenção.`);
-    else if (precip > 40) lines.push(`A previsão soma ${precip.toFixed(0)}mm de chuva em 14 dias. É chuva moderada, ainda sem sinal severo isolado.`);
+    else if (precip > 80) lines.push(`A previsão soma ${precip.toFixed(0)}mm de chuva em 14 dias, volume alto o suficiente para manter a cidade em monitoramento.`);
+    else if (precip > 40) lines.push(`A previsão soma ${precip.toFixed(0)}mm de chuva em 14 dias. É chuva moderada e justifica monitoramento.`);
     else if (precip > 20) lines.push(`A previsão soma ${precip.toFixed(0)}mm de chuva em 14 dias. Por enquanto, é um cenário de acompanhamento.`);
     else lines.push(`A previsão soma apenas ${precip.toFixed(0)}mm de chuva em 14 dias, sem pressão relevante por chuva acumulada.`);
   }
 
   if (tempMin !== null) {
-    if (tempMin < 0) lines.push(`A mínima prevista chega a ${tempMin.toFixed(1)}°C, com risco de geada ou gelo.`);
-    else if (tempMin < 5) lines.push(`A mínima prevista é de ${tempMin.toFixed(1)}°C. É frio suficiente para entrar em atenção no RS.`);
-    else lines.push(`A mínima prevista é de ${tempMin.toFixed(1)}°C. Esse frio não aumenta o nível de atenção agora.`);
+    if (tempMin < 0) lines.push(`A mínima prevista chega a ${tempMin.toFixed(1)}°C, com possibilidade de geada ou gelo.`);
+    else if (tempMin < 5) lines.push(`A mínima prevista é de ${tempMin.toFixed(1)}°C. É frio relevante para o RS e justifica monitoramento.`);
+    else lines.push(`A mínima prevista é de ${tempMin.toFixed(1)}°C. Esse frio não muda o estado de monitoramento agora.`);
   }
 
   if (windMax !== null) {
     if (windMax > 80) lines.push(`As rajadas podem chegar a ${windMax.toFixed(0)}km/h, faixa de vento muito forte.`);
     else if (windMax > 50) lines.push(`As rajadas podem chegar a ${windMax.toFixed(0)}km/h, vento forte para acompanhar.`);
-    else if (windMax > 30) lines.push(`As rajadas podem chegar a ${windMax.toFixed(0)}km/h. Ainda é atenção leve por vento.`);
-    else lines.push(`O vento previsto chega a ${windMax.toFixed(0)}km/h, baixo demais para aumentar o nível de atenção.`);
+    else if (windMax > 30) lines.push(`As rajadas podem chegar a ${windMax.toFixed(0)}km/h. Esse vento já justifica monitoramento.`);
+    else lines.push(`O vento previsto chega a ${windMax.toFixed(0)}km/h, baixo demais para mudar o estado de monitoramento.`);
   }
 
   if (observedPrecip24h !== null) {
@@ -338,7 +338,7 @@ function explainCityRisk(station, d, ensoText = "") {
   return {
     title: `${station?.name || "Cidade"} — ${riskLabel}`,
     lines,
-    note: `Regra: status calculado por parâmetros locais — chuva prevista, chuva observada Open-Meteo, temperatura mínima, vento e nível quando houver estação. ENSO é contexto climático${ensoText ? ` (${ensoText})` : ""}; não aciona alerta local sozinho.`
+    note: `Regra: status de monitoramento calculado por parâmetros locais — chuva prevista, chuva observada Open-Meteo, temperatura mínima, vento e nível quando houver estação. ENSO é contexto climático${ensoText ? ` (${ensoText})` : ""}; não aciona alerta local sozinho.`
   };
 }
 
@@ -352,17 +352,17 @@ function explainDailyRisk(station, date, p, tn, w, riskCode) {
     lines: [
       p >= 10
         ? `Há ${p.toFixed(0)}mm de chuva previstos para o dia. Esse volume já justifica acompanhar a situação.`
-        : `Quase não há chuva prevista para o dia (${p.toFixed(0)}mm), então a chuva não pesa no risco.`,
+        : `Quase não há chuva prevista para o dia (${p.toFixed(0)}mm), então a chuva não muda o estado de monitoramento.`,
       tn < 0
         ? `A mínima pode cair para ${tn.toFixed(1)}°C, com risco de geada ou gelo.`
         : tn < 5
-          ? `A mínima pode chegar a ${tn.toFixed(1)}°C. É frio relevante para o RS e entra como atenção.`
-          : `A mínima prevista é de ${tn.toFixed(1)}°C. Esse frio não aumenta o nível de atenção agora.`,
+          ? `A mínima pode chegar a ${tn.toFixed(1)}°C. É frio relevante para o RS e justifica monitoramento.`
+          : `A mínima prevista é de ${tn.toFixed(1)}°C. Esse frio não muda o estado de monitoramento agora.`,
       w >= 30
         ? `O vento pode chegar a ${w.toFixed(0)}km/h. A partir de 30km/h o app passa a acompanhar o vento com mais cuidado.`
-        : `O vento previsto é baixo (${w.toFixed(0)}km/h), sem influência relevante no risco do dia.`
+        : `O vento previsto é baixo (${w.toFixed(0)}km/h), sem influência relevante no monitoramento do dia.`
     ],
-    note: "Este status resume chuva, frio e vento previstos. Para decisões de segurança, confira também os avisos oficiais da Defesa Civil e dos órgãos responsáveis."
+    note: "Este status resume chuva, frio e vento previstos para acompanhamento. Para decisões de segurança, confira os avisos oficiais da Defesa Civil e dos órgãos responsáveis."
   };
 }
 
@@ -734,7 +734,8 @@ export default function SentinelaRS() {
         const baseRisk = getRiskLevel(precip, tempMin, windMax, null);
         const levelRisk = ((lagoa?.radar || lagoa?.hidrosens) && lagoa?.threshold_m && !lagoa?.isFallback && lagoa?.operational !== false) ? radarRiskToLevel(lagoa.levelStatus) : "NORMAL";
         const order = ["NORMAL", "ATENCAO", "ALERTA", "EMERGENCIA", "CRITICO"];
-        const risk = order.indexOf(levelRisk) > order.indexOf(baseRisk) ? levelRisk : baseRisk;
+        const calculatedRisk = order.indexOf(levelRisk) > order.indexOf(baseRisk) ? levelRisk : baseRisk;
+        const risk = st.type === "cidade" && calculatedRisk !== "NORMAL" ? "MONITORAR" : calculatedRisk;
         results[st.id] = { weather, inmet, lagoa, precip, observedPrecip24h, tempMin, tempCurrent, precipCurrent, windCurrent, weatherCurrentCode, windMax, risk, realLevel, radarLevel };
       } catch { results[st.id] = { error: true, risk: "NORMAL" }; }
     });

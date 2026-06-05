@@ -1,5 +1,6 @@
 export const RISK_LEVELS = {
   NORMAL:     { label: "Normal",     color: "#22c55e", bg: "#052e16", bgLight: "#dcfce7", colorLight: "#15803d", icon: "\u2713" },
+  MONITORAR:  { label: "Monitorar",  color: "#eab308", bg: "#1c1a05", bgLight: "#fef9c3", colorLight: "#a16207", icon: "\u26a0" },
   ATENCAO:    { label: "Aten\u00e7\u00e3o",    color: "#eab308", bg: "#1c1a05", bgLight: "#fef9c3", colorLight: "#a16207", icon: "\u26a0" },
   ALERTA:     { label: "Alerta",     color: "#f97316", bg: "#1c0a05", bgLight: "#ffedd5", colorLight: "#c2410c", icon: "\u25b2" },
   SEVERO:     { label: "Severo",     color: "#ef4444", bg: "#1c0505", bgLight: "#fee2e2", colorLight: "#b91c1c", icon: "\u25b2" },
