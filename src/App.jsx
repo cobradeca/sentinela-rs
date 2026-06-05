@@ -435,6 +435,8 @@ export default function SentinelaRS() {
   // BLOCO D — saúde das fontes
   const [sourceHealth, setSourceHealth] = useState({});
   const sourceHealthRef = useRef({});
+  const fireSourcesLoadedRef = useRef(false);
+  const fireSourcesLoadingRef = useRef(false);
 
   useEffect(() => {
     document.body.dataset.theme = dark ? "dark" : "light";
@@ -717,31 +719,38 @@ export default function SentinelaRS() {
   }, []);
 
   const loadQueimadas = useCallback(async () => {
+    if (fireSourcesLoadingRef.current) return;
+    fireSourcesLoadingRef.current = true;
     setQLoading(true);
     const startedAt = Date.now();
-    const [dataResult, inpeEventsResult, eventsResult, ucsResult, effisResult] = await Promise.allSettled([
-      fetchQueimadas(),
-      fetchInpeFireEventsRs(),
-      fetchCensipamFireEventsRs(),
-      fetchIcmbioUcsRs(),
-      fetchEffisWmsHealth(),
-    ]);
-    const data = dataResult.status === "fulfilled" ? dataResult.value : { ok: false, error: dataResult.reason?.message || "falha inesperada" };
-    const inpeEvents = inpeEventsResult.status === "fulfilled" ? inpeEventsResult.value : { ok: false, error: inpeEventsResult.reason?.message || "falha inesperada" };
-    const events = eventsResult.status === "fulfilled" ? eventsResult.value : { ok: false, error: eventsResult.reason?.message || "falha inesperada" };
-    const ucs = ucsResult.status === "fulfilled" ? ucsResult.value : { ok: false, error: ucsResult.reason?.message || "falha inesperada" };
-    const effis = effisResult.status === "fulfilled" ? effisResult.value : { ok: false, error: effisResult.reason?.message || "falha inesperada" };
-    markSourceHealth("INPE BDQueimadas", Boolean(data?.ok), startedAt, data?.ok ? null : data?.error || "sem resposta operacional");
-    markSourceHealth("INPE Eventos de Fogo", Boolean(inpeEvents?.ok), startedAt, inpeEvents?.ok ? null : inpeEvents?.error || "sem eventos validados");
-    markSourceHealth("CENSIPAM Painel do Fogo", Boolean(events?.ok), startedAt, events?.ok ? null : events?.error || "sem eventos validados");
-    markSourceHealth("ICMBio/MMA CNUC", Boolean(ucs?.ok), startedAt, ucs?.ok ? null : ucs?.error || "sem cadastro validado");
-    markSourceHealth("Copernicus EFFIS", Boolean(effis?.ok), startedAt, effis?.ok ? null : effis?.error || "WMS EFFIS sem resposta validada");
-    setQueimadas(data);
-    setInpeFireEvents(inpeEvents);
-    setCensipamFireEvents(events);
-    setIcmbioUcs(ucs);
-    setEffisHealth(effis);
-    setQLoading(false);
+    try {
+      const [dataResult, inpeEventsResult, eventsResult, ucsResult, effisResult] = await Promise.allSettled([
+        fetchQueimadas(),
+        fetchInpeFireEventsRs(),
+        fetchCensipamFireEventsRs(),
+        fetchIcmbioUcsRs(),
+        fetchEffisWmsHealth(),
+      ]);
+      const data = dataResult.status === "fulfilled" ? dataResult.value : { ok: false, error: dataResult.reason?.message || "falha inesperada" };
+      const inpeEvents = inpeEventsResult.status === "fulfilled" ? inpeEventsResult.value : { ok: false, error: inpeEventsResult.reason?.message || "falha inesperada" };
+      const events = eventsResult.status === "fulfilled" ? eventsResult.value : { ok: false, error: eventsResult.reason?.message || "falha inesperada" };
+      const ucs = ucsResult.status === "fulfilled" ? ucsResult.value : { ok: false, error: ucsResult.reason?.message || "falha inesperada" };
+      const effis = effisResult.status === "fulfilled" ? effisResult.value : { ok: false, error: effisResult.reason?.message || "falha inesperada" };
+      markSourceHealth("INPE BDQueimadas", Boolean(data?.ok), startedAt, data?.ok ? null : data?.error || "sem resposta operacional");
+      markSourceHealth("INPE Eventos de Fogo", Boolean(inpeEvents?.ok), startedAt, inpeEvents?.ok ? null : inpeEvents?.error || "sem eventos validados");
+      markSourceHealth("CENSIPAM Painel do Fogo", Boolean(events?.ok), startedAt, events?.ok ? null : events?.error || "sem eventos validados");
+      markSourceHealth("ICMBio/MMA CNUC", Boolean(ucs?.ok), startedAt, ucs?.ok ? null : ucs?.error || "sem cadastro validado");
+      markSourceHealth("Copernicus EFFIS", Boolean(effis?.ok), startedAt, effis?.ok ? null : effis?.error || "WMS EFFIS sem resposta validada");
+      setQueimadas(data);
+      setInpeFireEvents(inpeEvents);
+      setCensipamFireEvents(events);
+      setIcmbioUcs(ucs);
+      setEffisHealth(effis);
+      fireSourcesLoadedRef.current = true;
+    } finally {
+      fireSourcesLoadingRef.current = false;
+      setQLoading(false);
+    }
   }, []);
 
   const loadEnsoNoticias = useCallback(async () => {
@@ -756,6 +765,12 @@ export default function SentinelaRS() {
     const iv = setInterval(loadAllData, 30 * 60 * 1000);
     return () => clearInterval(iv);
   }, [loadAllData]);
+
+  useEffect(() => {
+    loadQueimadas();
+    const iv = setInterval(loadQueimadas, 30 * 60 * 1000);
+    return () => clearInterval(iv);
+  }, [loadQueimadas]);
 
   useEffect(() => {
     let alive = true;
@@ -914,7 +929,7 @@ export default function SentinelaRS() {
   }, []);
 
   useEffect(() => {
-    if (activeTab === "queimadas" || activeTab === "apis") {
+    if ((activeTab === "queimadas" || activeTab === "apis") && !fireSourcesLoadedRef.current) {
       loadQueimadas();
     }
     if (activeTab === "noticias-enso" && !ensoNoticias && !ensoNoticiasLoading) {
