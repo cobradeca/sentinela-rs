@@ -190,7 +190,7 @@ export function EnsoTab({ ctx }) {
                         </g>
                       ))}
                     </svg>
-                    <div style={{ marginTop:0, fontSize:8, color:t.textFaint, lineHeight:1.5 }}>
+                    <div style={{ marginTop:-8, fontSize:8, color:t.textFaint, lineHeight:1.5 }}>
                       Fonte do gráfico: {activeENSO.probabilitySource || "IRI/CCSR ENSO Forecast"}{activeENSO.probabilitySourceUrl ? ` · ${activeENSO.probabilitySourceUrl}` : ""}. Curvas derivadas por parser textual do Sentinela-RS a partir do Quick Look; não representam tabela oficial trimestral estruturada.
                     </div>
                     {/* tabela compacta abaixo */}
