@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { DefesaCivilNotice } from "../components/DefesaCivilNotice";
-import monitoredAreasGeojsonUrl from "../data/fire-monitored-areas.geojson?url";
 import { findNearbyFireEvents, findNearbyFireFoci } from "../utils/fireSpatial";
 
 let monitoredAreaGeometriesPromise = null;
+const monitoredAreasGeojsonUrl = `${import.meta.env.BASE_URL}data/fire-monitored-areas.geojson`;
 
 function loadMonitoredAreaGeometries() {
   if (!monitoredAreaGeometriesPromise) {
