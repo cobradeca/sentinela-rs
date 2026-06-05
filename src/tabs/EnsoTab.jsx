@@ -85,7 +85,7 @@ export function EnsoTab({ ctx }) {
               {[
                 { l:"Fase observada", v: ensoObservedAvailable ? `${ensoClass.icon} ${ensoClass.label}` : "indisponível", s: ensoObservedAvailable ? `Niño 3.4: ${formatSignedCelsius(activeENSO.nino34)}` : "NOAA/CPC sem leitura", c:ensoClass.color },
                 { l:"ONI trimestral", v: formatSignedCelsius(activeENSO.oni3m), s:"NOAA/CPC observado", c: ensoObservedAvailable ? "#f97316" : "#64748b" },
-                { l:"Prob. El Niño (próx.)", v: formatProbability(activeENSO.prob?.elNino), s: ensoFirstForecast?.p ? `IRI/CCSR · ${ensoFirstForecast.p}` : "IRI/CCSR", c:"#f97316" },
+                { l:"Prob. El Niño (atual)", v: formatProbability(activeENSO.prob?.elNino), s: ensoFirstForecast?.p ? `IRI/CCSR · ${ensoFirstForecast.p}` : "IRI/CCSR", c:"#f97316" },
                 { l:"Prob. Neutro", v: formatProbability(activeENSO.prob?.neutral), s:"IRI/CCSR", c:"#22c55e" },
                 { l:"Prob. La Niña", v: formatProbability(activeENSO.prob?.laNina), s:"IRI/CCSR", c:"#3b82f6" },
                 { l:"Tipo de uso", v:"Contexto climático", s:"iminência de formação de El Niño", c:"#eab308" },
@@ -178,7 +178,7 @@ export function EnsoTab({ ctx }) {
                     <div style={{ display:"grid", gap:5, marginTop:10 }}>
                       {pts.map((f,i) => (
                         <div key={i} style={{ display:"grid", gridTemplateColumns:"90px 1fr 1fr 1fr", gap:6, alignItems:"center", padding:"4px 6px", background: i===0?(dark?"rgba(34,211,238,0.06)":"rgba(8,145,178,0.05)"):"transparent", borderRadius:3 }}>
-                          <div style={{ fontSize:9, fontWeight: i===0?700:400, color: i===0?t.accent:t.textMuted }}>{f.p}{i===0?" (próximo)":""}</div>
+                          <div style={{ fontSize:9, fontWeight: i===0?700:400, color: i===0?t.accent:t.textMuted }}>{f.p}{i===0?" (atual)":""}</div>
                           {[{l:"El Niño",v:f.en,c:"#f97316"},{l:"Neutro",v:f.nu,c:"#22c55e"},{l:"La Niña",v:f.ln,c:"#3b82f6"}].map(bar=>(
                             <div key={bar.l} style={{ fontSize:9, color:bar.c, fontWeight:600 }}>{bar.l} {formatProbability(bar.v)}</div>
                           ))}
