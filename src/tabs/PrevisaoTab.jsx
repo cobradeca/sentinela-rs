@@ -70,7 +70,7 @@ export function PrevisaoTab({ ctx }) {
           <div>
             <DefesaCivilNotice t={t} dark={dark} />
             {/* Select com seta visível, apenas cidades */}
-            <div style={{ position:"relative", display:"inline-block", marginBottom:14 }}>
+            <div style={{ position:"relative", zIndex:1, display:"inline-block", marginTop:12, marginBottom:18 }}>
               <select value={selStation.id} onChange={e=>setSelStation(STATIONS_CIDADES.find(st=>st.id===e.target.value)||STATIONS_CIDADES[0])}
                 style={{ appearance:"none", WebkitAppearance:"none", background:t.inputBg, border:`1px solid ${t.borderActive}`, color:t.text, padding:"8px 36px 8px 12px", borderRadius:5, fontFamily:"inherit", fontSize:11, cursor:"pointer", minWidth:200 }}>
                 {STATIONS_CIDADES.map(st=><option key={st.id} value={st.id} style={{ background:dark?"#0f172a":"#fff" }}>{st.name}</option>)}
