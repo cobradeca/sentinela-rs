@@ -260,6 +260,22 @@ function getObservedPrecip24h(weather) {
   return count ? total : null;
 }
 
+function getForecastDayIndexes(weather, limit = 14) {
+  const days = weather?.daily?.time || [];
+  if (!days.length) return [];
+  const currentDay = String(weather?.current?.time || days[0]).slice(0, 10);
+  const firstForecastIndex = days.findIndex((day) => day >= currentDay);
+  const start = firstForecastIndex >= 0 ? firstForecastIndex : 0;
+  return days.map((_, index) => index).slice(start, start + limit);
+}
+
+function getDailyNumbers(weather, key, indexes) {
+  const values = weather?.daily?.[key] || [];
+  return indexes
+    .map((index) => Number(values[index]))
+    .filter((value) => Number.isFinite(value));
+}
+
 function markStaleHealthIfNeeded(health) {
   if (!health?.lastOk) return health;
   const lastOkMs = new Date(health.lastOk).getTime();
@@ -674,14 +690,19 @@ export default function SentinelaRS() {
           if (!health["INMET"]) health["INMET"] = { ok: inmetOk, lastOk: inmetOk ? new Date().toISOString() : health["INMET"]?.lastOk || null, latencyMs: Date.now() - start, error: inmetOk ? null : r?.error || "sem resposta" };
           return inmetOk ? r : null;
         })() : null;
-        const precip = weather.daily?.precipitation_sum?.reduce((a, b) => a + b, 0) || 0;
+        const forecastDayIndexes = getForecastDayIndexes(weather);
+        weather.forecastDayIndexes = forecastDayIndexes;
+        const precipValues = getDailyNumbers(weather, "precipitation_sum", forecastDayIndexes);
+        const tempMinValues = getDailyNumbers(weather, "temperature_2m_min", forecastDayIndexes);
+        const windMaxValues = getDailyNumbers(weather, "windspeed_10m_max", forecastDayIndexes);
+        const precip = precipValues.reduce((a, b) => a + b, 0);
         const observedPrecip24h = getObservedPrecip24h(weather);
-        const tempMin = Math.min(...(weather.daily?.temperature_2m_min || [20]));
+        const tempMin = tempMinValues.length ? Math.min(...tempMinValues) : 20;
         const tempCurrent = typeof weather.current?.temperature_2m === "number" ? weather.current.temperature_2m : null;
         const precipCurrent = typeof weather.current?.precipitation === "number" ? weather.current.precipitation : null;
         const windCurrent = typeof weather.current?.wind_speed_10m === "number" ? weather.current.wind_speed_10m : null;
         const weatherCurrentCode = typeof weather.current?.weather_code === "number" ? weather.current.weather_code : null;
-        const windMax = Math.max(...(weather.daily?.windspeed_10m_max || [0]));
+        const windMax = windMaxValues.length ? Math.max(...windMaxValues) : 0;
 
         // Nível real disponível: prioriza RADAR da Lagoa quando houver sensor validado.
         // ANA permanece como fonte complementar/parcial.
@@ -1028,6 +1049,7 @@ export default function SentinelaRS() {
     const rColor = getRiskColor(d.risk);
     const rBg = getRiskBg(d.risk);
     const days = d.weather?.daily?.time || [];
+    const forecastDayIndexes = d.weather?.forecastDayIndexes || days.slice(0, 14).map((_, index) => index);
     return (
       <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
         onClick={onClose}>
@@ -1064,12 +1086,13 @@ export default function SentinelaRS() {
           {/* Previsão compacta dos 14 dias */}
           <div style={{ fontSize: 9, color: t.textMuted, letterSpacing: 2, marginBottom: 8 }}>PREVISÃO 14 DIAS</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4 }}>
-            {days.slice(0, 14).map((date, i) => {
+            {forecastDayIndexes.map((dayIndex, i) => {
+              const date = days[dayIndex];
               const dd = new Date(date + "T12:00:00");
-              const p = d.weather.daily.precipitation_sum?.[i] || 0;
-              const tx = d.weather.daily.temperature_2m_max?.[i] || 0;
-              const tn = d.weather.daily.temperature_2m_min?.[i] || 0;
-              const c = d.weather.daily.weathercode?.[i] || 0;
+              const p = d.weather.daily.precipitation_sum?.[dayIndex] || 0;
+              const tx = d.weather.daily.temperature_2m_max?.[dayIndex] || 0;
+              const tn = d.weather.daily.temperature_2m_min?.[dayIndex] || 0;
+              const c = d.weather.daily.weathercode?.[dayIndex] || 0;
               return (
                 <div key={date} style={{ padding: "6px 3px", background: dark ? (i === 0 ? "rgba(34,211,238,0.08)" : "rgba(255,255,255,0.03)") : (i === 0 ? "rgba(8,145,178,0.08)" : "rgba(0,0,0,0.03)"), border: `1px solid ${i === 0 ? t.accent + "55" : t.border}`, borderRadius: 4, textAlign: "center" }}>
                   <div style={{ fontSize: 7, color: t.textMuted }}>{i === 0 ? "HOJE" : dayNames[dd.getDay()]}</div>

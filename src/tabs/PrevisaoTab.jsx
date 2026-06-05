@@ -64,6 +64,10 @@ export function PrevisaoTab({ ctx }) {
     wmoDesc,
     wmoEmoji
   } = ctx;
+  const forecastDayIndexes = selData?.weather?.forecastDayIndexes
+    || selData?.weather?.daily?.time?.slice(0, 14).map((_, index) => index)
+    || [];
+  const forecastPrecipValues = forecastDayIndexes.map((index) => selData?.weather?.daily?.precipitation_sum?.[index] || 0);
 
   return (
 
@@ -81,13 +85,14 @@ export function PrevisaoTab({ ctx }) {
               <div>
                 {/* 14 cards dias */}
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:6, marginBottom:20 }}>
-                  {selData.weather.daily.time?.slice(0,14).map((date,i) => {
+                  {forecastDayIndexes.map((dayIndex,i) => {
+                    const date=selData.weather.daily.time?.[dayIndex];
                     const dd=new Date(date+"T12:00:00");
-                    const p=selData.weather.daily.precipitation_sum?.[i]||0;
-                    const tx=selData.weather.daily.temperature_2m_max?.[i]||0;
-                    const tn=selData.weather.daily.temperature_2m_min?.[i]||0;
-                    const w=selData.weather.daily.windspeed_10m_max?.[i]||0;
-                    const c=selData.weather.daily.weathercode?.[i]||0;
+                    const p=selData.weather.daily.precipitation_sum?.[dayIndex]||0;
+                    const tx=selData.weather.daily.temperature_2m_max?.[dayIndex]||0;
+                    const tn=selData.weather.daily.temperature_2m_min?.[dayIndex]||0;
+                    const w=selData.weather.daily.windspeed_10m_max?.[dayIndex]||0;
+                    const c=selData.weather.daily.weathercode?.[dayIndex]||0;
                     const baseDr=getRiskLevel(p*1.5,tn,w);
                     const dr=["CRITICO","EMERGENCIA","ALERTA"].includes(baseDr) ? baseDr : ((p>=10||w>=30||tn<5) ? "ATENCAO" : baseDr);
                     const r=RISK_LEVELS[dr];
@@ -119,9 +124,10 @@ export function PrevisaoTab({ ctx }) {
                 <div className="sr-precip-card" style={{ ...s.card, marginBottom:12 }}>
                   <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:12 }}>PRECIPITAÇÃO (mm/dia)</div>
                   <div className="sr-precip-chart" style={{ display:"flex", alignItems:"flex-end", gap:4, height:80 }}>
-                    {selData.weather.daily.precipitation_sum?.slice(0,14).map((p,i) => {
-                      const mx=Math.max(...selData.weather.daily.precipitation_sum.slice(0,14),1);
-                      const dd=new Date(selData.weather.daily.time[i]+"T12:00:00");
+                    {forecastPrecipValues.map((p,i) => {
+                      const mx=Math.max(...forecastPrecipValues,1);
+                      const dayIndex=forecastDayIndexes[i];
+                      const dd=new Date(selData.weather.daily.time[dayIndex]+"T12:00:00");
                       return (
                         <div key={i} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:3 }}>
                           <div style={{ fontSize:7, color:t.accent }}>{p.toFixed(0)}</div>
