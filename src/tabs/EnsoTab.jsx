@@ -190,11 +190,11 @@ export function EnsoTab({ ctx }) {
                         </g>
                       ))}
                     </svg>
-                    <div style={{ marginTop:6, fontSize:8, color:t.textFaint, lineHeight:1.5 }}>
+                    <div style={{ marginTop:0, fontSize:8, color:t.textFaint, lineHeight:1.5 }}>
                       Fonte do gráfico: {activeENSO.probabilitySource || "IRI/CCSR ENSO Forecast"}{activeENSO.probabilitySourceUrl ? ` · ${activeENSO.probabilitySourceUrl}` : ""}. Curvas derivadas por parser textual do Sentinela-RS a partir do Quick Look; não representam tabela oficial trimestral estruturada.
                     </div>
                     {/* tabela compacta abaixo */}
-                    <div style={{ display:"grid", gap:5, marginTop:10 }}>
+                    <div style={{ display:"grid", gap:5, marginTop:18 }}>
                       {pts.map((f,i) => (
                         <div key={i} style={{ display:"grid", gridTemplateColumns:"90px 1fr 1fr 1fr", gap:6, alignItems:"center", padding:"4px 6px", background: i===0?(dark?"rgba(34,211,238,0.06)":"rgba(8,145,178,0.05)"):"transparent", borderRadius:3 }}>
                           <div style={{ fontSize:9, fontWeight: i===0?700:400, color: i===0?t.accent:t.textMuted }}>{f.p}{i===0?" (atual)":""}</div>
