@@ -1160,7 +1160,7 @@ export default function SentinelaRS() {
 
             {/* Banner ENSO */}
             <div style={{ marginTop: 10, padding: "9px 14px", background: ensoBannerActive ? `${ensoBannerColor}12` : (dark ? "rgba(100,116,139,0.10)" : "rgba(100,116,139,0.08)"), border: `1px solid ${ensoBannerActive ? `${ensoBannerColor}55` : t.border}`, borderRadius: 4, fontSize: 11, color: ensoBannerActive ? ensoBannerColor : t.textMuted, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <strong>ENSO:</strong> {ensoObservedAvailable ? `${ensoClass.label} observado` : "observado indisponível"}{ensoDominantProb ? ` · probabilidade ${ensoDominantProb.label} ${formatProbability(ensoDominantProb.value)}` : ""}.
+              <strong>ENSO:</strong> {ensoObservedAvailable ? `${ensoClass.label} observado` : "observado indisponível"}{ensoDominantProb ? ` · probabilidade ${ensoDominantProb.label} ${formatProbability(ensoDominantProb.value)} (previsão IRI/CCSR — não é alerta local)` : ""}.
               <button onClick={() => setActiveTab("enso")} style={{ background: "none", border: "none", color: t.accent, cursor: "pointer", fontSize: 11, padding: 0, fontFamily: "inherit" }}>Ver dados completos →</button>
             </div>
           </header>
