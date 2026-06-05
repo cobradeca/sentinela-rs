@@ -130,6 +130,10 @@ export function EnsoTab({ ctx }) {
                 const innerH = H - padT - padB;
                 const xOf = (i) => padL + (i / (pts.length - 1)) * innerW;
                 const yOf = (v) => padT + innerH - (typeof v === "number" && Number.isFinite(v) ? v * innerH : 0);
+                const splitSeasonLabel = (label) => {
+                  const match = String(label || "").match(/^(.+?)\s+(\d{4}(?:\/\d{2})?)$/);
+                  return match ? { season: match[1], year: match[2] } : { season: label, year: "" };
+                };
                 const mkLine = (key, color) => {
                   const d = pts.map((f,i) => `${i===0?"M":"L"}${xOf(i).toFixed(1)},${yOf(f[key]).toFixed(1)}`).join(" ");
                   const lastV = pts[pts.length-1][key];
@@ -163,7 +167,8 @@ export function EnsoTab({ ctx }) {
                       {pts.map((f,i) => (
                         <g key={i}>
                           <line x1={xOf(i)} x2={xOf(i)} y1={padT} y2={padT+innerH} stroke={dark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.05)"} strokeWidth="1"/>
-                          <text x={xOf(i)} y={padT+innerH+42} textAnchor="middle" fontSize="7" fill={dark?"#64748b":"#94a3b8"}>{f.p}</text>
+                          <text x={xOf(i)} y={padT+innerH+38} textAnchor="middle" fontSize="7" fill={dark?"#64748b":"#94a3b8"}>{splitSeasonLabel(f.p).season}</text>
+                          <text x={xOf(i)} y={padT+innerH+49} textAnchor="middle" fontSize="7" fill={dark?"#64748b":"#94a3b8"}>{splitSeasonLabel(f.p).year}</text>
                         </g>
                       ))}
                       {/* limiar 50% */}
