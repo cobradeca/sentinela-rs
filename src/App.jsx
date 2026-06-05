@@ -166,6 +166,38 @@ function getFallbackWarningText(source, ageMinutes = null) {
   return `Fonte primária indisponível. Exibindo última leitura válida salva${ageText}. Verifique a informação junto ao órgão responsável: ${getResponsibleAgencyText(source)}.`;
 }
 
+function isWeatherHydroAlert(alert) {
+  const text = [
+    alert?.title,
+    alert?.message,
+    alert?.description,
+    alert?.summary,
+    alert?.category,
+  ].filter(Boolean).join(" ").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+  return [
+    "chuva",
+    "temporal",
+    "tempestade",
+    "instabilidade",
+    "precipitacao",
+    "acumulado",
+    "inundacao",
+    "alagamento",
+    "enchente",
+    "cheia",
+    "nivel",
+    "vento",
+    "vendaval",
+    "rajada",
+    "granizo",
+    "ciclone",
+    "ressaca",
+    "mare",
+    "frente fria",
+  ].some((term) => text.includes(term));
+}
+
 function getLagoaMeasuredAt(lagoa) {
   return lagoa?.hidrosens?.measured_at || lagoa?.radar?.measured_at || null;
 }
@@ -966,7 +998,7 @@ export default function SentinelaRS() {
   const selData = stationData[selStation.id];
   const lagoaSummary = getLagoaSummary(stationData);
   const officialHeaderAlert = alerts?.[0] || null;
-  const hasOfficialRssAlert = Array.isArray(alerts) && alerts.length > 0;
+  const hasOfficialRssAlert = Array.isArray(alerts) && alerts.some(isWeatherHydroAlert);
   const overallRisk = !ensoFormed || !hasOfficialRssAlert
     ? "NORMAL"
     : lagoaSummary.above > 0
