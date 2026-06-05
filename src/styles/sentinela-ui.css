@@ -973,16 +973,22 @@ body[data-theme="light"] .sr-mobile-close {
 
   .sr-mobile-tab-button {
     width: 100%;
-    display: grid;
-    grid-template-columns: 24px minmax(0, 1fr);
-    align-items: start;
-    column-gap: 8px;
     text-align: left;
     min-height: 42px;
     line-height: 1.25;
     font-size: 14px !important;
     opacity: 1;
     text-shadow: 0 0 12px rgba(148, 210, 230, 0.22);
+  }
+
+  .sr-mobile-tab-button .sr-tab-icon {
+    display: inline-flex;
+    min-width: 0;
+    margin-right: 6px;
+  }
+
+  .sr-mobile-tab-button .sr-tab-label {
+    display: inline;
   }
 
   .sr-mobile-menu-trigger {
