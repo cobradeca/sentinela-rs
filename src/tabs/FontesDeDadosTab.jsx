@@ -86,9 +86,9 @@ export function FontesDeDadosTab({ ctx }) {
                   const ok   = h?.ok;
                   const never = !h;
                   const anaComplementar = name === "ANA HidroWeb" && (!h || !ok);
-                  const copernicusPending = name.startsWith("Copernicus") && h?.pending;
-                  const color = never || copernicusPending ? (anaComplementar ? "#eab308" : "#64748b") : anaComplementar ? "#eab308" : ok ? "#22c55e" : "#ef4444";
-                  const label = anaComplementar ? "Configurar/sem leitura" : never || copernicusPending ? "Aguardando" : ok ? "OK" : "Falhou";
+                  const pending = h?.pending;
+                  const color = never || pending ? (anaComplementar ? "#eab308" : "#64748b") : anaComplementar ? "#eab308" : ok ? "#22c55e" : "#ef4444";
+                  const label = anaComplementar ? "Configurar/sem leitura" : never || pending ? "Aguardando" : ok ? "OK" : "Falhou";
                   return (
                     <div key={name} style={{ padding:"9px 12px", background:dark?"rgba(0,0,0,0.25)":t.bg, borderRadius:5, border:`1px solid ${color}33`, borderLeft:`3px solid ${color}` }}>
                       <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
@@ -99,9 +99,14 @@ export function FontesDeDadosTab({ ctx }) {
                         <>
                           <div style={{ fontSize:8, color:t.textMuted }}>Latência: {typeof h.latencyMs === "number" ? h.latencyMs + "ms" : "OK"}</div>
                           {h.lastOk && <div style={{ fontSize:8, color:t.textFaint }}>Último OK: {formatDateTimeBR(h.lastOk)}</div>}
-                          {h.error && !ok && !copernicusPending && (
+                          {h.error && !ok && !pending && (
                             <div style={{ fontSize:8, color:anaComplementar ? "#eab308" : "#ef4444", marginTop:2 }}>
                               {anaComplementar ? "sem leitura operacional validada da ANA" : h.error}
+                            </div>
+                          )}
+                          {h.error && pending && !anaComplementar && (
+                            <div style={{ fontSize:8, color:"#64748b", marginTop:2 }}>
+                              {h.error}
                             </div>
                           )}
                         </>

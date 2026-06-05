@@ -50,6 +50,8 @@ const AlertasTab = lazy(() => import("./tabs/AlertasTab").then((m) => ({ default
 const NoticiasEnsoTab = lazy(() => import("./tabs/NoticiasEnsoTab").then((m) => ({ default: m.NoticiasEnsoTab })));
 const FontesDeDadosTab = lazy(() => import("./tabs/FontesDeDadosTab").then((m) => ({ default: m.FontesDeDadosTab })));
 
+const SOURCE_HEALTH_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
 const TAB_KEYS = new Set([
   "dashboard",
   "previsao",
@@ -224,6 +226,21 @@ function getObservedPrecip24h(weather) {
   }
 
   return count ? total : null;
+}
+
+function markStaleHealthIfNeeded(health) {
+  if (!health?.lastOk) return health;
+  const lastOkMs = new Date(health.lastOk).getTime();
+  if (!Number.isFinite(lastOkMs)) return health;
+  if (Date.now() - lastOkMs <= SOURCE_HEALTH_MAX_AGE_MS) return health;
+
+  return {
+    ...health,
+    ok: false,
+    pending: true,
+    stale: true,
+    error: health.error || "ultimo OK ha mais de 7 dias",
+  };
 }
 
 function explainCityRisk(station, d, ensoText = "") {
@@ -503,34 +520,34 @@ export default function SentinelaRS() {
 
   function getValidatedSourceHealth(name) {
     const existing = sourceHealthRef.current?.[name] || sourceHealth?.[name] || null;
-    if (existing) return existing;
+    if (existing) return markStaleHealthIfNeeded(existing);
 
     if (name === "NOAA/CPC ENSO" && ensoLive && typeof ensoLive.nino34 === "number") {
-      return { ok: true, lastOk: ensoLive.fetchedAt || ensoLive.referenceDate || new Date().toISOString(), latencyMs: null, validated: true };
+      return markStaleHealthIfNeeded({ ok: true, lastOk: ensoLive.fetchedAt || ensoLive.referenceDate || new Date().toISOString(), latencyMs: null, validated: true });
     }
 
     if (name === "IRI/CCSR ENSO" && ensoProbLive && ensoProbLive.prob && typeof ensoProbLive.prob.elNino === "number") {
-      return { ok: true, lastOk: ensoProbLive.probabilityFetchedAt || ensoProbLive.probabilityReferenceDate || new Date().toISOString(), latencyMs: null, validated: true };
+      return markStaleHealthIfNeeded({ ok: true, lastOk: ensoProbLive.probabilityFetchedAt || ensoProbLive.probabilityReferenceDate || new Date().toISOString(), latencyMs: null, validated: true });
     }
 
     if (name === "CPTEC/INPE" && cptecProducts && (cptecProducts.ok === true || Array.isArray(cptecProducts.products))) {
-      return { ok: true, lastOk: cptecProducts.fetched_at || new Date().toISOString(), latencyMs: null, validated: true };
+      return markStaleHealthIfNeeded({ ok: true, lastOk: cptecProducts.fetched_at || new Date().toISOString(), latencyMs: null, validated: true });
     }
 
     if (name === "Copernicus Water" && copernicusWater && copernicusWater.ok === true && typeof copernicusWater.water_percent === "number") {
-      return { ok: true, lastOk: copernicusWater.fetched_at || new Date().toISOString(), latencyMs: null, validated: true };
+      return markStaleHealthIfNeeded({ ok: true, lastOk: copernicusWater.fetched_at || new Date().toISOString(), latencyMs: null, validated: true });
     }
 
     if (name === "Copernicus Sentinel-1" && copernicusS1 && (copernicusS1.status === "OK" || copernicusS1.ok === true) && typeof copernicusS1.water_like_percent === "number") {
-      return { ok: true, lastOk: copernicusS1.fetched_at || new Date().toISOString(), latencyMs: null, validated: true };
+      return markStaleHealthIfNeeded({ ok: true, lastOk: copernicusS1.fetched_at || new Date().toISOString(), latencyMs: null, validated: true });
     }
 
     if (name === "Copernicus NDVI" && copernicusNdvi && copernicusNdvi.ok === true && typeof copernicusNdvi.ndvi_mean === "number") {
-      return { ok: true, lastOk: copernicusNdvi.fetched_at || new Date().toISOString(), latencyMs: null, validated: true };
+      return markStaleHealthIfNeeded({ ok: true, lastOk: copernicusNdvi.fetched_at || new Date().toISOString(), latencyMs: null, validated: true });
     }
 
     if (name === "Copernicus EMS" && copernicusEms && copernicusEms.ok === true) {
-      return { ok: true, lastOk: copernicusEms.fetched_at || new Date().toISOString(), latencyMs: null, validated: true };
+      return markStaleHealthIfNeeded({ ok: true, lastOk: copernicusEms.fetched_at || new Date().toISOString(), latencyMs: null, validated: true });
     }
 
     return null;
