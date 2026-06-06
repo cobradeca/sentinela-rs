@@ -93,8 +93,7 @@ export function PrevisaoTab({ ctx }) {
                     const tn=selData.weather.daily.temperature_2m_min?.[dayIndex]||0;
                     const w=selData.weather.daily.windspeed_10m_max?.[dayIndex]||0;
                     const c=selData.weather.daily.weathercode?.[dayIndex]||0;
-                    const baseDr=getRiskLevel(p*1.5,tn,w);
-                    const dr=(baseDr!=="NORMAL" || p>=10 || w>=30 || tn<5) ? "MONITORAR" : "NORMAL";
+                    const dr=(p>20 || w>40 || tn<5) ? "MONITORAR" : "NORMAL";
                     const r=RISK_LEVELS[dr];
                     const rColor=getRiskColor(dr);
                     return (
@@ -146,9 +145,9 @@ export function PrevisaoTab({ ctx }) {
                   <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:8 }}>ANÁLISE DE MONITORAMENTO — 14 DIAS</div>
                   <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))", gap:8 }}>
                     {[
-                      { l:"Precipitação", v:`${selData.precip?.toFixed(0)} mm`, a:selData.precip>20 },
+                      { l:"Precipitação", v:`${selData.precip?.toFixed(0)} mm`, a:selData.precip>50 },
                       { l:"Temp. mínima", v:`${selData.tempMin?.toFixed(1)}°C`,  a:selData.tempMin<5 },
-                      { l:"Vento máx.",   v:`${selData.windMax?.toFixed(0)} km/h`, a:selData.windMax>30 },
+                      { l:"Vento máx.",   v:`${selData.windMax?.toFixed(0)} km/h`, a:selData.windMax>40 },
                       { l:"Contexto climático",v: ensoObservedAvailable ? `${ensoClass.label} (Niño 3.4 ${formatSignedCelsius(activeENSO.nino34)})` : (ensoDominantProb ? `${ensoDominantProb.label} ${formatProbability(ensoDominantProb.value)}` : "ENSO indisponível"), a:false },
                     ].map(item=>(
                       <div key={item.l} style={{ display:"flex", justifyContent:"space-between" }}>
