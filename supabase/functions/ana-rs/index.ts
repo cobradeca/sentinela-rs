@@ -33,8 +33,8 @@ function getEnv(names: string[]): string | null {
 
 function getAnaCredentials() {
   return {
-    identificador: getEnv(["ANA_HIDROWEB_IDENTIFICADOR", "ANA_HIDROWEB_USER", "ANA_HIDROWEB_USUARIO"]),
-    senha: getEnv(["ANA_HIDROWEB_SENHA", "ANA_HIDROWEB_PASSWORD"]),
+    identificador: getEnv(["ANA_HIDROWEB_IDENTIFICADOR", "ANA_HIDROWS_IDENTIFICADOR", "ANA_HIDROWEB_USER", "ANA_HIDROWEB_USUARIO"]),
+    senha: getEnv(["ANA_HIDROWEB_SENHA", "ANA_HIDROWS_SENHA", "ANA_HIDROWEB_PASSWORD"]),
     clientId: getEnv(["ANA_HIDROWEB_CLIENT_ID", "ANA_HIDROWEB_CLIENTID", "ANA_HIDROWEB_CLIENT"]),
   };
 }
@@ -140,6 +140,7 @@ async function getAnaAuth(): Promise<{ token: string; clientId: string | null }>
     const authUrl = `${ANA_REST_BASE_URL}/EstacoesTelemetricas/OAUth/v1`;
     const response = await fetch(authUrl, {
       method: "GET",
+      signal: AbortSignal.timeout(8000),
       headers: {
         Accept: "application/json",
         Identificador: credentials.identificador,
@@ -355,6 +356,7 @@ async function fetchAnaPublicStation(codEstacao: string) {
   url.searchParams.set("dataFim", formatAnaPublicDate(now));
 
   const response = await fetch(url, {
+    signal: AbortSignal.timeout(8000),
     headers: {
       Accept: "text/xml, application/xml, text/plain",
       "User-Agent": "SentinelaRS/1.0",
@@ -438,6 +440,7 @@ async function fetchAnaStation(codEstacao: string) {
   }
 
   const response = await fetch(url, {
+    signal: AbortSignal.timeout(8000),
     headers: apiHeaders,
   });
 
