@@ -38,6 +38,16 @@ export const COPERNICUS_REFERENCE = {
 };
 
 const COPERNICUS_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
+const ANA_FLOOD_VULNERABILITY_URL = "https://www.snirh.gov.br/arcgis/rest/services/SUM/vulnerabilidade_brasil/MapServer/0/query";
+
+const FLOOD_VULNERABILITY_SCORE = {
+  "BAIXA": 1,
+  "BAIXO": 1,
+  "MEDIA": 2,
+  "MEDIO": 2,
+  "ALTA": 3,
+  "ALTO": 3,
+};
 
 function readJsonCache(key, maxAgeMs = COPERNICUS_CACHE_MAX_AGE_MS) {
   try {
@@ -66,6 +76,139 @@ function saveJsonCache(key, data) {
       data,
     }));
   } catch {}
+}
+
+function normalizeText(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toUpperCase();
+}
+
+function normalizeArcgisFeatures(features) {
+  if (!features) return [];
+  return Array.isArray(features) ? features : [features];
+}
+
+function summarizeFloodVulnerability(features) {
+  const rows = normalizeArcgisFeatures(features)
+    .map((feature) => feature?.attributes || feature)
+    .filter(Boolean)
+    .map((item) => {
+      const vulnerability = String(item.Vulnerabil || item.vulnerability || "").trim();
+      const frequency = String(item.Frequencia || item.frequency || "").trim();
+      const impact = String(item.Impacto || item.impact || "").trim();
+      const river = String(item.NORIOCOMP || item.river || "").trim();
+      const score = Math.max(
+        FLOOD_VULNERABILITY_SCORE[normalizeText(vulnerability)] || 0,
+        FLOOD_VULNERABILITY_SCORE[normalizeText(impact)] || 0,
+        FLOOD_VULNERABILITY_SCORE[normalizeText(frequency)] || 0
+      );
+
+      return { river, frequency, impact, vulnerability, score };
+    });
+
+  if (!rows.length) {
+    return {
+      count: 0,
+      level: "Sem trecho",
+      maxScore: 0,
+      rivers: [],
+      samples: [],
+    };
+  }
+
+  const maxScore = Math.max(...rows.map((row) => row.score));
+  const strongest = rows.filter((row) => row.score === maxScore);
+  const rivers = [...new Set(rows.map((row) => row.river).filter(Boolean))].slice(0, 4);
+  const level = maxScore >= 3 ? "Alta" : maxScore === 2 ? "Media" : "Baixa";
+
+  return {
+    count: rows.length,
+    level,
+    maxScore,
+    rivers,
+    samples: strongest.slice(0, 5),
+  };
+}
+
+async function fetchFloodVulnerabilityForStation(station, radiusDeg = 0.2) {
+  const minLon = station.lon - radiusDeg;
+  const minLat = station.lat - radiusDeg;
+  const maxLon = station.lon + radiusDeg;
+  const maxLat = station.lat + radiusDeg;
+  const params = new URLSearchParams({
+    f: "json",
+    where: "1=1",
+    geometry: `${minLon},${minLat},${maxLon},${maxLat}`,
+    geometryType: "esriGeometryEnvelope",
+    inSR: "4326",
+    spatialRel: "esriSpatialRelIntersects",
+    outFields: "NORIOCOMP,Frequencia,Impacto,Vulnerabil",
+    returnGeometry: "false",
+  });
+
+  const res = await fetch(`${ANA_FLOOD_VULNERABILITY_URL}?${params.toString()}`, {
+    signal: AbortSignal.timeout(12000),
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+
+  const data = await readJsonOrServiceError(res, "ANA Vulnerabilidade Inundacoes");
+  if (!data?.ok && data?.error) throw new Error(data.error);
+  if (data?.error) throw new Error(data.error.message || data.error);
+
+  return {
+    station_id: station.id,
+    station_name: station.name,
+    ...summarizeFloodVulnerability(data.features),
+  };
+}
+
+export async function fetchAnaFloodVulnerability(stations) {
+  const cacheKey = "sentinela_ana_flood_vulnerability_v1";
+  const cached = readJsonCache(cacheKey, 24 * 60 * 60 * 1000);
+  if (cached) return cached;
+
+  const entries = await Promise.allSettled(stations.map((station) => fetchFloodVulnerabilityForStation(station)));
+  const byStation = {};
+  let successCount = 0;
+  let totalSegments = 0;
+
+  entries.forEach((entry, index) => {
+    const station = stations[index];
+    if (entry.status === "fulfilled") {
+      successCount += 1;
+      totalSegments += entry.value.count || 0;
+      byStation[station.id] = entry.value;
+    } else {
+      byStation[station.id] = {
+        station_id: station.id,
+        station_name: station.name,
+        count: 0,
+        level: "Indisponivel",
+        maxScore: 0,
+        rivers: [],
+        samples: [],
+        error: entry.reason?.message || "falha ao consultar vulnerabilidade ANA",
+      };
+    }
+  });
+
+  const result = {
+    ok: successCount > 0,
+    source: "ANA Atlas de Vulnerabilidade a Inundacoes",
+    source_url: "https://www.snirh.gov.br/arcgis/rest/services/SUM/vulnerabilidade_brasil/MapServer/0",
+    fetched_at: new Date().toISOString(),
+    success_count: successCount,
+    total_segments: totalSegments,
+    by_station: byStation,
+    note: "Dado estatico/anual de vulnerabilidade territorial; nao e aviso operacional nem leitura em tempo real.",
+  };
+
+  saveJsonCache(cacheKey, result);
+  return result;
 }
 
 async function readJsonOrServiceError(response, source) {

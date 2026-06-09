@@ -172,6 +172,7 @@ export function DashboardTab({ ctx }) {
                     </button>
                   </div>
                   {d.error ? <div style={{ fontSize:10, color:"#ef4444" }}>Erro ao carregar</div> : (
+                    <>
                     <div className="sr-city-metrics" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:5 }}>
                       {[
                         { l:"Condição", v: d.inmet?.resumo || (typeof d.weatherCurrentCode === "number" ? `${wmoEmoji(d.weatherCurrentCode)} ${wmoDesc(d.weatherCurrentCode)}` : "--") },
@@ -185,6 +186,16 @@ export function DashboardTab({ ctx }) {
                         </div>
                       ))}
                     </div>
+                    {d.floodVulnerability && d.floodVulnerability.level !== "Sem trecho" && d.floodVulnerability.level !== "Indisponivel" && (
+                      <div style={{ marginTop:7, padding:"6px 8px", border:`1px solid ${d.floodVulnerability.maxScore >= 3 ? "#eab30855" : t.border}`, borderRadius:4, background:dark?"rgba(234,179,8,0.06)":"rgba(234,179,8,0.05)" }}>
+                        <div style={{ fontSize:8, color:t.textMuted, letterSpacing:1.2 }}>ANA ATLAS · CONTEXTO DE INUNDACAO</div>
+                        <div style={{ fontSize:10, color:d.floodVulnerability.maxScore >= 3 ? "#eab308" : t.textMuted, fontWeight:800 }}>
+                          Vulnerabilidade {d.floodVulnerability.level}
+                          {d.floodVulnerability.rivers?.length ? ` · ${d.floodVulnerability.rivers.join(", ")}` : ""}
+                        </div>
+                      </div>
+                    )}
+                    </>
                   )}
                   {station.type==="lagoa" && d.lagoa && (
                     <div style={{ marginTop:7 }}>

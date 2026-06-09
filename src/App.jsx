@@ -4,6 +4,7 @@ import { FreshnessBadge } from "./components/FreshnessBadge";
 import { Sparkline as HistorySparkline } from "./components/Sparkline";
 import { appendLagoaHistorySnapshot, loadLagoaHistory } from "./services/lagoaHistory";
 import {
+  fetchAnaFloodVulnerability,
   fetchAnaLevel,
   fetchCensipamFireEventsRs,
   fetchCopernicusEms,
@@ -337,6 +338,11 @@ function explainCityRisk(station, d, ensoText = "") {
     lines.push(`Open-Meteo observado: acumulado estimado de ${observedPrecip24h.toFixed(1)}mm nas últimas 24h.`);
   } else {
     lines.push("Open-Meteo observado: acumulado de 24h indisponível nesta consulta.");
+  }
+
+  if (d.floodVulnerability && d.floodVulnerability.level && d.floodVulnerability.level !== "Sem trecho" && d.floodVulnerability.level !== "Indisponivel") {
+    const rivers = d.floodVulnerability.rivers?.length ? ` (${d.floodVulnerability.rivers.join(", ")})` : "";
+    lines.push(`ANA Atlas: vulnerabilidade territorial a inundações ${d.floodVulnerability.level}${rivers}. Dado estático, usado apenas como contexto.`);
   }
 
   const riskLabel = RISK_LEVELS[d.risk]?.label || d.risk || "Indefinido";
@@ -759,6 +765,31 @@ export default function SentinelaRS() {
         results[st.id] = { weather, inmet, lagoa, precip, observedPrecip24h, tempMin, tempCurrent, precipCurrent, windCurrent, weatherCurrentCode, windMax, risk, realLevel, radarLevel };
       } catch { results[st.id] = { error: true, risk: "NORMAL" }; }
     });
+    const floodVulnerabilityStart = Date.now();
+    try {
+      const floodVulnerability = await fetchAnaFloodVulnerability(STATIONS);
+      Object.entries(floodVulnerability.by_station || {}).forEach(([stationId, context]) => {
+        if (results[stationId]) {
+          results[stationId] = {
+            ...results[stationId],
+            floodVulnerability: context,
+          };
+        }
+      });
+      health["ANA Vulnerabilidade Inundacoes"] = {
+        ok: Boolean(floodVulnerability?.ok),
+        lastOk: floodVulnerability?.ok ? floodVulnerability.fetched_at || new Date().toISOString() : health["ANA Vulnerabilidade Inundacoes"]?.lastOk || null,
+        latencyMs: Date.now() - floodVulnerabilityStart,
+        error: floodVulnerability?.ok ? null : "sem contexto territorial validado",
+      };
+    } catch (err) {
+      health["ANA Vulnerabilidade Inundacoes"] = {
+        ok: false,
+        lastOk: health["ANA Vulnerabilidade Inundacoes"]?.lastOk || null,
+        latencyMs: Date.now() - floodVulnerabilityStart,
+        error: err?.message || "falha ao consultar vulnerabilidade ANA",
+      };
+    }
     const defesaStart = Date.now();
     const officialAlerts = await fetchDefesaCivilAlerts();
     health["Defesa Civil RS"] = { ok: Array.isArray(officialAlerts), lastOk: Array.isArray(officialAlerts) ? new Date().toISOString() : health["Defesa Civil RS"]?.lastOk || null, latencyMs: Date.now() - defesaStart, error: null };
