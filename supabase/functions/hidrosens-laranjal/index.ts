@@ -236,6 +236,9 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({
       ok: true,
+      estacao: "Laranjal/Pelotas",
+      fonte: "sensor_local",
+      source_type: "sensor_local",
       source: "HidroSens/UFPel ThingsBoard",
       source_url: "https://wp.ufpel.edu.br/hidrosens/",
       dashboard_url: "https://tb.labhidrosens.com/dashboard/97ec9a60-d9e1-11f0-ac7c-456d9a25fe9a?publicId=0a869e80-d9e8-11f0-ac7c-456d9a25fe9a",
