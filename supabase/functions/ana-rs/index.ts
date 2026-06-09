@@ -1,4 +1,5 @@
 const ANA_REST_BASE_URL = "https://www.ana.gov.br/hidrowebservice";
+const ANA_PUBLIC_TELEMETRY_URL = "https://telemetriaws1.ana.gov.br/serviceana.asmx/DadosHidrometeorologicos";
 const MAX_OPERATIONAL_AGE_MINUTES = 24 * 60;
 
 const corsHeaders = {
@@ -301,6 +302,106 @@ function getAgeMinutes(isoDate: string | null): number | null {
   return Number.isFinite(age) ? Math.max(0, Math.round(age)) : null;
 }
 
+function formatAnaPublicDate(date: Date): string {
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
+function parseAnaPublicTelemetryXml(xmlText: string, codEstacao: string) {
+  const blocks = [
+    ...xmlText.matchAll(/<DadosHidrometereologicos\b[^>]*>([\s\S]*?)<\/DadosHidrometereologicos>/g),
+    ...xmlText.matchAll(/<DadosHidrometeorologicos\b[^>]*>([\s\S]*?)<\/DadosHidrometeorologicos>/g),
+  ].map((match) => match[1] || "");
+
+  return blocks.map((block) => {
+    const getText = (tag: string) => {
+      const match = block.match(new RegExp(`<${tag}\\b[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
+      return (match?.[1] || "")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&amp;/g, "&")
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .trim();
+    };
+    const station = getText("CodEstacao") || codEstacao;
+    const measuredAt = asDate(getText("DataHora"));
+    const levelCm = asNumber(getText("Nivel"));
+    const rainMm = asNumber(getText("Chuva"));
+    const flowM3s = asNumber(getText("Vazao"));
+
+    return {
+      codEstacao: String(station),
+      dataHora: measuredAt,
+      measured_at: measuredAt,
+      level_cm: levelCm,
+      level_m: levelCm === null ? null : levelCm / 100,
+      rain_mm: rainMm,
+      flow_m3s: flowM3s,
+    };
+  }).filter((record) => record.measured_at && record.level_m !== null);
+}
+
+async function fetchAnaPublicStation(codEstacao: string) {
+  const now = new Date();
+  const start = new Date(now);
+  start.setDate(start.getDate() - 9);
+
+  const url = new URL(ANA_PUBLIC_TELEMETRY_URL);
+  url.searchParams.set("codEstacao", codEstacao);
+  url.searchParams.set("dataInicio", formatAnaPublicDate(start));
+  url.searchParams.set("dataFim", formatAnaPublicDate(now));
+
+  const response = await fetch(url, {
+    headers: {
+      Accept: "text/xml, application/xml, text/plain",
+      "User-Agent": "SentinelaRS/1.0",
+    },
+  });
+
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(`ANA telemetria publica HTTP ${response.status}: ${text.slice(0, 180)}`);
+  }
+
+  const records = parseAnaPublicTelemetryXml(text, codEstacao)
+    .sort((a, b) => new Date(b.measured_at || 0).getTime() - new Date(a.measured_at || 0).getTime());
+  const latest = records[0] || null;
+  const ageMinutes = getAgeMinutes(latest?.measured_at ?? null);
+  const stale = ageMinutes === null || ageMinutes > MAX_OPERATIONAL_AGE_MINUTES;
+
+  if (!latest) {
+    return {
+      ok: false,
+      source: "ANA Telemetria Publica",
+      codEstacao,
+      operational: false,
+      stale: true,
+      error: "Sem registros de nivel na telemetria publica da ANA para esta estacao no periodo consultado.",
+      ana_message: "Nao houve retorno de registros no webservice publico.",
+      latest: null,
+      records: [],
+      raw_status: null,
+    };
+  }
+
+  return {
+    ok: !stale,
+    source: "ANA Telemetria Publica",
+    codEstacao,
+    station_id: codEstacao,
+    operational: !stale,
+    stale,
+    age_minutes: ageMinutes,
+    error: stale ? "Leitura ANA publica acima de 24h; exibida apenas como referencia." : null,
+    latest,
+    records: records.slice(0, 96),
+    raw_status: null,
+  };
+}
+
 function extractAnaMessage(payload: unknown, fallback: string): string {
   if (!payload || typeof payload !== "object") return fallback;
   const raw = (payload as JsonRecord).message;
@@ -310,7 +411,13 @@ function extractAnaMessage(payload: unknown, fallback: string): string {
 }
 
 async function fetchAnaStation(codEstacao: string) {
-  const auth = await getAnaAuth();
+  let auth: { token: string; clientId: string | null } | null = null;
+  try {
+    auth = await getAnaAuth();
+  } catch {
+    return fetchAnaPublicStation(codEstacao);
+  }
+
   const url = new URL(`${ANA_REST_BASE_URL}/EstacoesTelemetricas/HidroinfoanaSerieTelemetricaAdotada/v1`);
   url.searchParams.set("Código da Estação", codEstacao);
   url.searchParams.set("Tipo Filtro Data", "DATA_LEITURA");
@@ -356,20 +463,33 @@ async function fetchAnaStation(codEstacao: string) {
   const stale = ageMinutes === null || ageMinutes > MAX_OPERATIONAL_AGE_MINUTES;
 
   if (!latest) {
-    const anaMessage = extractAnaMessage(payload, "");
+    try {
+      return await fetchAnaPublicStation(codEstacao);
+    } catch {
+      const anaMessage = extractAnaMessage(payload, "");
 
-    return {
-      ok: false,
-      source: "ANA HidroWeb REST",
-      codEstacao,
-      operational: false,
-      stale: true,
-      error: "Sem registros de nivel adotado para esta estacao no periodo consultado.",
-      ana_message: anaMessage || null,
-      latest: null,
-      records: [],
-      raw_status: typeof payload === "object" && payload ? (payload as JsonRecord).status ?? null : null,
-    };
+      return {
+        ok: false,
+        source: "ANA HidroWeb REST",
+        codEstacao,
+        operational: false,
+        stale: true,
+        error: "Sem registros de nivel adotado para esta estacao no periodo consultado.",
+        ana_message: anaMessage || null,
+        latest: null,
+        records: [],
+        raw_status: typeof payload === "object" && payload ? (payload as JsonRecord).status ?? null : null,
+      };
+    }
+  }
+
+  if (stale) {
+    try {
+      const publicResult = await fetchAnaPublicStation(codEstacao);
+      if (publicResult.ok || (publicResult.latest && !publicResult.stale)) return publicResult;
+    } catch {
+      // Mantem a leitura autenticada antiga como referencia.
+    }
   }
 
   return {
