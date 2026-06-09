@@ -437,12 +437,20 @@ export async function fetchAnaLevel(anaCode) {
     if (!res.ok) return null;
 
     const data = await res.json();
+    const level = typeof data?.latest?.level_m === "number" ? data.latest.level_m : null;
 
-    if (!data?.ok || typeof data?.latest?.level_m !== "number") {
-      return null;
-    }
-
-    return data.latest.level_m;
+    return {
+      ok: Boolean(data?.ok),
+      source: data?.source || "ANA HidroWeb REST",
+      level_m: level,
+      measured_at: data?.latest?.measured_at || data?.latest?.dataHora || null,
+      operational: Boolean(data?.operational && data?.ok),
+      stale: Boolean(data?.stale),
+      age_minutes: typeof data?.age_minutes === "number" ? data.age_minutes : null,
+      error: data?.error || null,
+      ana_message: data?.ana_message || null,
+      codEstacao: data?.codEstacao || anaCode,
+    };
   } catch {
     return null;
   }

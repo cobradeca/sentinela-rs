@@ -681,11 +681,23 @@ export default function SentinelaRS() {
             throw err;
           }
         })();
+        let anaReading = null;
         let realLevel = null;
         if (st.anaCode) {
           const start = Date.now();
-          realLevel = await fetchAnaLevel(st.anaCode);
-          if (!health["ANA HidroWeb"]) health["ANA HidroWeb"] = { ok: realLevel !== null, lastOk: realLevel !== null ? new Date().toISOString() : health["ANA HidroWeb"]?.lastOk || null, latencyMs: Date.now() - start, error: realLevel === null ? "sem leitura" : null };
+          anaReading = await fetchAnaLevel(st.anaCode);
+          realLevel = anaReading?.operational && typeof anaReading.level_m === "number" ? anaReading.level_m : null;
+          if (!health["ANA HidroWeb"]) {
+            const hasReference = typeof anaReading?.level_m === "number";
+            health["ANA HidroWeb"] = {
+              ok: Boolean(anaReading?.operational),
+              reference: hasReference,
+              stale: Boolean(anaReading?.stale),
+              lastOk: anaReading?.operational ? new Date().toISOString() : health["ANA HidroWeb"]?.lastOk || null,
+              latencyMs: Date.now() - start,
+              error: anaReading?.error || anaReading?.ana_message || (anaReading ? "sem leitura operacional" : "sem resposta"),
+            };
+          }
         }
         const radarLevel = lagoaRadarMap[st.id] || null;
         const hidrosensLevel = st.id === "lagoa_patos_pelotas" ? hidrosensLaranjal : null;
@@ -726,6 +738,8 @@ export default function SentinelaRS() {
           radar: radarLevel,
           hidrosens: hidrosensLevel,
           anaLevel: realLevel,
+          anaReferenceLevel: typeof anaReading?.level_m === "number" ? anaReading.level_m : null,
+          anaReading,
           threshold_m: hidrosensLevel?.threshold_m ?? radarLevel?.threshold_m ?? null,
           critical_threshold_m: hidrosensLevel?.critical_threshold_m ?? null,
           levelStatus: hidrosensLevel?.status ?? radarLevel?.status ?? (realLevel !== null ? "SEM_LIMIAR" : "SEM_LEITURA"),

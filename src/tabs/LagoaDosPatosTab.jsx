@@ -99,6 +99,13 @@ export function LagoaDosPatosTab({ ctx }) {
                 const measuredAt = getLagoaMeasuredAt(lagoa);
                 const max2024 = getLagoaMaxMay2024(lagoa);
                 const hasLevel = lagoa?.isReal && lagoa?.atual !== null && lagoa?.atual !== undefined;
+                const anaReferenceLevel = typeof lagoa?.anaReferenceLevel === "number" ? lagoa.anaReferenceLevel : null;
+                const anaAgeMinutes = typeof lagoa?.anaReading?.age_minutes === "number" ? lagoa.anaReading.age_minutes : null;
+                const anaAgeText = anaAgeMinutes !== null
+                  ? anaAgeMinutes >= 1440
+                    ? `${Math.round(anaAgeMinutes / 1440)} dias`
+                    : `${Math.round(anaAgeMinutes / 60)} h`
+                  : null;
                 const threshold = lagoa?.threshold_m ?? null;
                 const progressBase = Math.max(threshold || lagoa?.atual || 1, 1);
                 const progress = hasLevel ? Math.min(100, (lagoa.atual / progressBase) * 100) : 0;
@@ -186,7 +193,23 @@ export function LagoaDosPatosTab({ ctx }) {
                       </>
                     ) : (
                       <div style={{ padding:12, background:dark?"rgba(0,0,0,0.25)":t.bg, borderRadius:5, color:t.textMuted, fontSize:10 }}>
-                        {point.sourceHint === "ANA" ? "Sem leitura ANA operacional validada no período." : "Sem leitura operacional validada no período."}
+                        {anaReferenceLevel !== null ? (
+                          <div style={{ display:"grid", gap:5 }}>
+                            <div style={{ fontSize:8, color:"#eab308", fontWeight:800, letterSpacing:1.5 }}>ANA HIDROWEB · REFERENCIA ANTIGA</div>
+                            <div style={{ fontSize:24, fontWeight:900, color:"#eab308" }}>{(anaReferenceLevel*100).toFixed(1)} cm</div>
+                            <div style={{ fontSize:8, color:t.textMuted }}>
+                              {anaAgeText ? `Leitura com aproximadamente ${anaAgeText}. ` : ""}
+                              Nao usada como cota operacional nem para status.
+                            </div>
+                            {(lagoa?.anaReading?.error || lagoa?.anaReading?.ana_message) && (
+                              <div style={{ fontSize:8, color:t.textFaint }}>
+                                {lagoa.anaReading.error || lagoa.anaReading.ana_message}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          point.sourceHint === "ANA" ? "Sem leitura ANA operacional validada no periodo." : "Sem leitura operacional validada no periodo."
+                        )}
                       </div>
                     )}
                   </div>
