@@ -345,6 +345,59 @@ function parseAnaPublicTelemetryXml(xmlText: string, codEstacao: string) {
   }).filter((record) => record.measured_at && record.level_m !== null);
 }
 
+// Consulta rápida no portal publico alternativo (api-medidas-porto-7bni.onrender.com)
+async function queryPublicPortalSensors(codEstacao: string) {
+  const base = "https://api-medidas-porto-7bni.onrender.com";
+  const sensorKeys = ["sensor_1", "sensor_2", "sensor_3", "sensor_4", "sensor_5"];
+
+  for (const key of sensorKeys) {
+    try {
+      const resp = await fetch(`${base}/dados/${key}`, { signal: AbortSignal.timeout(5000) });
+      if (!resp.ok) continue;
+      const body = await resp.json();
+      // formato esperado: { dado: { data_hora, valor, sensor_id } }
+      const dado = body?.dado;
+      if (dado && dado.data_hora && (dado.valor !== null && dado.valor !== undefined)) {
+        const measured_at = asDate(dado.data_hora) || new Date(dado.data_hora).toISOString();
+        const level_cm = asNumber(dado.valor);
+        const age = getAgeMinutes(measured_at);
+        const stale = age === null || age > MAX_OPERATIONAL_AGE_MINUTES;
+
+        return {
+          ok: !stale,
+          source: `Portal Publico - ${key}`,
+          codEstacao,
+          station_id: key,
+          operational: !stale,
+          stale,
+          age_minutes: age,
+          latest: {
+            codEstacao: key,
+            dataHora: measured_at,
+            measured_at,
+            level_cm,
+            level_m: level_cm === null ? null : level_cm / 100,
+          },
+          records: [
+            {
+              codEstacao: key,
+              dataHora: measured_at,
+              measured_at,
+              level_cm,
+              level_m: level_cm === null ? null : level_cm / 100,
+            },
+          ],
+          raw_status: { portal_status: resp.status },
+        };
+      }
+    } catch (_) {
+      // ignora e continua com proximo sensor
+    }
+  }
+
+  return null;
+}
+
 async function fetchAnaPublicStation(codEstacao: string) {
   const now = new Date();
   const start = new Date(now);
@@ -375,6 +428,14 @@ async function fetchAnaPublicStation(codEstacao: string) {
   const stale = ageMinutes === null || ageMinutes > MAX_OPERATIONAL_AGE_MINUTES;
 
   if (!latest) {
+    // Tentar fallback no portal publico alternativo (sensor_1..sensor_5)
+    try {
+      const portalFallback = await queryPublicPortalSensors(codEstacao);
+      if (portalFallback) return portalFallback;
+    } catch {
+      // segue retornando o erro padrão abaixo
+    }
+
     return {
       ok: false,
       source: "ANA Telemetria Publica",
@@ -493,6 +554,14 @@ async function fetchAnaStation(codEstacao: string) {
     } catch {
       // Mantem a leitura autenticada antiga como referencia.
     }
+  }
+
+  // Se ainda sem dado operacional, tentar portal publico alternativo (sensor_1..sensor_5)
+  try {
+    const portalFallback = await queryPublicPortalSensors(codEstacao);
+    if (portalFallback) return portalFallback;
+  } catch {
+    // ignora falha no fallback, retorna o resultado ANA
   }
 
   return {

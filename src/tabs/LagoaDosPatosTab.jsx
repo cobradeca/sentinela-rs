@@ -1,221 +1,222 @@
-import { DefesaCivilNotice } from "../components/DefesaCivilNotice";
+import { LineChart } from "../components/layout/LineChart";
+import { NavIcon } from "../components/layout/NavIcons";
+
 export function LagoaDosPatosTab({ ctx }) {
   const {
-    APAS_RS,
-    COPERNICUS_REFERENCE,
-    FIRE_MONITORED_AREAS_RS,
-    FreshnessBadge,
-    HistorySparkline,
-    RISK_LEVELS,
-    STATIONS,
-    STATIONS_CIDADES,
     STATIONS_LAGOA,
-    activeENSO,
-    alerts,
-    copernicusEms,
-    copernicusNdvi,
-    copernicusS1,
-    copernicusWater,
-    dark,
-    dataStaleness,
-    effisHealth,
-    ensoClass,
-    ensoDominantProb,
-    ensoFirstForecast,
-    ensoObservedAvailable,
-    ensoProbabilityAvailable,
-    ensoProbabilityText,
-    explainCityRisk,
-    explainDailyRisk,
-    explainLagoaRisk,
     formatDateTimeBR,
-    formatProbability,
-    formatSignedCelsius,
-    getFallbackWarningText,
-    getLagoaMaxMay2024,
     getLagoaMeasuredAt,
     getLagoaPointData,
     getLagoaSourceText,
-    getResponsibleAgencyText,
-    getRiskColor,
-    getRiskLevel,
-    getValidatedSourceHealth,
     lagoaHistory,
-    lagoaHistoryMeta,
     lagoaStatusColor,
     lagoaStatusLabel,
     lagoaSummary,
-    lastUpdate,
-    loadAllData,
-    percentValue,
-    queimadas,
-    s,
-    safeEnsoForecast,
-    selStation,
+    selData,
     setActiveTab,
-    setExpandedCard,
     setRiskExplain,
-    setSelStation,
-    sourceHealth,
     stationData,
-    t,
-    wmoDesc,
-    wmoEmoji
+    explainLagoaRisk,
   } = ctx;
 
+  const points = STATIONS_LAGOA.map((p) => ({
+    point: p,
+    data: getLagoaPointData(p, stationData),
+    lagoa: getLagoaPointData(p, stationData)?.lagoa,
+  }));
+
+  const withLevel = points.filter(({ lagoa }) => lagoa?.isReal && typeof lagoa.atual === "number");
+  const avgLevel = withLevel.length ? withLevel.reduce((s, { lagoa }) => s + lagoa.atual, 0) / withLevel.length : null;
+
+  const historyAll = STATIONS_LAGOA.flatMap((p) => lagoaHistory[p.id] || []);
+  const get24hDelta = () => {
+    if (historyAll.length < 2 || avgLevel === null) return null;
+    const sorted = [...historyAll].sort((a, b) => new Date(a.t || a.at) - new Date(b.t || b.at));
+    const now = sorted[sorted.length - 1]?.v;
+    const dayAgo = sorted.find((pt) => {
+      const age = Date.now() - new Date(pt.t || pt.at).getTime();
+      return age >= 20 * 3600000 && age <= 28 * 3600000;
+    })?.v ?? sorted[0]?.v;
+    if (typeof now === "number" && typeof dayAgo === "number") return (now - dayAgo) * 100;
+    return null;
+  };
+
+  const delta24h = get24hDelta();
+  const minLevel = withLevel.length ? Math.min(...withLevel.map(({ lagoa }) => lagoa.atual)) : null;
+  const maxLevel = withLevel.length ? Math.max(...withLevel.map(({ lagoa }) => lagoa.atual)) : null;
+
+  const chart7d = (() => {
+    const all = STATIONS_LAGOA.flatMap((p) => (lagoaHistory[p.id] || []).slice(-14));
+    const byDay = {};
+    all.forEach((pt) => {
+      const day = String(pt.t || pt.at || "").slice(0, 10);
+      if (!day) return;
+      if (!byDay[day]) byDay[day] = [];
+      byDay[day].push(pt.v);
+    });
+    return Object.entries(byDay)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-7)
+      .map(([, vals]) => ({ v: vals.reduce((a, b) => a + b, 0) / vals.length }));
+  })();
+
+  const situation = lagoaSummary.above > 0 ? "Alerta" : lagoaSummary.attention > 0 ? "Atenção" : "Normal";
+  const situationColor = lagoaSummary.above > 0 ? "var(--sr-orange)" : lagoaSummary.attention > 0 ? "var(--sr-yellow)" : "var(--sr-green)";
+
+  const poaWeather = selData?.weather?.current;
+
   return (
-
-          <div>
-            <DefesaCivilNotice t={t} dark={dark} />
-            <div style={{ ...s.card, marginBottom:12, border:`1px solid ${t.borderActive}` }}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12, flexWrap:"wrap" }}>
-                <div>
-                  <div style={{ fontSize:9, color:t.textMuted, letterSpacing:2 }}>LAGOA DOS PATOS</div>
-                  <div style={{ fontSize:24, fontWeight:900, color:t.text, marginTop:2 }}>Monitoramento em ordem de escoamento</div>
-                </div>
-                <div style={{ display:"grid", gridTemplateColumns:"repeat(3, minmax(90px, 1fr))", gap:8 }}>
-                  <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
-                    <div style={{ fontSize:8, color:t.textMuted }}>Pontos com leitura</div>
-                    <div style={{ fontSize:18, fontWeight:800, color:t.accent }}>{lagoaSummary.monitored}/{lagoaSummary.total}</div>
-                  </div>
-                  <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
-                    <div style={{ fontSize:8, color:t.textMuted }}>Acima da cota</div>
-                    <div style={{ fontSize:18, fontWeight:800, color:lagoaSummary.above ? "#f97316" : "#22c55e" }}>{lagoaSummary.above}</div>
-                  </div>
-                  <div style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
-                    <div style={{ fontSize:8, color:t.textMuted }}>Atualização</div>
-                    <div style={{ fontSize:10, fontWeight:700, color:t.text }}>{lagoaSummary.latest ? formatDateTimeBR(lagoaSummary.latest) : "—"}</div>
-                  </div>
-                </div>
-              </div>
+    <div>
+      <div className="sr-kpi-row" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+        <div className="sr-card-v2">
+          <div className="sr-kpi-label">Nível atual da Lagoa</div>
+          <div className="sr-kpi-value">{avgLevel !== null ? `${avgLevel.toFixed(2).replace(".", ",")} m` : "—"}</div>
+          {delta24h !== null && (
+            <div className={`sr-kpi-trend ${delta24h <= 0 ? "is-down" : "is-up"}`}>
+              {delta24h <= 0 ? "↓" : "↑"} {Math.abs(delta24h).toFixed(0)} cm (24h)
             </div>
+          )}
+        </div>
+        <div className="sr-card-v2">
+          <div className="sr-kpi-label">Nível de referência</div>
+          <div className="sr-kpi-value">0,00 m</div>
+          <div className="sr-kpi-sublabel">Imbituba (SC)</div>
+        </div>
+        <div className="sr-card-v2">
+          <div className="sr-kpi-label">Situação</div>
+          <div className="sr-kpi-value" style={{ color: situationColor }}>{situation}</div>
+          <div className="sr-kpi-sublabel">
+            {lagoaSummary.above > 0 ? "Estação(es) acima da cota" : "Sem risco de transbordamento"}
+          </div>
+        </div>
+        <div className="sr-card-v2">
+          <div className="sr-kpi-label">Variação (24h)</div>
+          <div className="sr-kpi-value">{delta24h !== null ? `${delta24h >= 0 ? "+" : ""}${delta24h.toFixed(0)} cm` : "—"}</div>
+          {minLevel !== null && maxLevel !== null && (
+            <div className="sr-kpi-sublabel">Mín: {minLevel.toFixed(2)} m | Máx: {maxLevel.toFixed(2)} m</div>
+          )}
+        </div>
+      </div>
 
-            <div className="sr-lagoa-grid" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(418px,1fr))", gap:11 }}>
-              {STATIONS_LAGOA.map((point) => {
-                const d = getLagoaPointData(point, stationData);
-                const lagoa = d?.lagoa;
-                const rColor = lagoaStatusColor(lagoa?.levelStatus);
-                const sourceText = getLagoaSourceText(lagoa);
+      <div className="sr-grid-2-1">
+        <div className="sr-card-v2">
+          <h3 className="sr-card-title">Mapa da Lagoa dos Patos</h3>
+          <iframe
+            className="sr-map-frame"
+            title="Mapa Lagoa dos Patos"
+            loading="lazy"
+            src="https://www.openstreetmap.org/export/embed.html?bbox=-52.45%2C-32.15%2C-50.85%2C-30.25&layer=mapnik&marker=-31.5%2C-51.5"
+          />
+          <div className="sr-map-legend">
+            <span><span className="sr-status-dot" style={{ background: "#16a34a" }} /> Normal</span>
+            <span><span className="sr-status-dot" style={{ background: "#ca8a04" }} /> Atenção</span>
+            <span><span className="sr-status-dot" style={{ background: "#ea580c" }} /> Alerta</span>
+            <span><span className="sr-status-dot" style={{ background: "#94a3b8" }} /> Sem leitura</span>
+          </div>
+        </div>
+
+        <div className="sr-card-v2">
+          <h3 className="sr-card-title">Estações de monitoramento</h3>
+          <table className="sr-data-table">
+            <thead>
+              <tr>
+                <th>Estação</th>
+                <th>Nível (m)</th>
+                <th>Status</th>
+                <th>Leitura</th>
+              </tr>
+            </thead>
+            <tbody>
+              {points.map(({ point, lagoa }) => {
+                const hasLevel = lagoa?.isReal && lagoa?.atual != null;
+                const color = lagoaStatusColor(lagoa?.levelStatus);
                 const measuredAt = getLagoaMeasuredAt(lagoa);
-                const max2024 = getLagoaMaxMay2024(lagoa);
-                const hasLevel = lagoa?.isReal && lagoa?.atual !== null && lagoa?.atual !== undefined;
-                const anaReferenceLevel = typeof lagoa?.anaReferenceLevel === "number" ? lagoa.anaReferenceLevel : null;
-                const anaAgeMinutes = typeof lagoa?.anaReading?.age_minutes === "number" ? lagoa.anaReading.age_minutes : null;
-                const anaAgeText = anaAgeMinutes !== null
-                  ? anaAgeMinutes >= 1440
-                    ? `${Math.round(anaAgeMinutes / 1440)} dias`
-                    : `${Math.round(anaAgeMinutes / 60)} h`
-                  : null;
-                const threshold = lagoa?.threshold_m ?? null;
-                const progressBase = Math.max(threshold || lagoa?.atual || 1, 1);
-                const progress = hasLevel ? Math.min(100, (lagoa.atual / progressBase) * 100) : 0;
-
                 return (
-                  <div className="sr-lagoa-card" key={point.id} style={{ ...s.card, border:`1px solid ${hasLevel ? rColor+"55" : t.border}` }}>
-                    <div className="sr-lagoa-card-head" style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:8, marginBottom:10 }}>
-                      <div className="sr-lagoa-title">
-                        <div style={{ fontSize:9, color:t.textMuted, letterSpacing:2 }}>PONTO {point.ordemEscoamento} · ESTAÇÃO</div>
-                        <div style={{ fontSize:20, fontWeight:900, color:t.text }}>{point.name}</div>
-                        <div style={{ fontSize:8, color:t.textFaint, marginTop:2 }}>{point.displayName}</div>
-                      </div>
+                  <tr key={point.id}>
+                    <td>
+                      <span className="sr-status-dot" style={{ background: hasLevel ? color : "#94a3b8" }} />
+                      {point.displayName || point.name}
+                    </td>
+                    <td><strong>{hasLevel ? lagoa.atual.toFixed(2) : "—"}</strong></td>
+                    <td>
                       <button
-                         onClick={()=>setRiskExplain(explainLagoaRisk(point, lagoa))}
-                         title="Clique para entender este status"
-                         className="sr-status-button"
-                         style={{ background:"none", fontSize:9, fontWeight:800, padding:"3px 7px", border:`1px solid ${rColor}`, color:rColor, borderRadius:4, cursor:"pointer", fontFamily:"inherit" }}
-                       >
-                         {lagoaStatusLabel(lagoa?.levelStatus)} ⓘ
-                       </button>
-                    </div>
-
-                    {hasLevel ? (
-                      <>
-                        <div className="sr-lagoa-metrics" style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:8, marginBottom:10 }}>
-                          <div className="sr-lagoa-tile sr-lagoa-current" style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
-                            <div style={{ fontSize:8, color:t.textMuted }}>Cota atual</div>
-                            <div style={{ fontSize:33, fontWeight:900, color:rColor }}>{(lagoa.atual*100).toFixed(1)} cm</div>
-                            <div style={{ fontSize:8, color:t.textMuted }}>{lagoa.atual.toFixed(3)} m</div>
-                          </div>
-                          <div className="sr-lagoa-tile sr-lagoa-source" style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
-                            <div style={{ fontSize:8, color:t.textMuted }}>Fonte</div>
-                            <div className="sr-lagoa-source-name" style={{ fontSize:17, fontWeight:900, color:t.text }}>{sourceText}</div>
-                            <div style={{ fontSize:8, color:t.textMuted }}>{measuredAt ? formatDateTimeBR(measuredAt) : "horário não informado"}</div>
-                            {lagoa?.isFallback && (
-                              <div style={{ fontSize:8, color:"#eab308", marginTop:3 }}>
-                                {getFallbackWarningText(sourceText, lagoa.fallback_age_minutes)}
-                              </div>
-                            )}
-                            {point.id === "lagoa_patos_pelotas" && (
-                              <div style={{ fontSize:8, color:t.textMuted, marginTop:3 }}>
-                                Sensor HidroSens UFPel · alerta 1,20 m · crítica 1,40 m · máx. maio/2024 2,40 m
-                              </div>
-                            )}
-                          </div>
-                          <div className="sr-lagoa-tile" style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
-                            <div style={{ fontSize:8, color:t.textMuted }}>Cota de alerta</div>
-                            <div style={{ fontSize:20, fontWeight:900, color:threshold ? "#f97316" : t.textFaint }}>
-                              {threshold ? `${(threshold*100).toFixed(0)} cm` : "não validada"}
-                            </div>
-                            <div style={{ fontSize:8, color:t.textMuted }}>{threshold ? `${threshold.toFixed(2)} m` : "alerta automático conforme limiar"}</div>
-                          </div>
-                          <div className="sr-lagoa-tile" style={{ background:dark?"rgba(0,0,0,0.3)":t.bg, padding:"9px 11px", borderRadius:5 }}>
-                            <div style={{ fontSize:8, color:t.textMuted }}>Máx. maio/2024</div>
-                            <div style={{ fontSize:20, fontWeight:900, color:max2024 ? "#60a5fa" : t.textFaint }}>
-                              {max2024 ? `${(max2024*100).toFixed(0)} cm` : "–"}
-                            </div>
-                            <div style={{ fontSize:8, color:t.textMuted }}>{max2024 ? `${max2024.toFixed(2)} m` : "sem referência no sensor"}</div>
-                          </div>
-                        </div>
-
-                        <div style={{ height:5, background:t.barBg, borderRadius:3, overflow:"hidden" }}>
-                          <div style={{ width:`${progress}%`, height:"100%", background:rColor, borderRadius:3 }} />
-                        </div>
-                        <div style={{ display:"flex", justifyContent:"space-between", marginTop:4, fontSize:8, color:t.textMuted }}>
-                          <span>{sourceText}</span>
-                          <span>{threshold ? `limiar ${threshold.toFixed(2)} m` : "limiar não validado"}</span>
-                        </div>
-                        {/* BLOCO C — frescor do dado */}
-                        <div style={{ marginTop:6 }}>
-                          <FreshnessBadge
-                            measuredAt={getLagoaMeasuredAt(lagoa)}
-                            fallback={lagoa?.isFallback}
-                            fallbackAgeMin={lagoa?.fallback_age_minutes}
-                            t={t}
-                          />
-                        </div>
-                        {/* BLOCO B — sparkline histórico */}
-                        <HistorySparkline
-                          points={lagoaHistory[point.id] || []}
-                          color={rColor}
-                          t={t}
-                          sourceLabel={lagoaHistoryMeta.source}
-                        />
-                      </>
-                    ) : (
-                      <div style={{ padding:12, background:dark?"rgba(0,0,0,0.25)":t.bg, borderRadius:5, color:t.textMuted, fontSize:10 }}>
-                        {anaReferenceLevel !== null ? (
-                          <div style={{ display:"grid", gap:5 }}>
-                            <div style={{ fontSize:8, color:"#eab308", fontWeight:800, letterSpacing:1.5 }}>ANA HIDROWEB · REFERENCIA ANTIGA</div>
-                            <div style={{ fontSize:24, fontWeight:900, color:"#eab308" }}>{(anaReferenceLevel*100).toFixed(1)} cm</div>
-                            <div style={{ fontSize:8, color:t.textMuted }}>
-                              {anaAgeText ? `Leitura com aproximadamente ${anaAgeText}. ` : ""}
-                              Nao usada como cota operacional nem para status.
-                            </div>
-                            {(lagoa?.anaReading?.error || lagoa?.anaReading?.ana_message) && (
-                              <div style={{ fontSize:8, color:t.textFaint }}>
-                                {lagoa.anaReading.error || lagoa.anaReading.ana_message}
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          point.sourceHint === "ANA" ? "Sem leitura ANA operacional validada no periodo." : "Sem leitura operacional validada no periodo."
-                        )}
-                      </div>
-                    )}
-                  </div>
+                        type="button"
+                        style={{ background: "none", border: "none", color, fontWeight: 700, cursor: "pointer", fontSize: 12, padding: 0 }}
+                        onClick={() => setRiskExplain(explainLagoaRisk(point, lagoa))}
+                      >
+                        {lagoaStatusLabel(lagoa?.levelStatus)}
+                      </button>
+                    </td>
+                    <td style={{ fontSize: 11, color: "var(--sr-text-muted)" }}>
+                      {measuredAt ? formatDateTimeBR(measuredAt) : "—"}
+                    </td>
+                  </tr>
                 );
               })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="sr-grid-2">
+        <div className="sr-card-v2">
+          <h3 className="sr-card-title">Variação do nível — últimos 7 dias</h3>
+          <LineChart points={chart7d} width={480} height={140} color="#1a6fd4" referenceY={0} />
+        </div>
+        <div className="sr-card-v2">
+          <h3 className="sr-card-title">Histórico por estação</h3>
+          <LineChart
+            points={(lagoaHistory[STATIONS_LAGOA[0]?.id] || []).slice(-7).map((p) => ({ v: p.v }))}
+            width={480}
+            height={140}
+            color="#1a6fd4"
+            dashed
+            label={STATIONS_LAGOA[0]?.name || ""}
+          />
+        </div>
+      </div>
+
+      <div className="sr-grid-3">
+        <div className="sr-card-v2">
+          <h3 className="sr-card-title">Condições atuais</h3>
+          {[
+            { label: "Temperatura da água", value: "—", note: "Fonte em integração" },
+            { label: "Velocidade do vento", value: poaWeather?.wind_speed_10m != null ? `${poaWeather.wind_speed_10m.toFixed(0)} km/h` : "—" },
+            { label: "Pressão atmosférica", value: poaWeather?.surface_pressure != null ? `${poaWeather.surface_pressure.toFixed(0)} hPa` : "—" },
+          ].map((item) => (
+            <div key={item.label} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid var(--sr-border)", fontSize: 13 }}>
+              <span style={{ color: "var(--sr-text-muted)" }}>{item.label}</span>
+              <strong>{item.value}</strong>
             </div>
-          </div>
+          ))}
+        </div>
+        <div className="sr-card-v2">
+          <h3 className="sr-card-title">Fontes por estação</h3>
+          {points.slice(0, 4).map(({ point, lagoa }) => (
+            <div key={point.id} style={{ fontSize: 12, padding: "6px 0", borderBottom: "1px solid var(--sr-border)" }}>
+              <strong>{point.name}</strong>
+              <div style={{ color: "var(--sr-text-muted)" }}>{getLagoaSourceText(lagoa, point)}</div>
+            </div>
+          ))}
+        </div>
+        <div className="sr-card-v2">
+          <h3 className="sr-card-title">Informações</h3>
+          <p style={{ fontSize: 13, color: "var(--sr-text-muted)", lineHeight: 1.55, margin: 0 }}>
+            Os níveis são medidos por sensores RADAR, HidroSens/UFPel e Sensores de Monitoramento Lagoa dos Patos. O nível zero de referência
+            corresponde ao marégrafo de Imbituba (SC). Para decisões de segurança, consulte a Defesa Civil RS.
+          </p>
+          <button type="button" className="sr-card-footer-link" style={{ background: "none", border: "none" }} onClick={() => setActiveTab("alertas")}>
+            Entenda os níveis <NavIcon name="arrow" size={14} />
+          </button>
+        </div>
+      </div>
+
+      <div className="sr-info-banner">
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <NavIcon name="info" size={18} />
+          <span>Este painel apresenta dados de monitoramento. Para alertas oficiais, consulte a Defesa Civil RS (199).</span>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -79,18 +79,15 @@ export function FontesDeDadosTab({ ctx }) {
               <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:10 }}>SAÚDE DAS FONTES — ÚLTIMA VERIFICAÇÃO</div>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))", gap:8 }}>
                 {[
-                  "Open-Meteo","INMET","RADAR Lagoa","HidroSens","Defesa Civil RS",
-                  "NOAA/CPC ENSO","IRI/CCSR ENSO","CPTEC/INPE","INPE BDQueimadas","INPE Eventos de Fogo","CENSIPAM Painel do Fogo","Copernicus EFFIS","Copernicus Water","Copernicus Sentinel-1","Copernicus NDVI","Copernicus EMS","ANA HidroWeb","ANA Vulnerabilidade Inundacoes",
+                  "Open-Meteo","INMET","RADAR Lagoa","HidroSens","Sensores Monitoramento","Defesa Civil RS",
+                  "NOAA/CPC ENSO","IRI/CCSR ENSO","CPTEC/INPE","INPE BDQueimadas","INPE Eventos de Fogo","CENSIPAM Painel do Fogo","Copernicus EFFIS","Copernicus Water","Copernicus Sentinel-1","Copernicus NDVI","Copernicus EMS","ANA Vulnerabilidade Inundacoes",
                 ].map(name => {
                   const h = getValidatedSourceHealth(name);
                   const ok   = h?.ok;
                   const never = !h;
-                  const isAna = name === "ANA HidroWeb";
-                  const anaComplementar = isAna && (!h || !ok);
-                  const anaReference = isAna && h?.reference && !ok;
                   const pending = h?.pending;
-                  const color = never || pending ? (anaComplementar ? "#eab308" : "#64748b") : anaComplementar ? "#eab308" : ok ? "#22c55e" : "#ef4444";
-                  const label = anaReference ? "Referencia antiga" : anaComplementar ? "Sem leitura" : never || pending ? "Aguardando" : ok ? "OK" : "Falhou";
+                  const color = never || pending ? "#64748b" : ok ? "#22c55e" : "#ef4444";
+                  const label = never || pending ? "Aguardando" : ok ? "OK" : "Falhou";
                   return (
                     <div key={name} style={{ padding:"9px 12px", background:dark?"rgba(0,0,0,0.25)":t.bg, borderRadius:5, border:`1px solid ${color}33`, borderLeft:`3px solid ${color}` }}>
                       <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>

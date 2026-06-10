@@ -1,0 +1,5 @@
+Trecho de `supabase/functions/ana-rs/index.ts` mostrando `sensor_*` keys (2026-06-09):
+
+const sensorKeys = ["sensor_1", "sensor_2", "sensor_3", "sensor_4", "sensor_5"];
+
+// O código varre esses sensores no portal alternativo `https://api-medidas-porto-7bni.onrender.com` e retorna o primeiro com dado operacional.

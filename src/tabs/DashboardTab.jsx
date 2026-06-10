@@ -1,226 +1,300 @@
+import { KpiCard } from "../components/layout/KpiCard";
+import { LineChart } from "../components/layout/LineChart";
+import { NavIcon } from "../components/layout/NavIcons";
+
 export function DashboardTab({ ctx }) {
   const {
-    APAS_RS,
-    COPERNICUS_REFERENCE,
-    FIRE_MONITORED_AREAS_RS,
-    HistorySparkline,
-    RISK_LEVELS,
     STATIONS,
-    STATIONS_CIDADES,
     STATIONS_LAGOA,
     activeENSO,
     alerts,
-    copernicusEms,
-    copernicusNdvi,
-    copernicusS1,
-    copernicusWater,
-    dark,
-    dataStaleness,
-    effisHealth,
-    ensoFirstForecast,
-    ensoProbabilityText,
-    explainCityRisk,
-    explainDailyRisk,
-    explainLagoaRisk,
+    dayNames,
+    ensoClass,
+    ensoDominantProb,
+    ensoNoticias,
+    ensoObservedAvailable,
     formatDateTimeBR,
+    formatProbability,
     formatSignedCelsius,
-    getFallbackWarningText,
-    getLagoaMaxMay2024,
     getLagoaMeasuredAt,
     getLagoaPointData,
-    getLagoaSourceText,
-    getResponsibleAgencyText,
-    getRiskColor,
-    getRiskLevel,
-    getValidatedSourceHealth,
     lagoaHistory,
-    lagoaHistoryMeta,
     lagoaStatusColor,
     lagoaStatusLabel,
     lagoaSummary,
-    lastUpdate,
-    loadAllData,
     percentValue,
     queimadas,
-    s,
-    safeEnsoForecast,
-    selStation,
+    selData,
     setActiveTab,
-    setExpandedCard,
-    setRiskExplain,
-    setSelStation,
     stationData,
-    t,
-    wmoDesc,
-    wmoEmoji
+    wmoEmoji,
   } = ctx;
 
-  const orderedAlerts = [...(alerts || [])].sort((a, b) => {
-    const order = ["CRITICO", "EMERGENCIA", "ALERTA", "ATENCAO", "NORMAL"];
-    return order.indexOf(a.risk_level) - order.indexOf(b.risk_level);
-  });
-  const topOfficialAlert = orderedAlerts[0] || null;
-  const topAlertLevel = topOfficialAlert?.risk_level || "NORMAL";
-  const topAlertRisk = RISK_LEVELS[topAlertLevel] || RISK_LEVELS.NORMAL;
-  const topAlertColor = topOfficialAlert ? getRiskColor(topAlertLevel) : "#22c55e";
+  const poaData = stationData?.rs_porto_alegre;
+  const poaWeather = poaData?.weather;
+  const forecastIndexes = poaWeather?.forecastDayIndexes || poaWeather?.daily?.time?.slice(0, 7).map((_, i) => i) || [];
+  const weekDays = forecastIndexes.slice(0, 7);
+
+  const rain24h = typeof poaData?.observedPrecip24h === "number" ? poaData.observedPrecip24h : null;
+  const tempNow = typeof poaData?.tempCurrent === "number" ? poaData.tempCurrent : null;
+  const weatherCode = poaData?.weatherCurrentCode;
+
+  const lagoaLevels = STATIONS_LAGOA
+    .map((p) => getLagoaPointData(p, stationData)?.lagoa)
+    .filter((l) => l?.isReal && typeof l.atual === "number");
+  const avgLevel = lagoaLevels.length
+    ? lagoaLevels.reduce((s, l) => s + l.atual, 0) / lagoaLevels.length
+    : null;
+
+  const lagoaChartPoints = (() => {
+    const all = STATIONS_LAGOA.flatMap((p) => (lagoaHistory[p.id] || []).slice(-7));
+    if (all.length < 2) return [];
+    const byDay = {};
+    all.forEach((pt) => {
+      const day = String(pt.t || pt.at || "").slice(0, 10);
+      if (!day) return;
+      if (!byDay[day]) byDay[day] = [];
+      byDay[day].push(pt.v);
+    });
+    return Object.entries(byDay)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-7)
+      .map(([, vals]) => ({ v: vals.reduce((a, b) => a + b, 0) / vals.length }));
+  })();
+
+  const fireCount = queimadas?.foci?.length ?? queimadas?.count ?? 0;
+  const citiesAtRisk = STATIONS.filter((s) => {
+    const d = stationData[s.id];
+    return d && d.risk && d.risk !== "NORMAL";
+  }).length;
+
+  const topAlert = alerts?.[0];
 
   return (
+    <div>
+      <div className="sr-info-banner">
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <NavIcon name="info" size={18} />
+          <span>
+            {topAlert
+              ? `Aviso oficial: ${topAlert.message?.slice(0, 120)}${topAlert.message?.length > 120 ? "…" : ""}`
+              : "Sem avisos oficiais ativos. Em emergência, ligue 199 (Defesa Civil RS)."}
+          </span>
+        </div>
+        <button type="button" onClick={() => setActiveTab("alertas")}>
+          Ver todos os alertas <NavIcon name="arrow" size={14} />
+        </button>
+      </div>
 
-          <div>
-            <div style={{ ...s.card, marginBottom:12, border:`1px solid ${topAlertColor}55`, borderLeft:`4px solid ${topAlertColor}`, background: topOfficialAlert ? (dark ? "rgba(239,68,68,0.08)" : "rgba(239,68,68,0.05)") : (dark ? "rgba(34,197,94,0.06)" : "rgba(34,197,94,0.05)") }}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12, flexWrap:"wrap" }}>
-                <div style={{ minWidth:220, flex:"1 1 300px" }}>
-                  <div className="sr-section-eyebrow">SITUACAO OFICIAL</div>
-                  <div style={{ fontSize:15, fontWeight:900, color:topAlertColor, marginTop:3 }}>
-                    {topOfficialAlert ? `${topAlertRisk.icon} ${topAlertRisk.label.toUpperCase()} - Defesa Civil RS` : "Sem aviso oficial ativo no RSS"}
-                  </div>
-                  <div style={{ fontSize:10, color:t.textMuted, lineHeight:1.55, marginTop:6 }}>
-                    {topOfficialAlert ? topOfficialAlert.message : "Continue acompanhando os canais oficiais. Em emergência, use Defesa Civil, Bombeiros ou Brigada Militar."}
-                  </div>
-                  <div className="sr-source-badges" aria-label="Origem dos indicadores">
-                    <span className="sr-source-badge is-official">Defesa Civil RS</span>
-                  </div>
-                </div>
-                <div className="sr-emergency-actions">
-                  <a className="sr-emergency-action-link" href="tel:199">199 Defesa Civil</a>
-                  <a className="sr-emergency-action-link" href="tel:193">193 Bombeiros</a>
-                  <a className="sr-emergency-action-link" href="tel:190">190 Brigada</a>
-                  <button type="button" onClick={() => setActiveTab("alertas")} className="sr-emergency-action-link sr-emergency-action-button">
-                    Abrir alertas
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={() => setActiveTab("lagoa")}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  setActiveTab("lagoa");
-                }
-              }}
-              style={{ ...s.card, marginBottom:12, border:`1px solid ${lagoaSummary.above ? "#f9731655" : t.borderActive}`, cursor:"pointer" }}
-            >
-              <div style={{ display:"flex", justifyContent:"space-between", gap:12, alignItems:"flex-start", flexWrap:"wrap" }}>
-                <div>
-                  <div className="sr-section-eyebrow">LAGOA DOS PATOS</div>
-                  <div style={{ fontSize:15, fontWeight:800, color:t.text, marginTop:2 }}>Monitoramento de nível</div>
-                  <div style={{ fontSize:9, color:t.textMuted, marginTop:5 }}>
-                    {lagoaSummary.monitored}/{lagoaSummary.total} pontos com leitura real · RADAR + HidroSens · Ana HidroWeb
-                  </div>
-                  <div className="sr-source-badges" aria-label="Fontes do nivel da lagoa">
-                    <span className="sr-source-badge is-derived">RADAR</span>
-                    <span className="sr-source-badge is-derived">HidroSens</span>
-                    <span className="sr-source-badge is-official">ANA HidroWeb</span>
-                  </div>
-                </div>
-                <div className="sr-mini-stat-grid" style={{ gridTemplateColumns:"repeat(3, minmax(80px, 1fr))", minWidth:260, margin:0 }}>
-                  <div className="sr-mini-stat" style={{ background:dark?"rgba(0,0,0,0.3)":t.bg }}>
-                    <div className="sr-mini-stat-label">Acima da cota</div>
-                    <div className="sr-mini-stat-value" style={{ color:lagoaSummary.above ? "#f97316" : "#22c55e" }}>{lagoaSummary.above}</div>
-                  </div>
-                  <div className="sr-mini-stat" style={{ background:dark?"rgba(0,0,0,0.3)":t.bg }}>
-                    <div className="sr-mini-stat-label">Atencao</div>
-                    <div className="sr-mini-stat-value" style={{ color:lagoaSummary.attention ? "#eab308" : "#22c55e" }}>{lagoaSummary.attention}</div>
-                  </div>
-                  <div className="sr-mini-stat" style={{ background:dark?"rgba(0,0,0,0.3)":t.bg }}>
-                    <div className="sr-mini-stat-label">Ultima leitura</div>
-                    <div style={{ fontSize:10, fontWeight:700, color:t.text }}>{lagoaSummary.latest ? formatDateTimeBR(lagoaSummary.latest) : "—"}</div>
-                  </div>
-                </div>
-              </div>
-              <div style={{ marginTop:8, fontSize:8, color:t.accent, textAlign:"right", opacity:0.75 }}>abrir aba Lagoa dos Patos →</div>
-            </div>
+      <div className="sr-kpi-row">
+        <KpiCard
+          icon="rain"
+          label="Chuva (24h)"
+          value={rain24h !== null ? `${rain24h.toFixed(1)} mm` : "—"}
+          sublabel="Porto Alegre · Open-Meteo"
+          accent="blue"
+        />
+        <KpiCard
+          icon="waves"
+          label="Níveis d'água"
+          value={avgLevel !== null ? `${avgLevel.toFixed(2)} m` : "—"}
+          sublabel={`${lagoaSummary.monitored}/${lagoaSummary.total} estações`}
+          accent="green"
+        />
+        <KpiCard
+          icon="fire"
+          label="Focos de calor"
+          value={String(fireCount)}
+          sublabel="INPE · RS"
+          trend={fireCount > 0 ? "Monitorar" : "Sem focos"}
+          trendDir={fireCount > 0 ? "up" : "down"}
+          accent="orange"
+        />
+        <KpiCard
+          icon="shield"
+          label="Alertas ativos"
+          value={String(alerts?.length || 0)}
+          sublabel="Defesa Civil RS"
+          accent="red"
+        />
+        <KpiCard
+          icon="climate"
+          label="Cidades em monitoramento"
+          value={String(citiesAtRisk)}
+          sublabel={`de ${STATIONS.length} acompanhadas`}
+          accent="purple"
+        />
+      </div>
 
-            <div className="sr-city-grid" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(275px,1fr))", gap:11 }}>
-            {STATIONS.map(station => {
-              const d = stationData[station.id];
-              if (!d) return null;
-              const risk  = RISK_LEVELS[d.risk];
-              const rColor = getRiskColor(d.risk);
-              return (
-                <div key={station.id}
-                  role="button"
-                  tabIndex={0}
-                  className="sr-city-card"
-                  onClick={()=>setExpandedCard(station)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      setExpandedCard(station);
-                    }
-                  }}
-                  style={{ ...s.card, border:`1px solid ${d.risk!=="NORMAL"?rColor+"55":t.border}`, cursor:"pointer", position:"relative", overflow:"hidden", transition:"transform 0.15s,box-shadow 0.15s" }}
-                  onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow=`0 6px 20px ${rColor}22`;}}
-                  onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.boxShadow=t.shadowCard;}}>
-                  {d.risk!=="NORMAL" && <div style={{ position:"absolute", top:0, right:0, width:3, height:"100%", background:rColor, opacity:0.8 }} />}
-                  <div className="sr-city-card-head" style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8 }}>
-                    <div className="sr-city-card-title">
-                      <div className="sr-section-eyebrow" style={{ fontSize:9 }}>{station.type.toUpperCase()}</div>
-                      <div style={{ fontSize:14, fontWeight:700, color:t.text }}>{station.name}</div>
-                      {station.rioRef && <div style={{ fontSize:8, color:t.textFaint, marginTop:1 }}>{station.rioRef}</div>}
-                    </div>
-                    <button
-                      onClick={(e)=>{ e.stopPropagation(); setRiskExplain(explainCityRisk(station, d, ensoProbabilityText)); }}
-                      title="Clique para entender este status"
-                      className="sr-status-button"
-                      style={{ background:"none", fontSize:9, fontWeight:700, padding:"2px 7px", border:`1px solid ${rColor}`, color:rColor, borderRadius:3, cursor:"pointer", fontFamily:"inherit" }}
-                    >
-                      {risk.icon} {risk.label} ⓘ
-                    </button>
-                  </div>
-                  {d.error ? <div style={{ fontSize:10, color:"#ef4444" }}>Erro ao carregar</div> : (
-                    <>
-                    <div className="sr-city-metrics" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:5 }}>
-                      {[
-                        { l:"Condição", v: d.inmet?.resumo || (typeof d.weatherCurrentCode === "number" ? `${wmoEmoji(d.weatherCurrentCode)} ${wmoDesc(d.weatherCurrentCode)}` : "--") },
-                        { l:"Chuva agora", v: typeof d.precipCurrent === "number" ? `${d.precipCurrent.toFixed(1)}mm` : "--" },
-                        { l:"Temp. atual",  v: typeof d.tempCurrent === "number" ? `${d.tempCurrent.toFixed(1)}°C` : "--" },
-                        { l:"Vento atual", v: typeof d.windCurrent === "number" ? `${d.windCurrent.toFixed(0)}km/h` : "--" },
-                      ].map(item => (
-                        <div className="sr-metric-tile" key={item.l} style={{ background: dark?"rgba(0,0,0,0.3)":t.bg, padding:"5px 7px", borderRadius:3 }}>
-                          <div style={{ fontSize:9, fontWeight:600, color:t.textMuted }}>{item.l}</div>
-                          <div style={{ fontSize:13, fontWeight:700, color:item.highlight?"#f97316":t.text }}>{item.v}</div>
-                        </div>
-                      ))}
-                    </div>
-                    {d.floodVulnerability && d.floodVulnerability.level !== "Sem trecho" && d.floodVulnerability.level !== "Indisponivel" && (
-                      <div style={{ marginTop:7, padding:"6px 8px", border:`1px solid ${d.floodVulnerability.maxScore >= 3 ? "#eab30855" : t.border}`, borderRadius:4, background:dark?"rgba(234,179,8,0.06)":"rgba(234,179,8,0.05)" }}>
-                        <div style={{ fontSize:8, color:t.textMuted, letterSpacing:1.2 }}>ANA ATLAS · CONTEXTO DE INUNDACAO</div>
-                        <div style={{ fontSize:10, color:d.floodVulnerability.maxScore >= 3 ? "#eab308" : t.textMuted, fontWeight:800 }}>
-                          Vulnerabilidade {d.floodVulnerability.level}
-                          {d.floodVulnerability.rivers?.length ? ` · ${d.floodVulnerability.rivers.join(", ")}` : ""}
-                        </div>
-                      </div>
-                    )}
-                    </>
-                  )}
-                  {station.type==="lagoa" && d.lagoa && (
-                    <div style={{ marginTop:7 }}>
-                      <div style={{ fontSize:8, color:t.textMuted, marginBottom:3, display:"flex", justifyContent:"space-between" }}>
-                        <span>NÍVEL {d.lagoa.isReal ? (dataStaleness(getLagoaMeasuredAt(d.lagoa)) === "stale" ? "DESATUALIZADO" : "REAL") : "INDISPONÍVEL"}</span>
-                        {d.lagoa.isReal && <span style={{ color:"#22c55e" }}>● ANA</span>}
-                      </div>
-                      {d.lagoa.isReal && d.lagoa.atual !== null ? (
-                        <>
-                          <div style={{ height:4, background:t.barBg, borderRadius:2, overflow:"hidden" }}>
-                            <div style={{ height:"100%", width:`${Math.min(100,(d.lagoa.atual/1.5)*100)}%`, background:lagoaStatusColor(d.lagoa.levelStatus), borderRadius:2 }} />
-                          </div>
-                          <div style={{ fontSize:8, color:t.textMuted, marginTop:2 }}>{d.lagoa.atual.toFixed(2)}m / limiar por estação</div>
-                        </>
-                      ) : (
-                        <div style={{ fontSize:8, color:t.textFaint, marginTop:2 }}>Sem leitura operacional validada</div>
-                      )}
-                    </div>
-                  )}
-                  {/* Indicador clicável */}
-                  <div style={{ marginTop:8, fontSize:8, color:t.accent, textAlign:"right", opacity:0.7 }}>clique para detalhes →</div>
-                </div>
-              );
-            })}
-            </div>
+      <div className="sr-grid-2-1">
+        <div className="sr-card-v2">
+          <h3 className="sr-card-title">Previsão do tempo — próximos 7 dias</h3>
+          {poaWeather?.daily ? (
+            <table className="sr-forecast-table">
+              <thead>
+                <tr>
+                  <th>Dia</th>
+                  {weekDays.map((idx) => {
+                    const date = poaWeather.daily.time[idx];
+                    const dd = new Date(`${date}T12:00:00`);
+                    return (
+                      <th key={date}>
+                        <div className="sr-day-label">{idx === forecastIndexes[0] ? "Hoje" : dayNames[dd.getDay()]}</div>
+                        <div style={{ fontSize: 10, fontWeight: 400 }}>{dd.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</div>
+                      </th>
+                    );
+                  })}
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Tempo</td>
+                  {weekDays.map((idx) => (
+                    <td key={idx}>{wmoEmoji(poaWeather.daily.weathercode?.[idx] || 0)}</td>
+                  ))}
+                </tr>
+                <tr>
+                  <td>Máx</td>
+                  {weekDays.map((idx) => (
+                    <td key={idx} className="sr-temp-max">
+                      {Number(poaWeather.daily.temperature_2m_max?.[idx] || 0).toFixed(0)}°
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <td>Mín</td>
+                  {weekDays.map((idx) => (
+                    <td key={idx} className="sr-temp-min">
+                      {Number(poaWeather.daily.temperature_2m_min?.[idx] || 0).toFixed(0)}°
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <td>Chuva</td>
+                  {weekDays.map((idx) => (
+                    <td key={idx} className="sr-rain">
+                      {Number(poaWeather.daily.precipitation_sum?.[idx] || 0).toFixed(1)} mm
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          ) : (
+            <div className="sr-chart-empty">Carregando previsão…</div>
+          )}
+          <button type="button" className="sr-card-footer-link" style={{ background: "none", border: "none", width: "100%" }} onClick={() => setActiveTab("previsao")}>
+            Ver previsão completa (14 dias) <NavIcon name="arrow" size={14} />
+          </button>
+        </div>
+
+        <div className="sr-card-v2 sr-link-card" role="button" tabIndex={0} onClick={() => setActiveTab("lagoa")} onKeyDown={(e) => { if (e.key === "Enter") setActiveTab("lagoa"); }}>
+          <h3 className="sr-card-title">Lagoa dos Patos — nível médio</h3>
+          <div style={{ fontSize: 28, fontWeight: 800, color: "var(--sr-navy)", marginBottom: 4 }}>
+            {avgLevel !== null ? `${avgLevel.toFixed(2).replace(".", ",")} m` : "—"}
           </div>
+          <div style={{ fontSize: 12, color: "var(--sr-text-muted)", marginBottom: 12 }}>
+            {lagoaSummary.above > 0 ? `${lagoaSummary.above} acima da cota` : lagoaSummary.attention > 0 ? `${lagoaSummary.attention} em atenção` : "Situação normal"}
+          </div>
+          <LineChart points={lagoaChartPoints} width={280} height={100} color="#1a6fd4" />
+          <div className="sr-card-footer-link">Ver detalhes <NavIcon name="arrow" size={14} /></div>
+        </div>
+      </div>
+
+      <div className="sr-grid-3">
+        <div className="sr-card-v2 sr-link-card" role="button" tabIndex={0} onClick={() => setActiveTab("copernicus")}>
+          <h3 className="sr-card-title">Sensoriamento remoto</h3>
+          <div style={{ height: 120, background: "linear-gradient(135deg,#dbeafe,#bfdbfe)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--sr-blue)", fontWeight: 600, fontSize: 13 }}>
+            Copernicus · Água · NDVI · S1
+          </div>
+          <div className="sr-card-footer-link">Abrir Copernicus <NavIcon name="arrow" size={14} /></div>
+        </div>
+        <div className="sr-card-v2 sr-link-card" role="button" tabIndex={0} onClick={() => setActiveTab("queimadas")}>
+          <h3 className="sr-card-title">Focos de calor</h3>
+          <div style={{ height: 120, background: "linear-gradient(135deg,#ffedd5,#fed7aa)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--sr-orange)", fontWeight: 700, fontSize: 24 }}>
+            {fireCount}
+          </div>
+          <div className="sr-card-footer-link">Ver queimadas <NavIcon name="arrow" size={14} /></div>
+        </div>
+        <div className="sr-card-v2 sr-link-card" role="button" tabIndex={0} onClick={() => setActiveTab("lagoa")}>
+          <h3 className="sr-card-title">Estações da Lagoa</h3>
+          <div style={{ fontSize: 13, color: "var(--sr-text-muted)", lineHeight: 1.6 }}>
+            {STATIONS_LAGOA.slice(0, 4).map((p) => {
+              const lagoa = getLagoaPointData(p, stationData)?.lagoa;
+              const level = lagoa?.isReal ? `${lagoa.atual.toFixed(2)} m` : "sem leitura";
+              return <div key={p.id}>{p.name}: <strong>{level}</strong></div>;
+            })}
+          </div>
+          <div className="sr-card-footer-link">Ver mapa <NavIcon name="arrow" size={14} /></div>
+        </div>
+      </div>
+
+      <div className="sr-grid-3">
+        <div className="sr-card-v2">
+          <h3 className="sr-card-title">ENSO — El Niño / La Niña</h3>
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>
+            {ensoObservedAvailable ? `${ensoClass.label} · Niño 3.4 ${formatSignedCelsius(activeENSO.nino34)}` : "Dado observado indisponível"}
+          </div>
+          {ensoDominantProb && (
+            <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+              {[
+                { label: "La Niña", val: activeENSO.prob?.laNina, color: "#2563eb" },
+                { label: "Neutro", val: activeENSO.prob?.neutral, color: "#94a3b8" },
+                { label: "El Niño", val: activeENSO.prob?.elNino, color: "#dc2626" },
+              ].map((item) => (
+                <div key={item.label} style={{ flex: 1, textAlign: "center" }}>
+                  <div style={{ height: 60, display: "flex", alignItems: "flex-end" }}>
+                    <div style={{ width: "100%", height: `${percentValue(item.val) || 0}%`, minHeight: 4, background: item.color, borderRadius: "4px 4px 0 0" }} />
+                  </div>
+                  <div style={{ fontSize: 10, marginTop: 4, color: "var(--sr-text-muted)" }}>{item.label}</div>
+                  <div style={{ fontSize: 11, fontWeight: 700 }}>{formatProbability(item.val)}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          <button type="button" className="sr-card-footer-link" style={{ background: "none", border: "none", width: "100%" }} onClick={() => setActiveTab("enso")}>
+            Ver ENSO completo <NavIcon name="arrow" size={14} />
+          </button>
+        </div>
+
+        <div className="sr-card-v2">
+          <h3 className="sr-card-title">Notícias</h3>
+          {(ensoNoticias?.items || []).slice(0, 3).map((item, i) => (
+            <div key={i} style={{ display: "flex", gap: 10, marginBottom: 12, alignItems: "flex-start" }}>
+              <div style={{ width: 48, height: 48, borderRadius: 6, background: "var(--sr-blue-light)", flexShrink: 0 }} />
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.35 }}>{item.title || item.titulo || "Sem título"}</div>
+                <div style={{ fontSize: 11, color: "var(--sr-text-muted)", marginTop: 2 }}>{item.source || "Fonte"}</div>
+              </div>
+            </div>
+          ))}
+          {!(ensoNoticias?.items?.length) && (
+            <div style={{ fontSize: 13, color: "var(--sr-text-muted)" }}>Abra a aba Notícias para carregar o feed.</div>
+          )}
+          <button type="button" className="sr-card-footer-link" style={{ background: "none", border: "none", width: "100%" }} onClick={() => setActiveTab("noticias-enso")}>
+            Ver mais notícias <NavIcon name="arrow" size={14} />
+          </button>
+        </div>
+
+        <div className="sr-card-v2">
+          <h3 className="sr-card-title">Informações rápidas</h3>
+          {[
+            { icon: "🌡️", label: "Temperatura POA", value: tempNow !== null ? `${tempNow.toFixed(1)} °C` : "—" },
+            { icon: "🌧️", label: "Chuva prevista (14d)", value: poaData?.precip != null ? `${poaData.precip.toFixed(0)} mm` : "—" },
+            { icon: "💨", label: "Vento máx. previsto", value: poaData?.windMax != null ? `${poaData.windMax.toFixed(0)} km/h` : "—" },
+            { icon: "🌊", label: "Pontos Lagoa c/ leitura", value: `${lagoaSummary.monitored}/${lagoaSummary.total}` },
+          ].map((item) => (
+            <div key={item.label} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--sr-border)", fontSize: 13 }}>
+              <span style={{ color: "var(--sr-text-muted)" }}>{item.icon} {item.label}</span>
+              <strong>{item.value}</strong>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="sr-sources-footer">
+        <span>Fontes: ANA · CPRM · FEPAM · Open-Meteo · INMET · INPE · NOAA · Copernicus</span>
+        <button type="button" onClick={() => setActiveTab("apis")}>Ver detalhes das fontes</button>
+      </div>
+    </div>
   );
 }

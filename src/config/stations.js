@@ -1,10 +1,10 @@
 export const STATIONS_LAGOA = [
-  { id: "lagoa_patos_poa",      name: "Itapu\u00e3",                   displayName: "Lagoa dos Patos \u2014 Itapu\u00e3",              lat: -30.36, lon: -51.03, type: "lagoa", anaCode: "87450020", sourceHint: "RADAR", ordemEscoamento: 1 },
+  { id: "lagoa_patos_poa",      name: "Itapu\u00e3",                   displayName: "Lagoa dos Patos \u2014 Itapu\u00e3",              lat: -30.36, lon: -51.03, type: "lagoa", sourceHint: "RADAR", ordemEscoamento: 1 },
   { id: "lagoa_patos_arambare", name: "Arambar\u00e9",                 displayName: "Lagoa dos Patos \u2014 Arambar\u00e9",            lat: -30.91, lon: -51.50, type: "lagoa", sourceHint: "RADAR", ordemEscoamento: 2 },
   { id: "lagoa_sao_lourenco",   name: "S\u00e3o Louren\u00e7o do Sul",      displayName: "Lagoa dos Patos \u2014 S\u00e3o Louren\u00e7o do Sul", lat: -31.36, lon: -51.98, type: "lagoa", sourceHint: "RADAR", ordemEscoamento: 3 },
   { id: "lagoa_patos_pelotas",  name: "Pelotas / Laranjal",       displayName: "Lagoa dos Patos \u2014 Pelotas / Laranjal",  lat: -31.77, lon: -52.34, type: "lagoa", sourceHint: "HIDROSENS", ordemEscoamento: 4 },
   { id: "lagoa_sao_jose_norte", name: "S\u00e3o Jos\u00e9 do Norte",        displayName: "Lagoa dos Patos \u2014 S\u00e3o Jos\u00e9 do Norte",   lat: -32.02, lon: -52.04, type: "lagoa", sourceHint: "RADAR", ordemEscoamento: 5 },
-  { id: "lagoa_rio_grande",     name: "Rio Grande / FURG CCMAR",  displayName: "Lagoa dos Patos \u2014 Rio Grande / Barra",  lat: -32.03, lon: -52.10, type: "lagoa", sourceHint: "RADAR", ordemEscoamento: 6 },
+  { id: "lagoa_rio_grande",     name: "Rio Grande / FURG CCMAR",  displayName: "Lagoa dos Patos \u2014 Rio Grande / Barra",  lat: -32.03, lon: -52.10, type: "lagoa", sourceHint: "RADAR", ordemEscoamento: 6, sourceLabel: "CIEX / FURG" },
 ];
 
 export const STATIONS_CIDADES = [

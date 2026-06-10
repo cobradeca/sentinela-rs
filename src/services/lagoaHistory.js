@@ -2,8 +2,34 @@ import { supabase } from "../lib/supabase";
 
 const HISTORY_MAX_POINTS = 336;
 const HISTORY_LOOKBACK_HOURS = 168;
+const LOCAL_CACHE_KEY = "sentinela_rs_lagoa_history_v2";
+const LOCAL_CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias
 
 let sessionHistory = {};
+
+function saveHistoryToLocalStorage(history) {
+  try {
+    if (typeof window === "undefined" || !window.localStorage) return;
+    window.localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify({
+      saved_at: new Date().toISOString(),
+      history,
+    }));
+  } catch { /* quota cheia — silencia */ }
+}
+
+function loadHistoryFromLocalStorage() {
+  try {
+    if (typeof window === "undefined" || !window.localStorage) return null;
+    const raw = window.localStorage.getItem(LOCAL_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    const age = Date.now() - new Date(parsed.saved_at || 0).getTime();
+    if (age > LOCAL_CACHE_MAX_AGE_MS) return null;
+    return parsed.history || null;
+  } catch {
+    return null;
+  }
+}
 
 function sanitizePoint(point) {
   const value = Number(point?.v);
@@ -39,11 +65,19 @@ export function appendLagoaHistorySnapshot(history, stationId, levelM, measuredA
 
   next[stationId] = arr.slice(-HISTORY_MAX_POINTS);
   sessionHistory = next;
+  // persiste no localStorage a cada nova leitura
+  saveHistoryToLocalStorage(next);
   return next;
 }
 
 export async function loadLagoaHistory(stationIds) {
   const since = new Date(Date.now() - HISTORY_LOOKBACK_HOURS * 60 * 60 * 1000).toISOString();
+
+  // Carrega localStorage como base imediata (mantém histórico entre sessões)
+  const localCache = loadHistoryFromLocalStorage();
+  if (localCache) {
+    sessionHistory = normalizeHistory({ ...localCache, ...sessionHistory });
+  }
 
   try {
     const { data, error } = await supabase
@@ -65,17 +99,26 @@ export async function loadLagoaHistory(stationIds) {
       fromSupabase[row.station_id].push({ t: row.recorded_at, v: level });
     }
 
-    sessionHistory = normalizeHistory({ ...sessionHistory, ...fromSupabase });
+    // Supabase + localStorage + sessão atual — Supabase prevalece para o mesmo período
+    const merged = normalizeHistory({ ...sessionHistory, ...fromSupabase });
+    sessionHistory = merged;
+    saveHistoryToLocalStorage(merged);
+
     return {
-      history: sessionHistory,
+      history: merged,
       source: Object.keys(fromSupabase).length ? "histórico operacional" : "sessão atual",
       persistent: Object.keys(fromSupabase).length > 0,
     };
   } catch (error) {
+    // Supabase falhou: usa localStorage como fallback persistido
+    const fromLocal = loadHistoryFromLocalStorage();
+    const fallback = normalizeHistory({ ...(fromLocal || {}), ...sessionHistory });
+    sessionHistory = fallback;
+
     return {
-      history: normalizeHistory(sessionHistory),
-      source: "sessão atual",
-      persistent: false,
+      history: fallback,
+      source: fromLocal ? "cache local (Supabase indisponível)" : "sessão atual",
+      persistent: Boolean(fromLocal),
       error: error?.message || "histórico Supabase indisponível",
     };
   }

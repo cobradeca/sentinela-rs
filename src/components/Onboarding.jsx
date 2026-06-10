@@ -54,7 +54,7 @@ export function Onboarding({ t, dark }) {
           <a href="https://www.defesacivil.rs.gov.br/" target="_blank" rel="noreferrer" style={{ color: dark ? "#fbbf24" : "#92400e", fontWeight: 700 }}>defesacivil.rs.gov.br</a>
         </div>
         <div style={{ fontSize: 10, color: t.textMuted, lineHeight: 1.6, marginBottom: 20 }}>
-          <strong style={{ color: t.text }}>Fontes principais:</strong> Open-Meteo · INMET · RADAR Lagoa dos Patos · HidroSens/UFPel · ANA HidroWeb · NOAA/CPC · IRI/CCSR · CPTEC/INPE · Defesa Civil RS · INPE Queimadas · Copernicus Sentinel-1/2/EMS.
+          <strong style={{ color: t.text }}>Fontes principais:</strong> Open-Meteo · INMET · RADAR Lagoa dos Patos · HidroSens/UFPel · Sensores Monitoramento · NOAA/CPC · IRI/CCSR · CPTEC/INPE · Defesa Civil RS · INPE Queimadas · Copernicus Sentinel-1/2/EMS.
         </div>
         <button
           onClick={close}

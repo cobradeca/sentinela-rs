@@ -1,0 +1,12 @@
+Page Title: Monitoramento da Lagoa dos Patos
+URL: https://monitoramentolagoadospatos.com.br/
+
+Snapshot summary (acervo automático):
+- Vários painéis por estação com 'Cota Atual' e 'Última atualização' (09/06/2026, 19:30:00)
+- FURG CCMAR: 41.7 cm
+- São Lourenço do Sul: 68.9 cm
+- Arambaré: 46.9 cm
+- São José do Norte: 21.1 cm
+- Itapuã: 191.6 cm
+
+Observação: Uma screenshot visual foi capturada e exibida na interface de chat. Caso queira, posso tentar novamente salvar a imagem binária no repositório; isso pode requerer permissões ou tentativa alternativa.

@@ -1,164 +1,211 @@
-import { DefesaCivilNotice } from "../components/DefesaCivilNotice";
+import { NavIcon } from "../components/layout/NavIcons";
+import { STATIONS_CIDADES } from "../config/stations";
+
 export function PrevisaoTab({ ctx }) {
   const {
-    APAS_RS,
-    COPERNICUS_REFERENCE,
-    FIRE_MONITORED_AREAS_RS,
-    HistorySparkline,
     RISK_LEVELS,
-    STATIONS,
-    STATIONS_CIDADES,
-    STATIONS_LAGOA,
     activeENSO,
-    alerts,
-    copernicusEms,
-    copernicusNdvi,
-    copernicusS1,
-    copernicusWater,
-    dark,
-    dataStaleness,
     dayNames,
-    effisHealth,
     ensoClass,
     ensoDominantProb,
-    ensoFirstForecast,
     ensoObservedAvailable,
-    ensoProbabilityAvailable,
-    ensoProbabilityText,
     explainCityRisk,
     explainDailyRisk,
-    explainLagoaRisk,
-    formatDateTimeBR,
     formatProbability,
     formatSignedCelsius,
-    getFallbackWarningText,
-    getLagoaMaxMay2024,
-    getLagoaMeasuredAt,
-    getLagoaPointData,
-    getLagoaSourceText,
-    getResponsibleAgencyText,
     getRiskBg,
     getRiskColor,
-    getRiskLevel,
-    getValidatedSourceHealth,
-    lagoaHistory,
-    lagoaHistoryMeta,
-    lagoaStatusColor,
-    lagoaStatusLabel,
-    lagoaSummary,
-    lastUpdate,
-    loadAllData,
-    percentValue,
-    queimadas,
-    s,
-    safeEnsoForecast,
     selData,
     selStation,
     setActiveTab,
-    setExpandedCard,
     setRiskExplain,
     setSelStation,
-    sourceHealth,
-    stationData,
-    t,
     wmoDesc,
-    wmoEmoji
+    wmoEmoji,
   } = ctx;
+
   const forecastDayIndexes = selData?.weather?.forecastDayIndexes
     || selData?.weather?.daily?.time?.slice(0, 14).map((_, index) => index)
     || [];
-  const forecastPrecipValues = forecastDayIndexes.map((index) => selData?.weather?.daily?.precipitation_sum?.[index] || 0);
+
+  const daily = selData?.weather?.daily;
+  const precipValues = forecastDayIndexes.map((index) => daily?.precipitation_sum?.[index] || 0);
+  const tempMaxValues = forecastDayIndexes.map((index) => daily?.temperature_2m_max?.[index] || 0);
+  const tempMinValues = forecastDayIndexes.map((index) => daily?.temperature_2m_min?.[index] || 0);
+  const windValues = forecastDayIndexes.map((index) => daily?.windspeed_10m_max?.[index] || 0);
+
+  const avgMax = tempMaxValues.length ? tempMaxValues.reduce((a, b) => a + b, 0) / tempMaxValues.length : null;
+  const avgMin = tempMinValues.length ? tempMinValues.reduce((a, b) => a + b, 0) / tempMinValues.length : null;
+  const totalPrecip = precipValues.reduce((a, b) => a + b, 0);
+  const avgWind = windValues.length ? windValues.reduce((a, b) => a + b, 0) / windValues.length : null;
+
+  const maxPrecip = Math.max(...precipValues, 1);
 
   return (
+    <div>
+      <div className="sr-info-banner">
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <NavIcon name="info" size={18} />
+          <span>Previsão de 14 dias fornecida por Open-Meteo. Não substitui avisos oficiais do INMET ou Defesa Civil.</span>
+        </div>
+      </div>
 
-          <div>
-            <DefesaCivilNotice t={t} dark={dark} />
-            {/* Select com seta visível, apenas cidades */}
-            <div style={{ position:"relative", zIndex:1, display:"inline-block", marginTop:12, marginBottom:18 }}>
-              <select value={selStation.id} onChange={e=>setSelStation(STATIONS_CIDADES.find(st=>st.id===e.target.value)||STATIONS_CIDADES[0])}
-                style={{ appearance:"none", WebkitAppearance:"none", background:t.inputBg, border:`1px solid ${t.borderActive}`, color:t.text, padding:"8px 36px 8px 12px", borderRadius:5, fontFamily:"inherit", fontSize:11, cursor:"pointer", minWidth:200 }}>
-                {STATIONS_CIDADES.map(st=><option key={st.id} value={st.id} style={{ background:dark?"#0f172a":"#fff" }}>{st.name}</option>)}
-              </select>
-              <div style={{ position:"absolute", right:10, top:"50%", transform:"translateY(-50%)", pointerEvents:"none", color:t.accent, fontSize:12 }}>▼</div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 18 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "var(--sr-text-muted)" }}>
+          <NavIcon name="forecast" size={18} />
+          <strong style={{ color: "var(--sr-navy)" }}>{selStation.name} — RS</strong>
+        </div>
+        <div style={{ position: "relative" }}>
+          <select
+            value={selStation.id}
+            onChange={(e) => setSelStation(STATIONS_CIDADES.find((st) => st.id === e.target.value) || STATIONS_CIDADES[0])}
+            style={{
+              appearance: "none",
+              padding: "10px 36px 10px 14px",
+              border: "1px solid var(--sr-border)",
+              borderRadius: 8,
+              background: "var(--sr-card)",
+              fontSize: 13,
+              fontWeight: 600,
+              color: "var(--sr-navy)",
+              cursor: "pointer",
+            }}
+          >
+            {STATIONS_CIDADES.map((st) => (
+              <option key={st.id} value={st.id}>{st.name}</option>
+            ))}
+          </select>
+          <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--sr-blue)" }}>▼</span>
+        </div>
+      </div>
+
+      {daily ? (
+        <>
+          <div className="sr-card-v2" style={{ marginBottom: 18 }}>
+            <h3 className="sr-card-title">Visão geral dos próximos 14 dias</h3>
+            <div style={{ display: "flex", gap: 16, marginBottom: 12, fontSize: 12, color: "var(--sr-text-muted)" }}>
+              <span><span style={{ color: "#dc2626", fontWeight: 700 }}>—</span> Temp. máx.</span>
+              <span><span style={{ color: "#2563eb", fontWeight: 700 }}>—</span> Temp. mín.</span>
+              <span><span style={{ color: "#93c5fd", fontWeight: 700 }}>■</span> Precipitação (mm)</span>
             </div>
-            {selData?.weather?.daily ? (
-              <div>
-                {/* 14 cards dias */}
-                <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:6, marginBottom:20 }}>
-                  {forecastDayIndexes.map((dayIndex,i) => {
-                    const date=selData.weather.daily.time?.[dayIndex];
-                    const dd=new Date(date+"T12:00:00");
-                    const p=selData.weather.daily.precipitation_sum?.[dayIndex]||0;
-                    const tx=selData.weather.daily.temperature_2m_max?.[dayIndex]||0;
-                    const tn=selData.weather.daily.temperature_2m_min?.[dayIndex]||0;
-                    const w=selData.weather.daily.windspeed_10m_max?.[dayIndex]||0;
-                    const c=selData.weather.daily.weathercode?.[dayIndex]||0;
-                    const dr=(p>20 || w>40 || tn<5) ? "MONITORAR" : "NORMAL";
-                    const r=RISK_LEVELS[dr];
-                    const rColor=getRiskColor(dr);
-                    return (
-                      <div key={date} style={{ padding:"10px 6px", background:i===0?(dark?"rgba(34,211,238,0.08)":"rgba(8,145,178,0.08)"):(dark?"rgba(255,255,255,0.03)":"rgba(0,0,0,0.02)"), border:`1px solid ${i===0?t.accent+"44":(dr!=="NORMAL"?rColor+"55":t.border)}`, borderRadius:5, textAlign:"center" }}>
-                        <div style={{ fontSize:8, color:t.textMuted }}>{i===0?"HOJE":dayNames[dd.getDay()]}</div>
-                        <div style={{ fontSize:8, color:t.textFaint }}>{dd.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"})}</div>
-                        <div style={{ fontSize:22, margin:"6px 0 4px" }}>{wmoEmoji(c)}</div>
-                        <div style={{ fontSize:7, color:t.textMuted, marginBottom:5, minHeight:18 }}>{wmoDesc(c)}</div>
-                        <div style={{ fontSize:12, fontWeight:700, color:"#fbbf24" }}>{tx.toFixed(0)}°</div>
-                        <div style={{ fontSize:10, color:"#60a5fa" }}>{tn.toFixed(0)}°</div>
-                        <div style={{ marginTop:5, paddingTop:5, borderTop:`1px solid ${t.border}`, fontSize:8 }}>
-                          <div style={{ color:t.accent }}>🌧 {p.toFixed(0)}mm</div>
-                          <div style={{ color:t.textMuted }}>💨 {w.toFixed(0)}km/h</div>
-                        </div>
-                        <button
-                          onClick={()=>setRiskExplain(explainDailyRisk(selStation, date, p, tn, w, dr))}
-                          title="Clique para entender este status diário"
-                          style={{ marginTop:5, background:"none", fontSize:7, padding:"2px 3px", border:`1px solid ${rColor}`, color:rColor, borderRadius:3, cursor:"pointer", fontFamily:"inherit" }}
-                        >
-                          {r.label} ⓘ
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-                {/* Gráfico precipitação */}
-                <div className="sr-precip-card" style={{ ...s.card, marginBottom:12 }}>
-                  <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:12 }}>PRECIPITAÇÃO (mm/dia)</div>
-                  <div className="sr-precip-chart" style={{ display:"flex", alignItems:"flex-end", gap:4, height:80 }}>
-                    {forecastPrecipValues.map((p,i) => {
-                      const mx=Math.max(...forecastPrecipValues,1);
-                      const dayIndex=forecastDayIndexes[i];
-                      const dd=new Date(selData.weather.daily.time[dayIndex]+"T12:00:00");
-                      return (
-                        <div key={i} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:3 }}>
-                          <div style={{ fontSize:7, color:t.accent }}>{p.toFixed(0)}</div>
-                          <div style={{ width:"100%", height:(p/mx)*70, minHeight:p>0?3:0, background:p>50?"#ef4444":p>20?"#f97316":t.accent, borderRadius:"2px 2px 0 0", opacity:0.8 }} />
-                          <div style={{ fontSize:7, color:t.textFaint }}>{dayNames[dd.getDay()]}</div>
-                        </div>
-                      );
-                    })}
+            <div className="sr-combo-chart">
+              {forecastDayIndexes.map((dayIndex, i) => {
+                const date = daily.time[dayIndex];
+                const dd = new Date(`${date}T12:00:00`);
+                const p = precipValues[i];
+                const tx = tempMaxValues[i];
+                const tn = tempMinValues[i];
+                return (
+                  <div key={date} className="sr-combo-bar">
+                    <div style={{ fontSize: 9, color: "var(--sr-text-muted)", textAlign: "center" }}>
+                      {dayNames[dd.getDay()]}
+                      <br />
+                      {dd.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
+                    </div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "#dc2626" }}>{tx.toFixed(0)}°</div>
+                    <div style={{ fontSize: 9, color: "#2563eb" }}>{tn.toFixed(0)}°</div>
+                    <div className="sr-combo-bar-fill" style={{ height: `${(p / maxPrecip) * 80}px` }} title={`${p.toFixed(1)} mm`} />
+                    <div style={{ fontSize: 9, color: "var(--sr-blue)", fontWeight: 600 }}>{p.toFixed(1)}</div>
                   </div>
-                </div>
-                <div
-                  onClick={()=>setRiskExplain(explainCityRisk(selStation, selData, ensoProbabilityText))}
-                  title="Clique para entender a análise de monitoramento"
-                  style={{ padding:14, background:getRiskBg(selData.risk), border:`1px solid ${getRiskColor(selData.risk)}44`, borderRadius:5, cursor:"pointer" }}
-                >
-                  <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:8 }}>ANÁLISE DE MONITORAMENTO — 14 DIAS</div>
-                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))", gap:8 }}>
-                    {[
-                      { l:"Precipitação", v:`${selData.precip?.toFixed(0)} mm`, a:selData.precip>50 },
-                      { l:"Temp. mínima", v:`${selData.tempMin?.toFixed(1)}°C`,  a:selData.tempMin<5 },
-                      { l:"Vento máx.",   v:`${selData.windMax?.toFixed(0)} km/h`, a:selData.windMax>40 },
-                      { l:"Contexto climático",v: ensoObservedAvailable ? `${ensoClass.label} (Niño 3.4 ${formatSignedCelsius(activeENSO.nino34)})` : (ensoDominantProb ? `${ensoDominantProb.label} ${formatProbability(ensoDominantProb.value)}` : "ENSO indisponível"), a:false },
-                    ].map(item=>(
-                      <div key={item.l} style={{ display:"flex", justifyContent:"space-between" }}>
-                        <span style={{ fontSize:10, color:t.textMuted }}>{item.l}</span>
-                        <span style={{ fontSize:12, fontWeight:700, color:item.a?getRiskColor(selData.risk):"#22c55e" }}>{item.v}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : <div style={{ color:"#ef4444", fontSize:11 }}>Dados não disponíveis.</div>}
+                );
+              })}
+            </div>
           </div>
+
+          <div className="sr-card-v2" style={{ marginBottom: 18 }}>
+            <h3 className="sr-card-title">Previsão diária detalhada</h3>
+            <div className="sr-forecast-carousel">
+              {forecastDayIndexes.map((dayIndex, i) => {
+                const date = daily.time[dayIndex];
+                const dd = new Date(`${date}T12:00:00`);
+                const p = precipValues[i];
+                const tx = tempMaxValues[i];
+                const tn = tempMinValues[i];
+                const w = windValues[i];
+                const c = daily.weathercode?.[dayIndex] || 0;
+                const dr = p > 20 || w > 40 || tn < 5 ? "MONITORAR" : "NORMAL";
+                return (
+                  <div key={date} className={`sr-forecast-day-card${i === 0 ? " is-today" : ""}`}>
+                    <div className="sr-day-name">{i === 0 ? "Hoje" : dayNames[dd.getDay()]}</div>
+                    <div className="sr-day-date">{dd.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</div>
+                    <div className="sr-emoji">{wmoEmoji(c)}</div>
+                    <div className="sr-tmax">{tx.toFixed(0)}°</div>
+                    <div className="sr-tmin">{tn.toFixed(0)}°</div>
+                    <div className="sr-detail">🌧 {p.toFixed(1)} mm</div>
+                    <div className="sr-detail">💨 {w.toFixed(0)} km/h</div>
+                    <button
+                      type="button"
+                      onClick={() => setRiskExplain(explainDailyRisk(selStation, date, p, tn, w, dr))}
+                      style={{ marginTop: 6, background: "none", border: `1px solid ${getRiskColor(dr)}`, color: getRiskColor(dr), borderRadius: 4, fontSize: 10, padding: "2px 6px", cursor: "pointer" }}
+                    >
+                      {RISK_LEVELS[dr].label}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="sr-kpi-row" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+            <div className="sr-card-v2">
+              <div className="sr-kpi-label">Temp. máx. média</div>
+              <div className="sr-kpi-value" style={{ color: "#dc2626" }}>{avgMax != null ? `${avgMax.toFixed(1)} °C` : "—"}</div>
+            </div>
+            <div className="sr-card-v2">
+              <div className="sr-kpi-label">Temp. mín. média</div>
+              <div className="sr-kpi-value" style={{ color: "#2563eb" }}>{avgMin != null ? `${avgMin.toFixed(1)} °C` : "—"}</div>
+            </div>
+            <div className="sr-card-v2">
+              <div className="sr-kpi-label">Precipitação total</div>
+              <div className="sr-kpi-value">{totalPrecip.toFixed(1)} mm</div>
+            </div>
+            <div className="sr-card-v2">
+              <div className="sr-kpi-label">Vento médio máx.</div>
+              <div className="sr-kpi-value">{avgWind != null ? `${avgWind.toFixed(0)} km/h` : "—"}</div>
+            </div>
+          </div>
+
+          <div
+            className="sr-card-v2"
+            role="button"
+            tabIndex={0}
+            onClick={() => setRiskExplain(explainCityRisk(selStation, selData))}
+            style={{ marginTop: 18, cursor: "pointer", background: getRiskBg(selData.risk), borderColor: `${getRiskColor(selData.risk)}44` }}
+          >
+            <h3 className="sr-card-title">Análise de monitoramento — 14 dias</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, fontSize: 13 }}>
+              {[
+                { l: "Precipitação", v: `${selData.precip?.toFixed(0)} mm`, alert: selData.precip > 50 },
+                { l: "Temp. mínima", v: `${selData.tempMin?.toFixed(1)}°C`, alert: selData.tempMin < 5 },
+                { l: "Vento máx.", v: `${selData.windMax?.toFixed(0)} km/h`, alert: selData.windMax > 40 },
+                {
+                  l: "Contexto ENSO",
+                  v: ensoObservedAvailable
+                    ? `${ensoClass.label} (${formatSignedCelsius(activeENSO.nino34)})`
+                    : ensoDominantProb
+                      ? `${ensoDominantProb.label} ${formatProbability(ensoDominantProb.value)}`
+                      : "Indisponível",
+                  alert: false,
+                },
+              ].map((item) => (
+                <div key={item.l} style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ color: "var(--sr-text-muted)" }}>{item.l}</span>
+                  <strong style={{ color: item.alert ? getRiskColor(selData.risk) : "var(--sr-green)" }}>{item.v}</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="sr-info-banner" style={{ marginTop: 18 }}>
+            <span><strong>Importante:</strong> previsão numérica de apoio. Para alertas oficiais, consulte a Defesa Civil RS.</span>
+            <button type="button" onClick={() => setActiveTab("alertas")}>
+              Ver alertas da Defesa Civil <NavIcon name="shield" size={14} />
+            </button>
+          </div>
+        </>
+      ) : (
+        <div className="sr-chart-empty">Dados de previsão não disponíveis para esta cidade.</div>
+      )}
+    </div>
   );
 }

@@ -1,5 +1,4 @@
 import {
-  ANA_RS_FUNCTION_URL,
   COPERNICUS_EMS_FUNCTION_URL,
   COPERNICUS_EMS_RAPID_DETAIL_URL,
   COPERNICUS_EMS_RAPID_INFO_URL,
@@ -39,6 +38,14 @@ export const COPERNICUS_REFERENCE = {
 
 const COPERNICUS_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 const ANA_FLOOD_VULNERABILITY_URL = "https://www.snirh.gov.br/arcgis/rest/services/SUM/vulnerabilidade_brasil/MapServer/0/query";
+const SENSORES_LAGOA_BASE_URL = "https://api-medidas-porto-7bni.onrender.com/dados";
+const SENSORES_LAGOA_MAPPING = {
+  sensor_1: "lagoa_rio_grande",
+  sensor_2: "lagoa_sao_lourenco",
+  sensor_3: "lagoa_patos_arambare",
+  sensor_4: "lagoa_sao_jose_norte",
+  sensor_5: "lagoa_patos_poa",
+};
 
 const FLOOD_VULNERABILITY_SCORE = {
   "BAIXA": 1,
@@ -572,33 +579,63 @@ export async function fetchLagoaRadarLevels() {
   }
 }
 
-export async function fetchAnaLevel(anaCode) {
+export async function fetchSensorsLagoaMonitoramento() {
   try {
-    const res = await fetch(`${ANA_RS_FUNCTION_URL}?codEstacao=${encodeURIComponent(anaCode)}`, {
-      signal: AbortSignal.timeout(6000),
-      cache: "no-store",
-      headers: { Accept: "application/json" },
+    const sensorIds = Object.keys(SENSORES_LAGOA_MAPPING);
+    const results = await Promise.allSettled(
+      sensorIds.map((sensorId) =>
+        fetch(`${SENSORES_LAGOA_BASE_URL}/${sensorId}`, {
+          signal: AbortSignal.timeout(8000),
+          cache: "no-store",
+          headers: { Accept: "application/json" },
+        }).then(res => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.json();
+        })
+      )
+    );
+
+    const sensors = {};
+    let successCount = 0;
+
+    results.forEach((result, idx) => {
+      const sensorId = sensorIds[idx];
+      const stationId = SENSORES_LAGOA_MAPPING[sensorId];
+      if (!stationId) return;
+
+      if (result.status === "fulfilled") {
+        const data = result.value;
+        const level = data?.dado?.valor ? data.dado.valor / 100 : null;
+        if (typeof level === "number") {
+          sensors[stationId] = {
+            ok: true,
+            station_id: stationId,
+            sensor_id: sensorId,
+            level_m: level,
+            measured_at: data?.dado?.data_hora || null,
+            operational: true,
+            stale: false,
+            source_label: "Sensores Monitoramento Lagoa",
+          };
+          successCount += 1;
+        }
+      }
     });
 
-    if (!res.ok) return null;
-
-    const data = await res.json();
-    const level = typeof data?.latest?.level_m === "number" ? data.latest.level_m : null;
-
     return {
-      ok: Boolean(data?.ok),
-      source: data?.source || "ANA HidroWeb REST",
-      level_m: level,
-      measured_at: data?.latest?.measured_at || data?.latest?.dataHora || null,
-      operational: Boolean(data?.operational && data?.ok),
-      stale: Boolean(data?.stale),
-      age_minutes: typeof data?.age_minutes === "number" ? data.age_minutes : null,
-      error: data?.error || null,
-      ana_message: data?.ana_message || null,
-      codEstacao: data?.codEstacao || anaCode,
+      ok: successCount > 0,
+      sensors,
+      success_count: successCount,
+      source: "Sensores Monitoramento Lagoa dos Patos",
+      fetched_at: new Date().toISOString(),
     };
   } catch {
-    return null;
+    return {
+      ok: false,
+      sensors: {},
+      source: "Sensores Monitoramento Lagoa dos Patos",
+      fetched_at: new Date().toISOString(),
+    };
   }
 }
 
