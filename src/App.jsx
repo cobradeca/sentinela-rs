@@ -1217,7 +1217,7 @@ export default function SentinelaRS() {
     }
   };
 
-  const weatherWidget = activeTab === "dashboard" && poaData ? (
+  const weatherWidget = false && activeTab === "dashboard" && poaData ? (
     <div className="sr-weather-widget">
       <span style={{ fontSize: 22 }}>{wmoEmoji(poaData.weatherCurrentCode ?? 0)}</span>
       <div>
@@ -1266,6 +1266,7 @@ export default function SentinelaRS() {
           </aside>
 
           <div className="sr-content-v2">
+            {activeTab !== "dashboard" && activeTab !== "lagoa" && (
             <PageHeader
               title={pageMeta.title}
               subtitle={activeTab === "previsao" ? `${selStation.name} — RS` : pageMeta.subtitle}
@@ -1275,6 +1276,7 @@ export default function SentinelaRS() {
               onAction={activeTab === "lagoa" ? () => setActiveTab("apis") : undefined}
               weatherWidget={weatherWidget}
             />
+            )}
 
             {officialHeaderAlert && activeTab !== "dashboard" && activeTab !== "alertas" && (
               <div className="sr-info-banner" style={{ background: "var(--sr-red-bg)", color: "#991b1b" }}>

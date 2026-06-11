@@ -3,20 +3,36 @@ const TOMTOM_BASE_URL = "https://api.tomtom.com/traffic/services/5/incidentDetai
 const MONITORED_ROADS = [
   {
     id: "BR-116",
-    trecho: "Porto Alegre → Pelotas",
-    bbox: "-52.35,-31.78,-51.10,-29.95",
+    trecho: "Porto Alegre -> Pelotas",
+    bboxes: [
+      "-51.35,-30.25,-50.95,-29.85",
+      "-51.65,-30.75,-51.25,-30.35",
+      "-51.95,-31.25,-51.55,-30.85",
+      "-52.35,-31.85,-51.95,-31.45",
+    ],
     keywords: ["116", "br-116", "br116"],
   },
   {
     id: "BR-101",
-    trecho: "Região Metropolitana → Litoral Norte",
-    bbox: "-51.30,-30.10,-49.90,-29.30",
+    trecho: "Regiao Metropolitana -> Litoral Norte",
+    bboxes: [
+      "-51.25,-30.15,-50.85,-29.75",
+      "-50.85,-30.05,-50.45,-29.65",
+      "-50.45,-29.85,-50.05,-29.45",
+      "-50.15,-29.65,-49.75,-29.25",
+    ],
     keywords: ["101", "br-101", "br101"],
   },
   {
     id: "BR-471",
-    trecho: "Rio Grande → Santa Vitória do Palmar / Chuí",
-    bbox: "-53.65,-33.85,-52.00,-31.90",
+    trecho: "Rio Grande -> Santa Vitoria do Palmar / Chui",
+    bboxes: [
+      "-52.35,-32.25,-51.95,-31.85",
+      "-52.75,-32.70,-52.35,-32.30",
+      "-53.15,-33.10,-52.75,-32.70",
+      "-53.55,-33.55,-53.15,-33.15",
+      "-53.85,-33.90,-53.45,-33.50",
+    ],
     keywords: ["471", "br-471", "br471"],
   },
 ];
@@ -24,14 +40,14 @@ const MONITORED_ROADS = [
 const CATEGORY_LABELS: Record<number, string> = {
   0: "Desconhecido",
   1: "Acidente",
-  2: "Névoa",
+  2: "Nevoa",
   3: "Risco na via",
   4: "Obras em andamento",
   5: "Via bloqueada",
   6: "Via bloqueada",
   7: "Via bloqueada",
-  8: "Tráfego intenso",
-  9: "Tráfego parado",
+  8: "Trafego intenso",
+  9: "Trafego parado",
   10: "Via bloqueada",
   11: "Via bloqueada",
   14: "Via bloqueada",
@@ -71,7 +87,7 @@ function normalizeIncident(road: typeof MONITORED_ROADS[number], incident: any) 
     severidade: Number.isFinite(severity) ? severity : 0,
     de: from,
     ate: to,
-    trecho: from && to ? `${from} → ${to}` : from || to || road.trecho,
+    trecho: from && to ? `${from} -> ${to}` : from || to || road.trecho,
     descricao: event?.description || "",
     bloqueioTotal: BLOCKING_CATEGORIES.has(category),
     fonte: "TomTom Traffic",
@@ -79,22 +95,19 @@ function normalizeIncident(road: typeof MONITORED_ROADS[number], incident: any) 
   };
 }
 
-async function fetchTomTomRoad(road: typeof MONITORED_ROADS[number], key: string) {
-  const fields = "{incidents{type,properties{iconCategory,magnitudeOfDelay,events{description,code},from,to,roadNumbers,timeValidity}}}";
+async function fetchTomTomBox(road: typeof MONITORED_ROADS[number], bbox: string, key: string) {
+  const fields = "{incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description,code},from,to,roadNumbers,timeValidity}}}";
   const params = new URLSearchParams({
     key,
-    bbox: road.bbox,
+    bbox,
     fields,
-    language: "pt-BR",
+    language: "pt-PT",
     categoryFilter: "0,1,2,3,4,5,6,7,8,9,10,11,14",
     timeValidityFilter: "present",
   });
 
   const response = await fetch(`${TOMTOM_BASE_URL}?${params.toString()}`, {
-    headers: {
-      Accept: "application/json",
-      "User-Agent": "SentinelaRS/1.0",
-    },
+    headers: { Accept: "application/json" },
   });
 
   if (!response.ok) {
@@ -111,6 +124,18 @@ async function fetchTomTomRoad(road: typeof MONITORED_ROADS[number], key: string
       return road.keywords.some((keyword) => combined.includes(normalize(keyword)));
     })
     .map((incident: any) => normalizeIncident(road, incident));
+}
+
+async function fetchTomTomRoad(road: typeof MONITORED_ROADS[number], key: string) {
+  const results = await Promise.allSettled(road.bboxes.map((bbox) => fetchTomTomBox(road, bbox, key)));
+  const incidents = results.flatMap((result) => result.status === "fulfilled" ? result.value : []);
+  const seen = new Set<string>();
+  return incidents.filter((incident) => {
+    const id = [incident.br, incident.categoria, incident.de, incident.ate, incident.descricao].join("|");
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
 }
 
 Deno.serve(async (req) => {
@@ -130,8 +155,8 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({
       ok: false,
       source: "TomTom Traffic",
-      error: "TOMTOM_API_KEY não configurada",
-      brs: MONITORED_ROADS.map((road) => ({ ...road, status: "erro", incidents: [], fontes: [] })),
+      error: "TOMTOM_API_KEY nao configurada",
+      brs: MONITORED_ROADS.map((road) => ({ id: road.id, trecho: road.trecho, status: "erro", incidents: [], fontes: [] })),
       meta: { timestamp: new Date().toISOString(), tomtomOk: false },
     }), {
       status: 500,
@@ -153,10 +178,10 @@ Deno.serve(async (req) => {
     const status = result.status === "rejected"
       ? "erro"
       : blocked.length > 0
-      ? "bloqueado"
-      : incidents.length > 0
-      ? "incidente"
-      : "livre";
+        ? "bloqueado"
+        : incidents.length > 0
+          ? "incidente"
+          : "livre";
 
     return {
       id: road.id,
@@ -176,7 +201,7 @@ Deno.serve(async (req) => {
     ok: tomtomOk,
     source: "TomTom Traffic",
     source_url: "https://developer.tomtom.com/traffic-api",
-    note: "Indicador complementar de tráfego. Não é aviso oficial de interdição; confirme bloqueios com DAER, PRF, CRBM/CPRv ou Defesa Civil.",
+    note: "Indicador complementar de trafego. Nao e aviso oficial de interdicao; confirme bloqueios com DAER, PRF, CRBM/CPRv ou Defesa Civil.",
     fetched_at: new Date().toISOString(),
     brs,
     meta: {

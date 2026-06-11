@@ -51,28 +51,6 @@ export function LagoaDosPatosTab({ ctx }) {
 
   return (
     <div style={{ display: "grid", gap: 14 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 2 }}>
-            <NavIcon name="waves" size={28} />
-            <h1 style={{ margin: 0, fontSize: 28, color: "var(--sr-navy)" }}>Lagoa dos Patos</h1>
-          </div>
-          <div style={{ fontSize: 16, color: "var(--sr-text-muted)" }}>Níveis e condições atualizadas</div>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ fontSize: 14, color: "var(--sr-text-muted)" }}>Fonte: RADAR Lagoa / HidroSens / Monitoramento Lagoa</div>
-          <button type="button" className="sr-btn-outline">
-            <NavIcon name="info" size={16} /> Saiba mais
-          </button>
-        </div>
-      </div>
-
-      <div className="sr-update-bar">
-        <NavIcon name="clock" size={16} />
-        <span>Última atualização: 09/06/2026 09:45</span>
-        <span style={{ marginLeft: 8 }}>Dados podem sofrer alterações sem aviso prévio.</span>
-      </div>
-
       <div className="sr-kpi-row" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
         <div className="sr-kpi-card sr-kpi-blue"><div className="sr-kpi-icon"><NavIcon name="waves" size={20} /></div><div><div className="sr-kpi-label">NÍVEL ATUAL DA LAGOA</div><div className="sr-kpi-value">{avgLevel !== null ? `${avgLevel.toFixed(2).replace(".", ",")} m` : "—"}</div><div className="sr-kpi-sublabel">acima do nível de referência</div><div className="sr-kpi-trend is-down">↓ -2 cm</div></div></div>
         <div className="sr-kpi-card sr-kpi-green"><div className="sr-kpi-icon"><NavIcon name="info" size={20} /></div><div><div className="sr-kpi-label">NÍVEL DE REFERÊNCIA</div><div className="sr-kpi-value">0,00 m</div><div className="sr-kpi-sublabel">Referência: Imbituba (SC)</div></div></div>
@@ -83,12 +61,23 @@ export function LagoaDosPatosTab({ ctx }) {
       <div className="sr-grid-2-1">
         <div className="sr-card-v2">
           <h3 className="sr-card-title">Mapa da Lagoa dos Patos</h3>
-          <iframe
-            className="sr-map-frame"
-            title="Mapa Lagoa dos Patos"
-            loading="lazy"
-            src="https://www.openstreetmap.org/export/embed.html?bbox=-52.45%2C-32.15%2C-50.85%2C-30.25&layer=mapnik&marker=-31.5%2C-51.5"
-          />
+          <div className="sr-lagoa-map-panel" aria-label="Mapa esquematico da Lagoa dos Patos">
+            <div className="sr-lagoa-map-water">Lagoa dos Patos</div>
+            {points.slice(0, 6).map(({ point, lagoa }) => (
+              <div
+                key={point.id}
+                className="sr-lagoa-map-marker"
+                style={{
+                  left: `${18 + ((Math.abs(point.lon) - 50.9) / 1.8) * 62}%`,
+                  top: `${18 + ((Math.abs(point.lat) - 30.1) / 2.3) * 68}%`,
+                }}
+              >
+                <span className="sr-status-dot" style={{ background: lagoa?.isReal ? "#16a34a" : "#94a3b8" }} />
+                <strong>{point.displayName || point.name}</strong>
+                <small>{lagoa?.isReal && typeof lagoa.atual === "number" ? `${lagoa.atual.toFixed(2)} m` : "Sem leitura"}</small>
+              </div>
+            ))}
+          </div>
           <div className="sr-map-legend">
             <span><span className="sr-status-dot" style={{ background: "#16a34a" }} /> Normal (&lt; 0,80 m)</span>
             <span><span className="sr-status-dot" style={{ background: "#ca8a04" }} /> Atenção (0,80 a 1,20 m)</span>
