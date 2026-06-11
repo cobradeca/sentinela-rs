@@ -5,7 +5,7 @@ export function Sidebar({ activeTab, onNavigate, lastUpdate, formatDateTime }) {
   return (
     <aside className="sr-sidebar-v2">
       <div className="sr-sidebar-brand">
-        <SentinelaLogo size={88} />
+        <SentinelaLogo size={82} />
         <div className="sr-sidebar-brand-text">
           <strong>SENTINELA</strong>
           <span>RS</span>

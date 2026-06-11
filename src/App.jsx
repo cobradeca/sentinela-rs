@@ -1291,7 +1291,7 @@ export default function SentinelaRS() {
               </div>
             )}
 
-            {loading && activeTab !== "copernicus" && activeTab !== "enso" && activeTab !== "apis" && (
+            {loading && activeTab !== "dashboard" && activeTab !== "lagoa" && activeTab !== "copernicus" && activeTab !== "enso" && activeTab !== "apis" && (
               <div className="sr-loading">
                 <div className="sr-loading-spinner" />
                 <div>Analisando dados…</div>

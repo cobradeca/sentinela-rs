@@ -45,6 +45,7 @@ export function DashboardTab({ ctx }) {
     getLagoaPointData,
     lastUpdate,
     loadAllData,
+    loading,
     qLoading,
     queimadas,
     riverLevels,
@@ -86,7 +87,11 @@ export function DashboardTab({ ctx }) {
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
-      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 34, lineHeight: 1.1, color: "var(--sr-text)" }}>Dashboard</h1>
+          <div style={{ fontSize: 15, color: "var(--sr-text-muted)", marginTop: 4 }}>Visao geral das condicoes no Rio Grande do Sul</div>
+        </div>
         <div style={{ background: "#fff", border: "1px solid var(--sr-border)", borderRadius: 12, padding: "12px 16px", minWidth: 320, boxShadow: "var(--sr-shadow)" }}>
           <div style={{ fontSize: 13, color: "var(--sr-text)", marginBottom: 8 }}>Porto Alegre, RS</div>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
@@ -105,6 +110,13 @@ export function DashboardTab({ ctx }) {
           </div>
         </div>
       </div>
+
+      {loading && (
+        <div className="sr-loading" style={{ margin: 0 }}>
+          <div className="sr-loading-spinner" />
+          <div>Analisando dados...</div>
+        </div>
+      )}
 
       <div className="sr-info-banner">
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
