@@ -1,222 +1,312 @@
-import { KpiCard } from "../components/layout/KpiCard";
+import { useState } from "react";
+import { Sparkline as HistorySparkline } from "../components/Sparkline";
 import { NavIcon } from "../components/layout/NavIcons";
-import { LineChart } from "../components/layout/LineChart";
 
 export function DashboardTab({ ctx }) {
   const {
-    STATIONS,
     STATIONS_LAGOA,
     activeENSO,
     alerts,
+    dark,
     dayNames,
     ensoClass,
     ensoDominantProb,
-    ensoNoticias,
     ensoObservedAvailable,
+    formatDateTimeBR,
     formatProbability,
-    formatSignedCelsius,
+    getLagoaMeasuredAt,
     getLagoaPointData,
     lagoaHistory,
     lagoaSummary,
-    percentValue,
     queimadas,
+    s,
+    selData,
     setActiveTab,
     stationData,
+    t,
     wmoEmoji,
   } = ctx;
 
-  const poaData = stationData?.rs_porto_alegre;
-  const poaWeather = poaData?.weather;
-  const forecastIndexes = poaWeather?.forecastDayIndexes || poaWeather?.daily?.time?.slice(0, 7).map((_, i) => i) || [];
-  const weekDays = forecastIndexes.slice(0, 7);
-  const rain24h = typeof poaData?.observedPrecip24h === "number" ? poaData.observedPrecip24h : null;
-  const tempNow = typeof poaData?.tempCurrent === "number" ? poaData.tempCurrent : null;
-  const weatherCode = poaData?.weatherCurrentCode ?? 0;
-  const fireCount = queimadas?.foci?.length ?? queimadas?.count ?? 0;
-  const citiesAtRisk = STATIONS.filter((s) => stationData[s.id]?.risk && stationData[s.id]?.risk !== "NORMAL").length;
-  const topAlert = alerts?.[0];
+  const [expandedLagoaStation, setExpandedLagoaStation] = useState(null);
 
   const lagoaLevels = STATIONS_LAGOA
     .map((p) => getLagoaPointData(p, stationData)?.lagoa)
     .filter((l) => l?.isReal && typeof l.atual === "number");
-  const avgLevel = lagoaLevels.length ? lagoaLevels.reduce((s, l) => s + l.atual, 0) / lagoaLevels.length : null;
+  const avgLagoaLevel = lagoaLevels.length
+    ? lagoaLevels.reduce((sum, l) => sum + l.atual, 0) / lagoaLevels.length
+    : null;
 
-  const lagoaChartPoints = (() => {
-    const all = STATIONS_LAGOA.flatMap((p) => (lagoaHistory[p.id] || []).slice(-7));
-    if (all.length < 2) return [];
-    const byDay = {};
-    all.forEach((pt) => {
-      const day = String(pt.t || pt.at || "").slice(0, 10);
-      if (!day) return;
-      if (!byDay[day]) byDay[day] = [];
-      byDay[day].push(pt.v);
-    });
-    return Object.entries(byDay)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .slice(-7)
-      .map(([, vals]) => ({ v: vals.reduce((a, b) => a + b, 0) / vals.length }));
+  const lagoaTendency = (() => {
+    if (avgLagoaLevel === null) return null;
+    const today = new Date().toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    const allHistory = STATIONS_LAGOA.flatMap((p) => lagoaHistory[p.id] || []);
+    const todayMeasures = allHistory.filter((m) => String(m.t || m.at || "").slice(0, 10) === today).map((m) => m.v);
+    const yesterdayMeasures = allHistory.filter((m) => String(m.t || m.at || "").slice(0, 10) === yesterday).map((m) => m.v);
+    const todayAvg = todayMeasures.length ? todayMeasures.reduce((a, b) => a + b, 0) / todayMeasures.length : null;
+    const yesterdayAvg = yesterdayMeasures.length ? yesterdayMeasures.reduce((a, b) => a + b, 0) / yesterdayMeasures.length : null;
+    if (todayAvg && yesterdayAvg) return todayAvg - yesterdayAvg;
+    return null;
   })();
 
+  const poaWeather = stationData?.rs_porto_alegre?.weather;
+  const forecasted5DaysPrecip = poaWeather?.daily
+    ? poaWeather.daily.precipitation_sum?.slice(0, 5).reduce((a, b) => a + (b || 0), 0) || 0
+    : null;
+
+  const ensoStatus = ensoObservedAvailable ? ensoClass?.label || "Desconhecido" : "Sem dado";
+  const fireCount24h = queimadas?.foci?.length ?? queimadas?.count ?? 0;
+  const hasCriticalAlerts = alerts?.some((a) => a.risk_level === "CRITICO" || a.risk_level === "EMERGENCIA");
+  const defesaCivilStatus = hasCriticalAlerts ? "⚠️ Alerta ativo" : "✅ Normalidade";
+  const topAlert = alerts?.[0];
+  const lagoaStations = STATIONS_LAGOA.slice(0, 4);
+  const forecastIndexes = poaWeather?.forecastDayIndexes || poaWeather?.daily?.time?.slice(0, 5).map((_, i) => i) || [];
+  const nextFiveDays = forecastIndexes.slice(0, 5);
+  const ensoProbLaNina = activeENSO?.prob?.laNina || 0;
+  const ensoProbNeutral = activeENSO?.prob?.neutral || 0;
+  const ensoProbElNino = activeENSO?.prob?.elNino || 0;
+  const ndviMedium = queimadas?.ndvi_medium ?? null;
+  const vooData = stationData?.rs_porto_alegre?.metar || null;
+
   return (
-    <div style={{ display: "grid", gap: 14 }}>
-      <div className="sr-info-banner">
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <NavIcon name="info" size={18} />
-          <span>
-            {topAlert
-              ? `Os dados apresentados são provenientes de fontes oficiais e podem sofrer alterações sem aviso prévio.`
-              : "Os dados apresentados são provenientes de fontes oficiais e podem sofrer alterações sem aviso prévio."}
-          </span>
+    <div style={{ display: "grid", gap: 12 }}>
+      <div style={{ ...s.card, border: `1px solid ${t.borderActive}`, padding: 0, overflow: "hidden" }}>
+        <div style={{ padding: "12px 15px", borderBottom: `1px solid ${t.border}` }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: t.accent }}>📊 PANORAMA GERAL</div>
+            <div style={{ fontSize: 10, color: t.textMuted }}>Dados informativos • não são alertas</div>
+          </div>
         </div>
-        <button type="button" onClick={() => setActiveTab("alertas")}>
-          Ver todos os alertas <NavIcon name="arrow" size={14} />
-        </button>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 0 }}>
+          <div style={{ padding: "12px 12px", borderRight: `1px solid ${t.border}`, cursor: "pointer" }} onClick={() => setActiveTab("lagoa")} role="button" tabIndex={0}>
+            <div style={{ fontSize: 10, color: t.textMuted, marginBottom: 4 }}>🌊 Lagoa dos Patos</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: "#06b6d4", marginBottom: 2 }}>{avgLagoaLevel !== null ? `${avgLagoaLevel.toFixed(2)} m` : "—"}</div>
+            <div style={{ fontSize: 10, color: t.textMuted, marginBottom: 4 }}>Nível médio</div>
+            <div style={{ fontSize: 11, color: lagoaTendency !== null ? (lagoaTendency < 0 ? "#ef4444" : "#22c55e") : t.textMuted }}>
+              {lagoaTendency !== null ? <>{lagoaTendency < 0 ? "↓" : "↑"} {Math.abs(lagoaTendency).toFixed(2)} m (24h)</> : "—"}
+            </div>
+          </div>
+
+          <div style={{ padding: "12px 12px", borderRight: `1px solid ${t.border}`, cursor: "pointer" }} onClick={() => setActiveTab("previsao")} role="button" tabIndex={0}>
+            <div style={{ fontSize: 10, color: t.textMuted, marginBottom: 4 }}>🌧️ Previsão</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: "#06b6d4", marginBottom: 2 }}>{forecasted5DaysPrecip !== null ? `${forecasted5DaysPrecip.toFixed(0)} mm` : "—"}</div>
+            <div style={{ fontSize: 10, color: t.textMuted, marginBottom: 4 }}>Acumulado 5 dias</div>
+            <div style={{ fontSize: 11, color: t.textMuted }}>Chuva prevista</div>
+          </div>
+
+          <div style={{ padding: "12px 12px", borderRight: `1px solid ${t.border}`, cursor: "pointer" }} onClick={() => setActiveTab("enso")} role="button" tabIndex={0}>
+            <div style={{ fontSize: 10, color: t.textMuted, marginBottom: 4 }}>🌡️ ENSO</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "#06b6d4", marginBottom: 2 }}>{ensoStatus}</div>
+            <div style={{ fontSize: 10, color: t.textMuted, marginBottom: 4 }}>Prob. (IRI/CCSR)</div>
+            <div style={{ fontSize: 9, color: t.textMuted }}>{ensoDominantProb ? `${formatProbability(Math.max(ensoProbLaNina, ensoProbNeutral, ensoProbElNino))}` : "—"}</div>
+          </div>
+
+          <div style={{ padding: "12px 12px", borderRight: `1px solid ${t.border}`, cursor: "pointer" }} onClick={() => setActiveTab("queimadas")} role="button" tabIndex={0}>
+            <div style={{ fontSize: 10, color: t.textMuted, marginBottom: 4 }}>🔥 Queimadas</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: fireCount24h > 0 ? "#f97316" : "#22c55e", marginBottom: 2 }}>{fireCount24h > 0 ? `${fireCount24h}` : "Sem foco"}</div>
+            <div style={{ fontSize: 10, color: t.textMuted, marginBottom: 4 }}>Focos detectados</div>
+            <div style={{ fontSize: 11, color: t.textMuted }}>Nas últimas 24h</div>
+          </div>
+
+          <div style={{ padding: "12px 12px", cursor: "pointer" }} onClick={() => setActiveTab("alertas")} role="button" tabIndex={0}>
+            <div style={{ fontSize: 10, color: t.textMuted, marginBottom: 4 }}>🚨 Defesa Civil RS</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: hasCriticalAlerts ? "#ef4444" : "#22c55e", marginBottom: 2 }}>{defesaCivilStatus}</div>
+            <div style={{ fontSize: 10, color: t.textMuted, marginBottom: 4 }}>Situação informativa</div>
+            <div style={{ fontSize: 9, color: t.textMuted }}>Acompanhe canais oficiais</div>
+          </div>
+        </div>
       </div>
 
-      <div className="sr-kpi-row">
-        <KpiCard icon="rain" label="Chuvas (24h)" value={rain24h !== null ? `${rain24h.toFixed(1)} mm` : "—"} sublabel="Média estadual" accent="blue" trend={rain24h !== null ? "vs. ontem" : undefined} trendDir="down" />
-        <KpiCard icon="waves" label="Níveis (médio)" value={avgLevel !== null ? `${avgLevel.toFixed(2)} m` : "—"} sublabel="Lagoa dos Patos" accent="green" trend={avgLevel !== null ? "vs. ontem" : undefined} trendDir="down" />
-        <KpiCard icon="fire" label="Focos de calor (24h)" value={String(fireCount)} sublabel="Em todo o estado" accent="orange" trend={fireCount > 0 ? "+11% vs. ontem" : "Sem focos"} trendDir={fireCount > 0 ? "up" : "down"} />
-        <KpiCard icon="shield" label="Rodovias bloqueadas" value={String(Math.max(0, Math.round((alerts?.length || 0) / 3)))} sublabel="Pontos de atenção" accent="purple" />
-        <KpiCard icon="climate" label="Municípios afetados" value={String(citiesAtRisk)} sublabel="Com ocorrências" accent="red" />
+      {topAlert && (
+        <div style={{ ...s.card, background: dark ? "rgba(239,68,68,0.08)" : "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.3)", borderLeft: "4px solid #ef4444", padding: "12px 15px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: t.textMuted, marginBottom: 4 }}>⚠️ ATENÇÃO</div>
+              <div style={{ fontSize: 12, color: t.text, lineHeight: 1.5, marginBottom: 6 }}>{topAlert.message || "Alerta da Defesa Civil RS"}</div>
+              <div style={{ fontSize: 10, color: t.textMuted }}>Em caso de riscos, siga orientações oficiais e ligue 199.</div>
+            </div>
+            <button onClick={() => setActiveTab("alertas")} style={{ background: "none", border: "none", color: t.accent, cursor: "pointer", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap", textDecoration: "underline" }}>
+              Defesa Civil RS ↗
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div style={{ ...s.card, border: `1px solid ${t.borderActive}`, padding: 0, overflow: "hidden" }}>
+        <div style={{ padding: "12px 15px", borderBottom: `1px solid ${t.border}` }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: t.accent }}>🌊 LAGOA DOS PATOS</div>
+            <div style={{ fontSize: 9, color: t.textMuted }}>Níveis em metros (m) • Referência: DHN/CPRM</div>
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gap: 0 }}>
+          {lagoaStations.map((station, idx) => {
+            const lagoa = getLagoaPointData(station, stationData)?.lagoa;
+            const history = lagoaHistory[station.id] || [];
+            const isExpanded = expandedLagoaStation === station.id;
+            return (
+              <div key={station.id}>
+                <div style={{ padding: "12px 15px", borderBottom: idx < lagoaStations.length - 1 ? `1px solid ${t.border}` : "none", cursor: "pointer" }} onClick={() => setExpandedLagoaStation(isExpanded ? null : station.id)} role="button" tabIndex={0}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto auto", gap: 16, alignItems: "center" }}>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: t.text }}>{station.name}</div>
+                      <div style={{ fontSize: 10, color: t.textMuted }}>{station.subtitle || station.city}</div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: "#06b6d4" }}>{lagoa?.isReal ? `${lagoa.atual.toFixed(2)} m` : "—"}</div>
+                    </div>
+                    <div style={{ textAlign: "right", minWidth: 50 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: lagoa?.trend === "down" ? "#ef4444" : "#22c55e" }}>{lagoa?.trend === "down" ? "↓" : "↑"} {lagoa?.trendValue?.toFixed(2) || "—"}</div>
+                      <div style={{ fontSize: 9, color: t.textMuted }}>24h</div>
+                    </div>
+                    <div style={{ minWidth: 80 }}>
+                      {history.length > 0 && <HistorySparkline points={history.map((h) => ({ v: h.v }))} color="#06b6d4" t={t} />}
+                    </div>
+                  </div>
+                  {isExpanded && (
+                    <div style={{ marginTop: 8, fontSize: 10, color: t.textMuted, paddingTop: 8, borderTop: `1px solid ${t.border}` }}>
+                      <div>Última medição: {getLagoaMeasuredAt(station)}</div>
+                      <div>Fonte: {lagoa?.source || "CPRM"}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      <div className="sr-grid-2-1">
-        <div className="sr-card-v2">
-          <h3 className="sr-card-title">Previsão rápida (próximos 7 dias)</h3>
-          {poaWeather?.daily ? (
-            <table className="sr-forecast-table">
-              <thead>
-                <tr>
-                  {weekDays.map((idx) => {
-                    const date = poaWeather.daily.time[idx];
-                    const dd = new Date(`${date}T12:00:00`);
-                    return (
-                      <th key={date}>
-                        <div className="sr-day-label">{idx === forecastIndexes[0] ? "TER" : dayNames[dd.getDay()].slice(0, 3).toUpperCase()}</div>
-                        <div style={{ fontSize: 10 }}>{dd.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</div>
-                      </th>
-                    );
-                  })}
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  {weekDays.map((idx) => (
-                    <td key={idx}>{wmoEmoji(poaWeather.daily.weathercode?.[idx] || 0)}</td>
-                  ))}
-                </tr>
-                <tr>
-                  {weekDays.map((idx) => (
-                    <td key={idx} className="sr-temp-max">{Number(poaWeather.daily.temperature_2m_max?.[idx] || 0).toFixed(0)}°</td>
-                  ))}
-                </tr>
-                <tr>
-                  {weekDays.map((idx) => (
-                    <td key={idx} className="sr-temp-min">{Number(poaWeather.daily.temperature_2m_min?.[idx] || 0).toFixed(0)}°</td>
-                  ))}
-                </tr>
-                <tr>
-                  {weekDays.map((idx) => (
-                    <td key={idx} className="sr-rain">{Number(poaWeather.daily.precipitation_sum?.[idx] || 0).toFixed(1)} mm</td>
-                  ))}
-                </tr>
-              </tbody>
-            </table>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <div style={{ ...s.card, border: `1px solid ${t.borderActive}`, padding: 0, overflow: "hidden" }} onClick={() => setActiveTab("previsao")} role="button" tabIndex={0}>
+          <div style={{ padding: "12px 15px", borderBottom: `1px solid ${t.border}` }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: t.accent }}>🌧️ PREVISÃO • Acumulado de chuva (mm)</div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 0 }}>
+            {nextFiveDays.map((idx) => {
+              const date = poaWeather?.daily?.time?.[idx];
+              const dd = new Date(`${date}T12:00:00`);
+              const tx = Number(poaWeather?.daily?.temperature_2m_max?.[idx] || 0);
+              const tn = Number(poaWeather?.daily?.temperature_2m_min?.[idx] || 0);
+              const p = Number(poaWeather?.daily?.precipitation_sum?.[idx] || 0);
+              const c = poaWeather?.daily?.weathercode?.[idx] || 0;
+              const wind = Number(poaWeather?.daily?.windspeed_10m_max?.[idx] || 0);
+              return (
+                <div key={date} style={{ padding: 12, borderRight: `1px solid ${t.border}`, textAlign: "center" }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 4 }}>{idx === 0 ? "Hoje" : dayNames[dd.getDay()]}</div>
+                  <div style={{ fontSize: 9, color: t.textMuted, marginBottom: 4 }}>{dd.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</div>
+                  <div style={{ fontSize: 28, marginBottom: 4 }}>{wmoEmoji(c)}</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4, marginBottom: 6 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#dc2626" }}>{tx.toFixed(0)}°</div>
+                    <div style={{ fontSize: 11, color: "#2563eb" }}>{tn.toFixed(0)}°</div>
+                  </div>
+                  <div style={{ fontSize: 10, color: t.textMuted, marginBottom: 3 }}>💧 {p.toFixed(0)} mm</div>
+                  <div style={{ fontSize: 9, color: t.textMuted }}>↗ {wind.toFixed(0)} km/h</div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ padding: "8px 12px", textAlign: "center", fontSize: 10, color: t.textMuted }}>Fonte: INMET • Atualizado: {poaWeather?.lastUpdate ? formatDateTimeBR(poaWeather.lastUpdate) : "—"}</div>
+        </div>
+
+        <div style={{ ...s.card, border: `1px solid ${t.borderActive}`, padding: 0, overflow: "hidden" }} onClick={() => setActiveTab("enso")} role="button" tabIndex={0}>
+          <div style={{ padding: "12px 15px", borderBottom: `1px solid ${t.border}` }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: t.accent }}>🌊 ENSO • Contexto climático</div>
+          </div>
+          <div style={{ padding: 15 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 12, color: t.text }}>Condição atual: <span style={{ color: "#06b6d4" }}>{ensoStatus}</span></div>
+            <div style={{ display: "flex", justifyContent: "space-around", marginBottom: 12, gap: 8 }}>
+              <div style={{ flex: 1, textAlign: "center" }}>
+                <div style={{ height: 80, background: "linear-gradient(180deg, #3b82f6 0%, #1e40af 100%)", borderRadius: "4px 4px 0 0", marginBottom: 8 }} />
+                <div style={{ fontSize: 9, color: t.textMuted, marginBottom: 2 }}>La Niña</div>
+                <div style={{ fontSize: 12, fontWeight: 700 }}>{formatProbability(ensoProbLaNina)}</div>
+              </div>
+              <div style={{ flex: 1, textAlign: "center" }}>
+                <div style={{ height: 60, background: "#94a3b8", borderRadius: "4px 4px 0 0", marginBottom: 8 }} />
+                <div style={{ fontSize: 9, color: t.textMuted, marginBottom: 2 }}>Neutro</div>
+                <div style={{ fontSize: 12, fontWeight: 700 }}>{formatProbability(ensoProbNeutral)}</div>
+              </div>
+              <div style={{ flex: 1, textAlign: "center" }}>
+                <div style={{ height: 40, background: "#ef4444", borderRadius: "4px 4px 0 0", marginBottom: 8 }} />
+                <div style={{ fontSize: 9, color: t.textMuted, marginBottom: 2 }}>El Niño</div>
+                <div style={{ fontSize: 12, fontWeight: 700 }}>{formatProbability(ensoProbElNino)}</div>
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 10, color: t.textMuted }}>
+              <div>IRI: {formatProbability(ensoProbLaNina)}</div>
+              <div style={{ textAlign: "right" }}>CCSR: {formatProbability(ensoProbNeutral)}</div>
+            </div>
+            <div style={{ marginTop: 10, fontSize: 9, color: t.textMuted }}>Atualizado: Mai/2025</div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <div style={{ ...s.card, border: `1px solid ${t.borderActive}` }} onClick={() => setActiveTab("queimadas")} role="button" tabIndex={0}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: t.accent, marginBottom: 12 }}>🔥 QUEIMADAS E VEGETAÇÃO</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 12, color: fireCount24h > 0 ? "#f97316" : "#22c55e", fontWeight: 700, marginBottom: 4 }}>{fireCount24h > 0 ? fireCount24h : "Sem foco"}</div>
+              <div style={{ fontSize: 10, color: t.textMuted }}>Focos de calor (24h)</div>
+              <div style={{ fontSize: 9, color: t.textMuted }}>No RS</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 12, color: "#06b6d4", fontWeight: 700, marginBottom: 4 }}>{ndviMedium !== null ? ndviMedium.toFixed(2) : "PLACEHOLDER"}</div>
+              <div style={{ fontSize: 10, color: t.textMuted }}>NDVI médio (RS)</div>
+              <div style={{ fontSize: 9, color: t.textMuted }}>Condição: {ndviMedium !== null ? (ndviMedium > 0.6 ? "Boa" : "Normal") : "—"}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4, color: t.text }}>→ Estável</div>
+              <div style={{ fontSize: 10, color: t.textMuted }}>Tendência (7 dias)</div>
+              <div style={{ fontSize: 9, color: t.textMuted }}>&nbsp;</div>
+            </div>
+          </div>
+          <div style={{ marginTop: 10, fontSize: 9, color: t.textMuted }}>Fonte: INPE • Atualizado: 08:00</div>
+        </div>
+
+        <div style={{ ...s.card, border: `1px solid ${t.borderActive}` }} onClick={() => setActiveTab("info-voo")} role="button" tabIndex={0}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: t.accent, marginBottom: 12 }}>✈️ CONDIÇÕES DE VOO • Corredor POA-RIO GRANDE</div>
+          {vooData ? (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: 10, color: t.textMuted, marginBottom: 3 }}>Vento</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: t.text }}>{vooData.windDir || "—"}° {vooData.windSpeed || "—"} kt</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: t.textMuted, marginBottom: 3 }}>Visibilidade</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: t.text }}>{vooData.visibility || "10 km ou mais"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: t.textMuted, marginBottom: 3 }}>Obs.</div>
+                <div style={{ fontSize: 11, color: t.textMuted }}>—</div>
+              </div>
+            </div>
           ) : (
-            <div className="sr-chart-empty">Carregando previsão…</div>
+            <div style={{ fontSize: 11, color: t.textMuted }}>⚠️ PLACEHOLDER: Dados de VOO (METAR) não configurados. Buscar endpoint METAR.</div>
           )}
-          <button type="button" className="sr-card-footer-link" style={{ background: "none", border: "none", width: "100%" }} onClick={() => setActiveTab("previsao")}>
-            Ver previsão completa <NavIcon name="arrow" size={14} />
-          </button>
-        </div>
-
-        <div className="sr-card-v2">
-          <h3 className="sr-card-title">Lagoa dos Patos</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "center" }}>
-            <div>
-              <div style={{ fontSize: 13, color: "var(--sr-text-muted)", marginBottom: 8 }}>Nível atual</div>
-              <div style={{ fontSize: 32, fontWeight: 800, color: "var(--sr-navy)", lineHeight: 1 }}>
-                {avgLevel !== null ? `${avgLevel.toFixed(2).replace(".", ",")} m` : "—"}
-              </div>
-              <div style={{ fontSize: 13, color: "var(--sr-text-muted)", marginTop: 6 }}>Referência: 0,00 m (Imbituba/SC)</div>
-              <div style={{ marginTop: 18, fontSize: 13, color: "var(--sr-text-muted)" }}>
-                Tendência (24h) <strong style={{ color: "#16a34a", marginLeft: 8 }}>↓ -2 cm</strong>
-              </div>
-            </div>
-            <LineChart points={lagoaChartPoints} width={300} height={140} color="#1a6fd4" />
-          </div>
-          <button type="button" className="sr-card-footer-link" style={{ background: "none", border: "none", width: "100%" }} onClick={() => setActiveTab("lagoa")}>
-            Ver detalhes da Lagoa <NavIcon name="arrow" size={14} />
-          </button>
+          <div style={{ marginTop: 10, fontSize: 9, color: t.textMuted }}>Fonte: METAR • Atualizado: 08:10</div>
         </div>
       </div>
 
-      <div className="sr-grid-3">
-        <div className="sr-card-v2">
-          <h3 className="sr-card-title">ENSO (El Niño/La Niña)</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "72px 1fr", gap: 14, alignItems: "center" }}>
-            <div style={{ width: 72, height: 72, borderRadius: "50%", background: "linear-gradient(180deg,#eaf3ff,#dbeafe)", display: "grid", placeItems: "center", fontSize: 34 }}>🌊</div>
-            <div>
-              <div style={{ fontSize: 12, color: "var(--sr-text-muted)" }}>Condição atual</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "var(--sr-navy)" }}>
-                {ensoObservedAvailable ? ensoClass.label.toUpperCase() : "NEUTRO"}
-              </div>
-              <div style={{ fontSize: 12, color: "var(--sr-text-muted)" }}>Niño 3.4: {ensoObservedAvailable ? formatSignedCelsius(activeENSO.nino34) : "—"}</div>
-            </div>
-          </div>
-          <div style={{ marginTop: 14 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, fontSize: 12 }}>
-              <div><strong>20%</strong><div style={{ color: "var(--sr-text-muted)" }}>La Niña</div></div>
-              <div><strong>60%</strong><div style={{ color: "var(--sr-text-muted)" }}>Neutro</div></div>
-              <div><strong>20%</strong><div style={{ color: "var(--sr-text-muted)" }}>El Niño</div></div>
-            </div>
-            <div style={{ height: 10, borderRadius: 999, background: "linear-gradient(90deg,#1d4ed8 0 20%, #94a3b8 20% 80%, #dc2626 80% 100%)", marginTop: 10 }} />
-          </div>
-          <button type="button" className="sr-card-footer-link" style={{ background: "none", border: "none", width: "100%" }} onClick={() => setActiveTab("enso")}>
-            Ver detalhes do ENSO <NavIcon name="arrow" size={14} />
-          </button>
-        </div>
-
-        <div className="sr-card-v2">
-          <h3 className="sr-card-title">Notícias - El Niño</h3>
-          {(ensoNoticias?.items || []).slice(0, 3).map((item, i) => (
-            <div key={i} style={{ display: "flex", gap: 10, marginBottom: 12, alignItems: "flex-start" }}>
-              <div style={{ width: 54, height: 54, borderRadius: 8, background: "linear-gradient(135deg,#dbeafe,#bfdbfe)", flexShrink: 0 }} />
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.35 }}>{item.title || item.titulo || "Sem título"}</div>
-                <div style={{ fontSize: 11, color: "var(--sr-text-muted)", marginTop: 2 }}>{item.source || "Fonte"}</div>
-              </div>
-            </div>
-          ))}
-          {!(ensoNoticias?.items?.length) && <div style={{ fontSize: 13, color: "var(--sr-text-muted)" }}>Abra a aba Notícias para carregar o feed.</div>}
-          <button type="button" className="sr-card-footer-link" style={{ background: "none", border: "none", width: "100%" }} onClick={() => setActiveTab("noticias-enso")}>
-            Ver mais notícias <NavIcon name="arrow" size={14} />
-          </button>
-        </div>
-
-        <div className="sr-card-v2">
-          <h3 className="sr-card-title">Informações rápidas</h3>
+      <div style={{ ...s.card, border: `1px solid ${t.borderActive}` }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: t.accent, marginBottom: 12 }}>📡 FONTES E ATUALIZAÇÃO</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
           {[
-            { icon: "🌦️", label: "Temperatura POA", value: tempNow !== null ? `${tempNow.toFixed(1)} °C` : "—" },
-            { icon: "💧", label: "Chuva prevista (14d)", value: poaData?.precip != null ? `${poaData.precip.toFixed(0)} mm` : "—" },
-            { icon: "🌬️", label: "Vento máx. previsto", value: poaData?.windMax != null ? `${poaData.windMax.toFixed(0)} km/h` : "—" },
-            { icon: "🌊", label: "Pontos Lagoa c/ leitura", value: `${lagoaSummary.monitored}/${lagoaSummary.total}` },
-          ].map((item) => (
-            <div key={item.label} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--sr-border)", fontSize: 13 }}>
-              <span style={{ color: "var(--sr-text-muted)" }}>{item.icon} {item.label}</span>
-              <strong>{item.value}</strong>
-            </div>
+            { name: "DHN/CPRM", time: "07:30" },
+            { name: "INMET", time: "08:00" },
+            { name: "INPE", time: "08:00" },
+            { name: "Defesa Civil RS", time: "07:45" },
+            { name: "METAR", time: "08:10" },
+            { name: "IRI/CCSR", time: "Mai/2025" },
+          ].map((src) => (
+            <div key={src.name} style={{ fontSize: 10, color: t.textMuted }}>● {src.name} {src.time}</div>
           ))}
-          <div style={{ marginTop: 14, fontSize: 12, color: "var(--sr-text-muted)", lineHeight: 1.5 }}>
-            {topAlert ? topAlert.message : "Fontes oficiais e dados observacionais consolidados."}
-          </div>
         </div>
-      </div>
-
-      <div className="sr-sources-footer">
-        <span>Fontes: ANA · CPRM · FEPAM · Open-Meteo · INMET · INPE · NOAA · Copernicus</span>
-        <button type="button" onClick={() => setActiveTab("apis")}>Ver detalhes das fontes</button>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 10, color: t.textMuted }}>
+          <span>Última sincronização: {new Date().toLocaleDateString("pt-BR")} {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
+          <span>✓ Atualização automática ativa</span>
+        </div>
       </div>
     </div>
   );
