@@ -46,6 +46,9 @@ const SENSORES_LAGOA_MAPPING = {
   sensor_4: "lagoa_sao_jose_norte",
   sensor_5: "lagoa_patos_poa",
 };
+const SENSORES_LAGOA_ENDPOINTS = Object.fromEntries(
+  Object.keys(SENSORES_LAGOA_MAPPING).map((sensorId) => [sensorId, `${SENSORES_LAGOA_BASE_URL}/${sensorId}`])
+);
 
 const FLOOD_VULNERABILITY_SCORE = {
   "BAIXA": 1,
@@ -584,7 +587,7 @@ export async function fetchSensorsLagoaMonitoramento() {
     const sensorIds = Object.keys(SENSORES_LAGOA_MAPPING);
     const results = await Promise.allSettled(
       sensorIds.map((sensorId) =>
-        fetch(`${SENSORES_LAGOA_BASE_URL}/${sensorId}`, {
+        fetch(SENSORES_LAGOA_ENDPOINTS[sensorId], {
           signal: AbortSignal.timeout(8000),
           cache: "no-store",
           headers: { Accept: "application/json" },
@@ -611,6 +614,8 @@ export async function fetchSensorsLagoaMonitoramento() {
             ok: true,
             station_id: stationId,
             sensor_id: sensorId,
+            source_url: SENSORES_LAGOA_ENDPOINTS[sensorId],
+            fallback: true,
             level_m: level,
             measured_at: data?.dado?.data_hora || null,
             operational: true,
@@ -626,14 +631,18 @@ export async function fetchSensorsLagoaMonitoramento() {
       ok: successCount > 0,
       sensors,
       success_count: successCount,
-      source: "Sensores Monitoramento Lagoa dos Patos",
+      source: "Monitoramento Lagoa dos Patos",
+      source_url: "https://monitoramentolagoadospatos.com.br/",
+      endpoints: SENSORES_LAGOA_ENDPOINTS,
       fetched_at: new Date().toISOString(),
     };
   } catch {
     return {
       ok: false,
       sensors: {},
-      source: "Sensores Monitoramento Lagoa dos Patos",
+      source: "Monitoramento Lagoa dos Patos",
+      source_url: "https://monitoramentolagoadospatos.com.br/",
+      endpoints: SENSORES_LAGOA_ENDPOINTS,
       fetched_at: new Date().toISOString(),
     };
   }

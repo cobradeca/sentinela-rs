@@ -60,7 +60,7 @@ export function LagoaDosPatosTab({ ctx }) {
           <div style={{ fontSize: 16, color: "var(--sr-text-muted)" }}>Níveis e condições atualizadas</div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ fontSize: 14, color: "var(--sr-text-muted)" }}>Fonte: ANA / CPRM / FEPAM</div>
+          <div style={{ fontSize: 14, color: "var(--sr-text-muted)" }}>Fonte: RADAR Lagoa / HidroSens / Monitoramento Lagoa</div>
           <button type="button" className="sr-btn-outline">
             <NavIcon name="info" size={16} /> Saiba mais
           </button>
@@ -173,7 +173,7 @@ export function LagoaDosPatosTab({ ctx }) {
         <div className="sr-card-v2">
           <h3 className="sr-card-title">Informações</h3>
           <p style={{ fontSize: 13, color: "var(--sr-text-muted)", lineHeight: 1.55, margin: 0 }}>
-            Os dados são provenientes da ANA, CPRM e FEPAM e podem sofrer alterações sem aviso prévio. Níveis referenciados ao nível médio do mar obtido em Imbituba/SC.
+            Os níveis vêm da rede RADAR Lagoa dos Patos, do sensor local HidroSens em Laranjal/Pelotas e dos endpoints públicos do Monitoramento Lagoa como fallback. Dados podem sofrer alterações sem aviso prévio.
           </p>
           <button type="button" className="sr-card-footer-link" style={{ background: "none", border: "none", width: "100%" }} onClick={() => setActiveTab("alertas")}>
             Entenda os níveis <NavIcon name="info" size={14} />

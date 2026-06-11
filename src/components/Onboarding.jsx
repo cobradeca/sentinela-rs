@@ -42,7 +42,7 @@ export function Onboarding({ t, dark }) {
           Painel de monitoramento climático do RS
         </div>
         <div style={{ fontSize: 11, color: t.textMuted, lineHeight: 1.7, marginBottom: 16 }}>
-          Este app agrega dados de fontes oficiais e complementares — INMET, Open-Meteo, ANA, Defesa Civil RS, NOAA, Copernicus — para auxiliar no acompanhamento de condições climáticas e hidrológicas no Rio Grande do Sul.
+          Este app agrega dados de fontes oficiais e complementares — INMET, Open-Meteo, RADAR Lagoa, HidroSens, Defesa Civil RS, NOAA, Copernicus — para auxiliar no acompanhamento de condições climáticas e hidrológicas no Rio Grande do Sul.
         </div>
         <div style={{ fontSize: 11, color: dark ? "#fef08a" : "#854d0e", background: dark ? "rgba(234,179,8,0.08)" : "rgba(234,179,8,0.06)", border: "1px solid rgba(234,179,8,0.3)", borderRadius: 5, padding: "10px 12px", marginBottom: 16, lineHeight: 1.6 }}>
           <strong>⚠ Painel informativo.</strong> Não substitui alertas oficiais.<br />

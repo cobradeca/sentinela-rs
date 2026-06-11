@@ -337,7 +337,7 @@ export function DashboardTab({ ctx }) {
           <NavIcon name="dashboard" size={18} />
           <div>
             <div style={{ fontSize: 13, fontWeight: 700 }}>Fontes dos dados</div>
-            <div style={{ fontSize: 11, color: "#6b7280" }}>CPTEC/INPE • ANA • CPRM • INMET • NOAA • CEMADEN • FEPAM • Defesa Civil RS</div>
+            <div style={{ fontSize: 11, color: "#6b7280" }}>CPTEC/INPE • RADAR Lagoa • HidroSens • INMET • NOAA • CEMADEN • Defesa Civil RS</div>
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>

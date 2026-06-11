@@ -718,8 +718,8 @@ export default function SentinelaRS() {
         const weatherCurrentCode = typeof weather.current?.weather_code === "number" ? weather.current.weather_code : null;
         const windMax = windMaxValues.length ? Math.max(...windMaxValues) : 0;
 
-        // Nível real disponível: prioriza RADAR → HidroSens → Sensores Monitoramento.
-        // Sensores entram como fallback quando RADAR e HidroSens não têm leitura.
+        // Nível real disponível: Pelotas usa sensor local HidroSens; demais pontos usam RADAR Lagoa.
+        // Sensores do Monitoramento Lagoa entram apenas como fallback quando a leitura principal não vem.
         const lagoa = st.type === "lagoa" ? {
           atual: hidrosensLevel?.level_m ?? radarLevel?.level_m ?? sensorLevel?.level_m,
           isReal: Boolean(hidrosensLevel?.level_m ?? radarLevel?.level_m ?? sensorLevel?.level_m),
@@ -1245,7 +1245,7 @@ export default function SentinelaRS() {
               subtitle={activeTab === "previsao" ? `${selStation.name} — RS` : pageMeta.subtitle}
               lastUpdate={lastUpdate}
               formatDateTime={formatDateTimeBR}
-              sourceText={activeTab === "lagoa" ? "Fontes: ANA / RADAR / HidroSens" : undefined}
+              sourceText={activeTab === "lagoa" ? "Fontes: RADAR Lagoa / HidroSens / Monitoramento Lagoa" : undefined}
               onAction={activeTab === "lagoa" ? () => setActiveTab("apis") : undefined}
               weatherWidget={weatherWidget}
             />
