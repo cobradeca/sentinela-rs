@@ -1,8 +1,7 @@
 export const NAV_ITEMS = [
   { id: "dashboard", tab: "dashboard", label: "Dashboard", icon: "dashboard" },
-  { id: "previsao", tab: "previsao", label: "Previsão 14 dias", icon: "forecast" },
+  { id: "previsao", tab: "previsao", label: "Previsão", icon: "forecast" },
   { id: "radar", tab: "copernicus", label: "Radar", icon: "radar" },
-  { id: "chuvas", tab: "previsao", label: "Chuvas", icon: "rain" },
   { id: "lagoa", tab: "lagoa", label: "Lagoa dos Patos", icon: "waves" },
   { id: "alertas", tab: "alertas", label: "Defesa Civil RS", icon: "shield" },
   { id: "queimadas", tab: "queimadas", label: "Queimadas", icon: "fire" },
@@ -14,7 +13,7 @@ export const NAV_ITEMS = [
 
 export const PAGE_META = {
   dashboard: { title: "Dashboard", subtitle: "Visão geral — monitoramento em tempo real" },
-  previsao: { title: "Previsão 14 dias", subtitle: "Condições meteorológicas previstas" },
+  previsao: { title: "Previsão", subtitle: "Condições meteorológicas previstas" },
   lagoa: { title: "Lagoa dos Patos", subtitle: "Níveis e condições atualizadas" },
   enso: { title: "ENSO", subtitle: "El Niño / La Niña — índice e probabilidades" },
   "noticias-enso": { title: "Notícias El Niño", subtitle: "Acompanhe o cenário climático" },
