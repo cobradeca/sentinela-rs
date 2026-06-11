@@ -79,6 +79,7 @@ export function DashboardTab({ ctx }) {
     lagoaSummary,
     queimadas,
     riverLevels,
+    roadBlocks,
     s,
     setActiveTab,
     stationData,
@@ -97,6 +98,16 @@ export function DashboardTab({ ctx }) {
   const fireCount = queimadas?.foci?.length ?? queimadas?.count ?? 0;
   const citiesAtRisk = (ctx.STATIONS || []).filter((sItem) => stationData[sItem.id]?.risk && stationData[sItem.id]?.risk !== "NORMAL").length;
   const topAlert = alerts?.[0];
+  const roadBRS = Array.isArray(roadBlocks?.brs) ? roadBlocks.brs : [];
+  const blockedRoads = roadBRS.filter((road) => road?.status === "bloqueado");
+  const roadIncidents = roadBRS.reduce((sum, road) => sum + (Array.isArray(road?.incidents) ? road.incidents.length : 0), 0);
+  const roadTrendText = blockedRoads.length
+    ? blockedRoads.map((road) => road.id).join(", ")
+    : roadIncidents > 0
+      ? `${roadIncidents} incidente(s)`
+      : roadBlocks?.ok
+        ? "Sem bloqueio informado"
+        : "Fonte indisponível";
   const riversWithReading = (riverLevels?.stations || []).filter((station) => station?.ok && typeof station?.level_cm === "number");
   const riverLevelsText = riversWithReading.length
     ? `${riversWithReading.length} pontos com leitura`
@@ -155,7 +166,7 @@ export function DashboardTab({ ctx }) {
           { icon: "M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z", label: "Chuvas (24h)", val: rain24h !== null ? `${rain24h.toFixed(1)} mm` : "—", sub: "Média estadual", trend: rain24h !== null ? "↓ -18% vs. ontem" : "Sem dados", color: "#3b82f6" },
           { icon: "M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z", label: "Níveis (médio)", val: avgLevel !== null ? `${avgLevel.toFixed(2)} m` : "—", sub: "Lagoa dos Patos", trend: avgLevel !== null ? "↓ -2 cm vs. ontem" : "Sem dados", color: "#06b6d4" },
           { icon: "M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z", label: "Focos de calor (24h)", val: String(fireCount), sub: "Em todo o estado", trend: fireCount > 0 ? "↑ +11% vs. ontem" : "Sem focos", color: "#ef4444" },
-          { icon: "M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7", label: "Rodovias bloqueadas", val: String(Math.max(0, Math.round((alerts?.length || 0) / 3))), sub: "Pontos de atenção", trend: "Ver detalhes →", color: "#6b7280" },
+          { icon: "M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7", label: "Rodovias bloqueadas", val: String(blockedRoads.length), sub: "BR-116, BR-101 e BR-471", trend: roadTrendText, color: blockedRoads.length ? "#ef4444" : "#6b7280" },
           { icon: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4", label: "Municípios afetados", val: String(citiesAtRisk), sub: "Com ocorrências", trend: "Ver detalhes →", color: "#6b7280" },
         ].map((c, i) => (
           <div key={i} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "14px 16px", boxShadow: "0 2px 10px rgba(0,0,0,0.04)" }}>

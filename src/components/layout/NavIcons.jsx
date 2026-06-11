@@ -44,33 +44,13 @@ export function NavIcon({ name, size = 18, className = "" }) {
 export function SentinelaLogo({ size = 40 }) {
   return (
     <div className="sr-logo" style={{ width: size, height: size }}>
-      <svg viewBox="0 0 48 48" width={size} height={size} aria-hidden="true">
-        <path
-          d="M22 4 30 7 36 13 39 20 37 27 41 34 36 42 27 44 19 41 12 43 7 37 9 29 6 22 10 14 16 10Z"
-          fill="#17a34a"
-        />
-        <path
-          d="M26 22c3.3.3 6.8 2.1 8.4 5.2 1.5 2.9.9 6.4-1.8 9.8-2.4 2.9-6.5 4-10.6 3.2 3.3-2.9 5.6-6.3 6.1-10.1.3-2.4-.4-5-2.1-8.1Z"
-          fill="#0ea5e9"
-          opacity="0.9"
-        />
-        <path
-          d="M11 35 27 8 36 19 18 42Z"
-          fill="#facc15"
-          opacity="0.88"
-        />
-        <path
-          d="M22 4 30 7 36 13 39 20 37 27 41 34 36 42 27 44 19 41 12 43 7 37 9 29 6 22 10 14 16 10Z"
-          fill="none"
-          stroke="#dff7ff"
-          strokeWidth="1.4"
-          strokeLinejoin="round"
-        />
-        <circle cx="29.5" cy="31" r="2.1" fill="#f8fafc" />
-        <path d="M29.5 31 23 39M29.5 31l7 7" stroke="#f8fafc" strokeWidth="1.3" strokeLinecap="round" />
-        <path d="M33 28.5a6 6 0 0 1 2.4 5.6" stroke="#f8fafc" strokeWidth="1.3" strokeLinecap="round" fill="none" />
-        <path d="M36 25.8a10 10 0 0 1 4 9.5" stroke="#f8fafc" strokeWidth="1.3" strokeLinecap="round" fill="none" opacity="0.82" />
-      </svg>
+      <img
+        src={`${import.meta.env.BASE_URL}brand/sentinela-rs-logo.png`}
+        width={size}
+        height={size}
+        alt=""
+        aria-hidden="true"
+      />
     </div>
   );
 }

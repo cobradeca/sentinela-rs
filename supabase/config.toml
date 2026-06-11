@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.ana-river-levels]
 verify_jwt = false
+
+[functions.rodovias-rs]
+verify_jwt = false

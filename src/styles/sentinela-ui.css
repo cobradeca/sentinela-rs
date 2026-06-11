@@ -125,6 +125,21 @@ a:focus-visible {
   padding: 4px 4px 2px;
 }
 
+.sr-logo {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.sr-logo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .sr-sidebar-brand-text {
   display: flex;
   flex-direction: column;

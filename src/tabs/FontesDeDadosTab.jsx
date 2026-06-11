@@ -80,7 +80,7 @@ export function FontesDeDadosTab({ ctx }) {
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))", gap:8 }}>
                 {[
                   "Open-Meteo","INMET","RADAR Lagoa","HidroSens","Sensores Monitoramento","Defesa Civil RS",
-                  "NOAA/CPC ENSO","IRI/CCSR ENSO","CPTEC/INPE","ANA Telemetria Rios","INPE BDQueimadas","INPE Eventos de Fogo","CENSIPAM Painel do Fogo","Copernicus EFFIS","Copernicus Water","Copernicus Sentinel-1","Copernicus NDVI","Copernicus EMS","ANA Vulnerabilidade Inundacoes",
+                  "NOAA/CPC ENSO","IRI/CCSR ENSO","CPTEC/INPE","ANA Telemetria Rios","Rodovias RS","INPE BDQueimadas","INPE Eventos de Fogo","CENSIPAM Painel do Fogo","Copernicus EFFIS","Copernicus Water","Copernicus Sentinel-1","Copernicus NDVI","Copernicus EMS","ANA Vulnerabilidade Inundacoes",
                 ].map(name => {
                   const h = getValidatedSourceHealth(name);
                   const ok   = h?.ok;

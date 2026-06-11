@@ -28,6 +28,7 @@ import {
   fetchLagoaRadarLevels,
   fetchNoaaEnso,
   fetchQueimadas,
+  fetchRoadBlocksRs,
   fetchSensorsLagoaMonitoramento,
   fetchWeather14Days,
 } from "./services/api";
@@ -499,6 +500,7 @@ export default function SentinelaRS() {
   const [ensoNoticias, setEnsoNoticias] = useState(null);
   const [ensoNoticiasLoading, setEnsoNoticiasLoading] = useState(false);
   const [riverLevels, setRiverLevels] = useState(null);
+  const [roadBlocks, setRoadBlocks] = useState(null);
   // BLOCO D — saúde das fontes
   const [sourceHealth, setSourceHealth] = useState({});
   const sourceHealthRef = useRef({});
@@ -674,22 +676,32 @@ export default function SentinelaRS() {
       }
     }
 
-    const [lagoaRadarResult, hidrosensResult, sensorsResult, riverLevelsResult] = await Promise.allSettled([
+    const [lagoaRadarResult, hidrosensResult, sensorsResult, riverLevelsResult, roadBlocksResult] = await Promise.allSettled([
       tracked("RADAR Lagoa", fetchLagoaRadarLevels),
       tracked("HidroSens", fetchHidroSensLaranjalLevel),
       tracked("Sensores Monitoramento", fetchSensorsLagoaMonitoramento),
       tracked("ANA Telemetria Rios", fetchAnaRiverLevels),
+      tracked("Rodovias RS", fetchRoadBlocksRs),
     ]);
     const lagoaRadarMap = lagoaRadarResult.status === "fulfilled" ? (lagoaRadarResult.value || {}) : {};
     const hidrosensLaranjal = hidrosensResult.status === "fulfilled" ? hidrosensResult.value : null;
     const sensorsMap = sensorsResult.status === "fulfilled" ? (sensorsResult.value?.sensors || {}) : {};
     const riverLevelsData = riverLevelsResult.status === "fulfilled" ? riverLevelsResult.value : null;
+    const roadBlocksData = roadBlocksResult.status === "fulfilled" ? roadBlocksResult.value : null;
     if (riverLevelsData) {
       health["ANA Telemetria Rios"] = {
         ...(health["ANA Telemetria Rios"] || {}),
         ok: Boolean(riverLevelsData.ok && riverLevelsData.count > 0),
         lastOk: riverLevelsData.ok && riverLevelsData.count > 0 ? riverLevelsData.fetched_at || new Date().toISOString() : health["ANA Telemetria Rios"]?.lastOk || null,
         error: riverLevelsData.ok && riverLevelsData.count > 0 ? null : riverLevelsData.error || "sem leitura de nível validada",
+      };
+    }
+    if (roadBlocksData) {
+      health["Rodovias RS"] = {
+        ...(health["Rodovias RS"] || {}),
+        ok: Boolean(roadBlocksData.ok && Array.isArray(roadBlocksData.brs)),
+        lastOk: roadBlocksData.ok && Array.isArray(roadBlocksData.brs) ? roadBlocksData.fetched_at || new Date().toISOString() : health["Rodovias RS"]?.lastOk || null,
+        error: roadBlocksData.ok ? null : roadBlocksData.error || "sem leitura de rodovias validada",
       };
     }
 
@@ -803,6 +815,7 @@ export default function SentinelaRS() {
     setSourceHealth({ ...mergedHealth });
     setStationData(results);
     setRiverLevels(riverLevelsData);
+    setRoadBlocks(roadBlocksData);
     setLagoaHistory(nextLagoaHistory);
     setLagoaHistoryMeta({
       source: historyResult.source,
@@ -1174,9 +1187,9 @@ export default function SentinelaRS() {
     ensoClass, ensoDominantProb, ensoFirstForecast, ensoObservedAvailable, ensoObservedText, ensoProbabilityAvailable, ensoProbabilityText, expanded, explainCityRisk, explainDailyRisk, explainLagoaRisk,
     formatDateTimeBR, formatProbability, formatSignedCelsius, getFallbackWarningText, getLagoaMaxMay2024, getLagoaMeasuredAt, getLagoaPointData, getLagoaSourceText,
     getResponsibleAgencyText, getRiskBg, getRiskColor, getRiskLevel, getValidatedSourceHealth, lagoaHistory, lagoaHistoryMeta, lagoaStatusColor, lagoaStatusLabel, lagoaSummary, lastUpdate,
-    ensoNoticias, ensoNoticiasLoading, icmbioUcs, inpeFireEvents, loadAllData, loadEnsoNoticias, loadQueimadas, percentValue, qLoading, queimadas, riverLevels, s, safeEnsoForecast, selData, selStation, setActiveTab, setExpanded, setExpandedCard, setRiskExplain, setSelStation, sourceHealth, stationData, t, wmoDesc, wmoEmoji,
+    ensoNoticias, ensoNoticiasLoading, icmbioUcs, inpeFireEvents, loadAllData, loadEnsoNoticias, loadQueimadas, percentValue, qLoading, queimadas, riverLevels, roadBlocks, s, safeEnsoForecast, selData, selStation, setActiveTab, setExpanded, setExpandedCard, setRiskExplain, setSelStation, sourceHealth, stationData, t, wmoDesc, wmoEmoji,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [stationData, alerts, dark, activeTab, selStation, selData, loading, lastUpdate, sourceHealth, lagoaHistory, lagoaHistoryMeta, expanded, expandedCard, riskExplain, queimadas, inpeFireEvents, censipamFireEvents, qLoading, copernicusWater, copernicusS1, copernicusNdvi, copernicusEms, cptecProducts, effisHealth, icmbioUcs, activeENSO, ensoNoticias, ensoNoticiasLoading, riverLevels]);
+  }), [stationData, alerts, dark, activeTab, selStation, selData, loading, lastUpdate, sourceHealth, lagoaHistory, lagoaHistoryMeta, expanded, expandedCard, riskExplain, queimadas, inpeFireEvents, censipamFireEvents, qLoading, copernicusWater, copernicusS1, copernicusNdvi, copernicusEms, cptecProducts, effisHealth, icmbioUcs, activeENSO, ensoNoticias, ensoNoticiasLoading, riverLevels, roadBlocks]);
 
   const renderNavButton = (tab, compact = false) => {
     const labelText = tab.label;
