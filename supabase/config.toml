@@ -2,3 +2,6 @@ project_id = "ykaaxrzkfeaxatrnkkxj"
 
 [functions.enso-noticias]
 verify_jwt = false
+
+[functions.ana-river-levels]
+verify_jwt = false

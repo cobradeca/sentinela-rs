@@ -4,6 +4,7 @@ export const DEFESA_CIVIL_RS_FUNCTION_URL = `${SUPABASE_FUNCTIONS_BASE_URL}/defe
 export const INMET_FORECAST_BASE_URL = "https://apiprevmet3.inmet.gov.br/previsao";
 export const INMET_PREVISAO_FUNCTION_URL = `${SUPABASE_FUNCTIONS_BASE_URL}/inmet-previsao`;
 export const ANA_RS_FUNCTION_URL = `${SUPABASE_FUNCTIONS_BASE_URL}/ana-rs`;
+export const ANA_RIVER_LEVELS_FUNCTION_URL = `${SUPABASE_FUNCTIONS_BASE_URL}/ana-river-levels`;
 export const LAGOA_RADAR_FUNCTION_URL = `${SUPABASE_FUNCTIONS_BASE_URL}/lagoa-patos-radar`;
 export const HIDROSENS_LARANJAL_FUNCTION_URL = `${SUPABASE_FUNCTIONS_BASE_URL}/hidrosens-laranjal`;
 export const NOAA_ENSO_FUNCTION_URL = `${SUPABASE_FUNCTIONS_BASE_URL}/noaa-enso`;

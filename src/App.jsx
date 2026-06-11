@@ -10,6 +10,7 @@ import { Sparkline as HistorySparkline } from "./components/Sparkline";
 import { appendLagoaHistorySnapshot, loadLagoaHistory } from "./services/lagoaHistory";
 import {
   fetchAnaFloodVulnerability,
+  fetchAnaRiverLevels,
   fetchCensipamFireEventsRs,
   fetchCopernicusEms,
   fetchCopernicusNdvi,
@@ -497,6 +498,7 @@ export default function SentinelaRS() {
   const [riskExplain, setRiskExplain] = useState(null);
   const [ensoNoticias, setEnsoNoticias] = useState(null);
   const [ensoNoticiasLoading, setEnsoNoticiasLoading] = useState(false);
+  const [riverLevels, setRiverLevels] = useState(null);
   // BLOCO D — saúde das fontes
   const [sourceHealth, setSourceHealth] = useState({});
   const sourceHealthRef = useRef({});
@@ -672,14 +674,24 @@ export default function SentinelaRS() {
       }
     }
 
-    const [lagoaRadarResult, hidrosensResult, sensorsResult] = await Promise.allSettled([
+    const [lagoaRadarResult, hidrosensResult, sensorsResult, riverLevelsResult] = await Promise.allSettled([
       tracked("RADAR Lagoa", fetchLagoaRadarLevels),
       tracked("HidroSens", fetchHidroSensLaranjalLevel),
       tracked("Sensores Monitoramento", fetchSensorsLagoaMonitoramento),
+      tracked("ANA Telemetria Rios", fetchAnaRiverLevels),
     ]);
     const lagoaRadarMap = lagoaRadarResult.status === "fulfilled" ? (lagoaRadarResult.value || {}) : {};
     const hidrosensLaranjal = hidrosensResult.status === "fulfilled" ? hidrosensResult.value : null;
     const sensorsMap = sensorsResult.status === "fulfilled" ? (sensorsResult.value?.sensors || {}) : {};
+    const riverLevelsData = riverLevelsResult.status === "fulfilled" ? riverLevelsResult.value : null;
+    if (riverLevelsData) {
+      health["ANA Telemetria Rios"] = {
+        ...(health["ANA Telemetria Rios"] || {}),
+        ok: Boolean(riverLevelsData.ok && riverLevelsData.count > 0),
+        lastOk: riverLevelsData.ok && riverLevelsData.count > 0 ? riverLevelsData.fetched_at || new Date().toISOString() : health["ANA Telemetria Rios"]?.lastOk || null,
+        error: riverLevelsData.ok && riverLevelsData.count > 0 ? null : riverLevelsData.error || "sem leitura de nível validada",
+      };
+    }
 
     await mapWithConcurrency(ALL_STATIONS, 4, async (st) => {
       try {
@@ -790,6 +802,7 @@ export default function SentinelaRS() {
     sourceHealthRef.current = mergedHealth;
     setSourceHealth({ ...mergedHealth });
     setStationData(results);
+    setRiverLevels(riverLevelsData);
     setLagoaHistory(nextLagoaHistory);
     setLagoaHistoryMeta({
       source: historyResult.source,
@@ -1161,9 +1174,9 @@ export default function SentinelaRS() {
     ensoClass, ensoDominantProb, ensoFirstForecast, ensoObservedAvailable, ensoObservedText, ensoProbabilityAvailable, ensoProbabilityText, expanded, explainCityRisk, explainDailyRisk, explainLagoaRisk,
     formatDateTimeBR, formatProbability, formatSignedCelsius, getFallbackWarningText, getLagoaMaxMay2024, getLagoaMeasuredAt, getLagoaPointData, getLagoaSourceText,
     getResponsibleAgencyText, getRiskBg, getRiskColor, getRiskLevel, getValidatedSourceHealth, lagoaHistory, lagoaHistoryMeta, lagoaStatusColor, lagoaStatusLabel, lagoaSummary, lastUpdate,
-    ensoNoticias, ensoNoticiasLoading, icmbioUcs, inpeFireEvents, loadAllData, loadEnsoNoticias, loadQueimadas, percentValue, qLoading, queimadas, s, safeEnsoForecast, selData, selStation, setActiveTab, setExpanded, setExpandedCard, setRiskExplain, setSelStation, sourceHealth, stationData, t, wmoDesc, wmoEmoji,
+    ensoNoticias, ensoNoticiasLoading, icmbioUcs, inpeFireEvents, loadAllData, loadEnsoNoticias, loadQueimadas, percentValue, qLoading, queimadas, riverLevels, s, safeEnsoForecast, selData, selStation, setActiveTab, setExpanded, setExpandedCard, setRiskExplain, setSelStation, sourceHealth, stationData, t, wmoDesc, wmoEmoji,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [stationData, alerts, dark, activeTab, selStation, selData, loading, lastUpdate, sourceHealth, lagoaHistory, lagoaHistoryMeta, expanded, expandedCard, riskExplain, queimadas, inpeFireEvents, censipamFireEvents, qLoading, copernicusWater, copernicusS1, copernicusNdvi, copernicusEms, cptecProducts, effisHealth, icmbioUcs, activeENSO, ensoNoticias, ensoNoticiasLoading]);
+  }), [stationData, alerts, dark, activeTab, selStation, selData, loading, lastUpdate, sourceHealth, lagoaHistory, lagoaHistoryMeta, expanded, expandedCard, riskExplain, queimadas, inpeFireEvents, censipamFireEvents, qLoading, copernicusWater, copernicusS1, copernicusNdvi, copernicusEms, cptecProducts, effisHealth, icmbioUcs, activeENSO, ensoNoticias, ensoNoticiasLoading, riverLevels]);
 
   const renderNavButton = (tab, compact = false) => {
     const labelText = tab.label;

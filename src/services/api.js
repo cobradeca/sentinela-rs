@@ -11,6 +11,7 @@ import {
   DEFESA_CIVIL_RS_FUNCTION_URL,
   ENSO_NOTICIAS_FUNCTION_URL,
   EFFIS_WMS_HEALTH_FUNCTION_URL,
+  ANA_RIVER_LEVELS_FUNCTION_URL,
   HIDROSENS_LARANJAL_FUNCTION_URL,
   ICMBIO_UCS_RS_FUNCTION_URL,
   INMET_PREVISAO_FUNCTION_URL,
@@ -37,6 +38,7 @@ export const COPERNICUS_REFERENCE = {
 };
 
 const COPERNICUS_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
+const RIVER_LEVELS_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 const ANA_FLOOD_VULNERABILITY_URL = "https://www.snirh.gov.br/arcgis/rest/services/SUM/vulnerabilidade_brasil/MapServer/0/query";
 const SENSORES_LAGOA_BASE_URL = "https://api-medidas-porto-7bni.onrender.com/dados";
 const SENSORES_LAGOA_MAPPING = {
@@ -219,6 +221,30 @@ export async function fetchAnaFloodVulnerability(stations) {
 
   saveJsonCache(cacheKey, result);
   return result;
+}
+
+export async function fetchAnaRiverLevels() {
+  const cacheKey = "sentinela_ana_river_levels_v1";
+  const cached = readJsonCache(cacheKey, RIVER_LEVELS_CACHE_MAX_AGE_MS);
+
+  try {
+    const res = await fetch(ANA_RIVER_LEVELS_FUNCTION_URL, {
+      signal: AbortSignal.timeout(20000),
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+
+    if (!res.ok) return cached || { ok: false, stations: [], error: `ANA Telemetria HTTP ${res.status}`, fetched_at: new Date().toISOString() };
+
+    const data = await res.json();
+    const validCount = Array.isArray(data?.stations) ? data.stations.filter((station) => station?.ok && typeof station?.level_cm === "number").length : 0;
+    if (!data?.ok || validCount === 0) return cached || { ...data, ok: false, stations: data?.stations || [] };
+
+    saveJsonCache(cacheKey, data);
+    return data;
+  } catch (err) {
+    return cached || { ok: false, stations: [], error: err?.message || "timeout", fetched_at: new Date().toISOString() };
+  }
 }
 
 async function readJsonOrServiceError(response, source) {

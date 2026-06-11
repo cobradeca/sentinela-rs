@@ -78,6 +78,7 @@ export function DashboardTab({ ctx }) {
     lagoaHistory,
     lagoaSummary,
     queimadas,
+    riverLevels,
     s,
     setActiveTab,
     stationData,
@@ -96,6 +97,15 @@ export function DashboardTab({ ctx }) {
   const fireCount = queimadas?.foci?.length ?? queimadas?.count ?? 0;
   const citiesAtRisk = (ctx.STATIONS || []).filter((sItem) => stationData[sItem.id]?.risk && stationData[sItem.id]?.risk !== "NORMAL").length;
   const topAlert = alerts?.[0];
+  const riversWithReading = (riverLevels?.stations || []).filter((station) => station?.ok && typeof station?.level_cm === "number");
+  const riverLevelsText = riversWithReading.length
+    ? `${riversWithReading.length} pontos com leitura`
+    : "Sem leitura confirmada";
+  const quickInfoItems = quickInfo.map((item) => (
+    item.label === "NÃ­veis dos Rios"
+      ? { ...item, sub: riverLevelsText }
+      : item
+  ));
 
   const lagoaLevels = STATIONS_LAGOA.map((p) => getLagoaPointData(p, stationData)?.lagoa).filter((l) => l?.isReal && typeof l.atual === "number");
   const avgLevel = lagoaLevels.length ? lagoaLevels.reduce((sum, l) => sum + l.atual, 0) / lagoaLevels.length : null;
@@ -311,7 +321,7 @@ export function DashboardTab({ ctx }) {
         <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "16px 18px", display: "flex", flexDirection: "column" }}>
           <h3 style={{ margin: "0 0 14px", fontSize: 14, fontWeight: 700 }}>Informações rápidas</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 10, flex: 1 }}>
-            {quickInfo.map((q, i) => (
+            {quickInfoItems.map((q, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "#f8fafc", borderRadius: 8, cursor: "pointer" }}>
                 <div style={{ width: 34, height: 34, borderRadius: 8, background: `${q.color}18`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <NavIcon name={i === 0 ? "shield" : i === 1 ? "cloud" : i === 2 ? "waves" : "info"} size={16} />
