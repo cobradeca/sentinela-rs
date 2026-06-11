@@ -20,18 +20,44 @@ function fmtNumber(value, decimals = 1, fallback = "--") {
   return typeof value === "number" && Number.isFinite(value) ? value.toFixed(decimals) : fallback;
 }
 
-function MiniCard({ icon, label, value, sub, action, tone = "#1a6fd4" }) {
+function MiniCard({ icon, label, value, sub, action, detail, tone = "#1a6fd4", onClick }) {
   return (
-    <div className="sr-card-v2" style={{ minHeight: 132 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: `${tone}18`, color: tone, display: "grid", placeItems: "center" }}>
-          <NavIcon name={icon} size={18} />
+    <div className="sr-card-v2" style={{ minHeight: 188, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: 18 }}>
+      <div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+          <div style={{ width: 54, height: 54, borderRadius: 12, background: `${tone}14`, color: tone, display: "grid", placeItems: "center", flex: "0 0 auto" }}>
+            <NavIcon name={icon} size={32} />
+          </div>
+          <div style={{ fontSize: 13, color: "var(--sr-text)", fontWeight: 800, lineHeight: 1.25 }}>{label}</div>
         </div>
-        <div style={{ fontSize: 12, color: "var(--sr-text-muted)", fontWeight: 700 }}>{label}</div>
+        <div style={{ fontSize: 30, fontWeight: 900, color: "var(--sr-text)", lineHeight: 1 }}>{value}</div>
+        <div style={{ fontSize: 13, color: "var(--sr-text-muted)", marginTop: 8, lineHeight: 1.35 }}>{sub}</div>
+        {detail && <div style={{ fontSize: 12, color: "var(--sr-text-muted)", marginTop: 10, lineHeight: 1.35 }}>{detail}</div>}
       </div>
-      <div style={{ fontSize: 26, fontWeight: 900, color: "var(--sr-text)", lineHeight: 1 }}>{value}</div>
-      <div style={{ fontSize: 12, color: "var(--sr-text-muted)", marginTop: 6 }}>{sub}</div>
-      {action && <div style={{ fontSize: 12, color: tone, fontWeight: 700, marginTop: 10 }}>{action}</div>}
+      {action && (
+        <button
+          type="button"
+          onClick={onClick}
+          disabled={!onClick}
+          style={{
+            marginTop: 14,
+            padding: 0,
+            border: 0,
+            background: "transparent",
+            color: tone,
+            fontSize: 13,
+            fontWeight: 800,
+            fontFamily: "inherit",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            cursor: onClick ? "pointer" : "default",
+            alignSelf: "flex-start",
+          }}
+        >
+          {action} <NavIcon name="arrow" size={14} />
+        </button>
+      )}
     </div>
   );
 }
@@ -84,6 +110,18 @@ export function DashboardTab({ ctx }) {
     return status && status !== "NORMAL";
   }).length;
   const riversWithReading = (riverLevels?.stations || []).filter((station) => station?.ok && typeof station?.level_cm === "number");
+  const blockedRoadDetails = blockedRoads.length
+    ? blockedRoads.map((road) => `${road.id}: ${road.trecho}`).join(" | ")
+    : "Sem trecho bloqueado nas rotas monitoradas";
+  const routeCities = [
+    "Porto Alegre",
+    "Guaiba",
+    "Pelotas",
+    "Rio Grande",
+    "Sao Jose do Norte",
+    "Arroio Grande",
+    "Santa Vitoria do Palmar",
+  ].join(", ");
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -126,12 +164,50 @@ export function DashboardTab({ ctx }) {
         <button type="button" onClick={() => setActiveTab("alertas")}>Ver alertas</button>
       </div>
 
-      <div className="sr-kpi-row" style={{ gridTemplateColumns: "repeat(5, 1fr)" }}>
-        <MiniCard icon="rain" label="Chuva agora" value={`${fmtNumber(rainNow, 1)} mm`} sub="Open-Meteo observado" tone="#3b82f6" />
-        <MiniCard icon="waves" label="Nivel medio" value={avgLevel != null ? `${avgLevel.toFixed(2)} m` : "--"} sub="Lagoa dos Patos" action="Ver detalhes" tone="#06b6d4" />
-        <MiniCard icon="fire" label="Focos de calor" value={String(fireCount)} sub="INPE / eventos de fogo" tone="#ef4444" />
-        <MiniCard icon="shield" label="Rodovias bloqueadas" value={String(blockedRoads.length)} sub="BR-116, BR-101 e BR-471" action={roadText} tone={blockedRoads.length ? "#dc2626" : "#64748b"} />
-        <MiniCard icon="climate" label="Municipios monitorados" value={String(citiesAtRisk)} sub="Com indicador fora do normal" tone="#6b7280" />
+      <div className="sr-kpi-row" style={{ gridTemplateColumns: "repeat(5, minmax(0, 1fr))", alignItems: "stretch" }}>
+        <MiniCard
+          icon="rain"
+          label="Chuvas (24h)"
+          value={`${fmtNumber(rainNow, 1)} mm`}
+          sub="Open-Meteo observado"
+          action="Ver detalhes"
+          tone="#3b82f6"
+          onClick={() => setActiveTab("previsao")}
+        />
+        <MiniCard
+          icon="waves"
+          label="Niveis (medio)"
+          value={avgLevel != null ? `${avgLevel.toFixed(2)} m` : "--"}
+          sub="Lagoa dos Patos"
+          action="Ver detalhes"
+          tone="#06b6d4"
+          onClick={() => setActiveTab("lagoa")}
+        />
+        <MiniCard
+          icon="fire"
+          label="Focos de calor (24h)"
+          value={String(fireCount)}
+          sub="INPE / eventos de fogo"
+          action="Ver detalhes"
+          tone="#ef4444"
+          onClick={() => setActiveTab("queimadas")}
+        />
+        <MiniCard
+          icon="shield"
+          label="Rodovias bloqueadas"
+          value={String(blockedRoads.length)}
+          sub="BR-116, BR-101 e BR-471"
+          detail={blockedRoadDetails}
+          tone={blockedRoads.length ? "#dc2626" : "#64748b"}
+        />
+        <MiniCard
+          icon="climate"
+          label="Municipios afetados"
+          value={String(citiesAtRisk)}
+          sub="Cidades nas rotas monitoradas"
+          detail={routeCities}
+          tone="#6b7280"
+        />
       </div>
 
       <div className="sr-grid-2">
