@@ -12,6 +12,7 @@ import {
   ENSO_NOTICIAS_FUNCTION_URL,
   EFFIS_WMS_HEALTH_FUNCTION_URL,
   ANA_RIVER_LEVELS_FUNCTION_URL,
+  AWC_METAR_CORREDOR_FUNCTION_URL,
   HIDROSENS_LARANJAL_FUNCTION_URL,
   ICMBIO_UCS_RS_FUNCTION_URL,
   INMET_PREVISAO_FUNCTION_URL,
@@ -41,6 +42,7 @@ export const COPERNICUS_REFERENCE = {
 const COPERNICUS_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 const RIVER_LEVELS_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 const ROAD_BLOCKS_CACHE_MAX_AGE_MS = 15 * 60 * 1000;
+const FLIGHT_CONDITIONS_CACHE_MAX_AGE_MS = 10 * 60 * 1000;
 const ANA_FLOOD_VULNERABILITY_URL = "https://www.snirh.gov.br/arcgis/rest/services/SUM/vulnerabilidade_brasil/MapServer/0/query";
 const SENSORES_LAGOA_BASE_URL = "https://api-medidas-porto-7bni.onrender.com/dados";
 const SENSORES_LAGOA_MAPPING = {
@@ -269,6 +271,29 @@ export async function fetchRoadBlocksRs() {
     return data;
   } catch (err) {
     return cached || { ok: false, brs: [], error: err?.message || "timeout", fetched_at: new Date().toISOString() };
+  }
+}
+
+export async function fetchFlightConditions() {
+  const cacheKey = "sentinela_flight_conditions_awc_v1";
+  const cached = readJsonCache(cacheKey, FLIGHT_CONDITIONS_CACHE_MAX_AGE_MS);
+
+  try {
+    const res = await fetch(AWC_METAR_CORREDOR_FUNCTION_URL, {
+      signal: AbortSignal.timeout(15000),
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+
+    if (!res.ok) return cached || { ok: false, aerodromos: [], error: `AWC METAR HTTP ${res.status}`, fetched_at: new Date().toISOString() };
+
+    const data = await res.json();
+    if (!data?.ok || !Array.isArray(data?.aerodromos)) return cached || { ...data, ok: false, aerodromos: data?.aerodromos || [] };
+
+    saveJsonCache(cacheKey, data);
+    return data;
+  } catch (err) {
+    return cached || { ok: false, aerodromos: [], error: err?.message || "timeout", fetched_at: new Date().toISOString() };
   }
 }
 
