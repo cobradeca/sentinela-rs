@@ -4,6 +4,7 @@ import {
   LagoadosPatos,
   MOCK_LAGOA,
   MOCK_RIOS,
+  MOCK_RODOVIAS,
   PanoramaGeral,
   PrevisaoRioGrande,
   QueimadasVegetacao,
@@ -29,18 +30,14 @@ function toLagoaRows(STATIONS_LAGOA, stationData, getLagoaPointData) {
 
 function buildRoadRows(roadBlocks) {
   const brs = Array.isArray(roadBlocks?.brs) ? roadBlocks.brs : [];
-  return ["BR-101", "BR-116", "BR-471"].map((id) => {
-    const road = brs.find((item) => item.id === id);
-    const first = road?.incidents?.[0];
-    const blocked = road?.status === "bloqueado";
-    const incident = road?.status === "incidente";
-    return {
-      br: id,
-      status: blocked ? "Bloqueada" : incident ? "Lenta" : "Livre",
-      trecho: first?.trecho || road?.trecho || "Trecho monitorado",
-      motivo: first?.descricao || (incident ? "Ponto de atenção de tráfego" : "Sem bloqueio informado"),
-    };
-  });
+  return brs.length
+    ? brs.map((road) => ({
+        br: road.id,
+        status: road.status === "erro" ? "Erro" : road.status,
+        trecho: road.trecho,
+        detalhe: road.status === "erro" ? "Sem dados de transito disponiveis" : road.detalhe,
+      }))
+    : MOCK_RODOVIAS;
 }
 
 function buildRiverRows(riverLevels) {
@@ -51,7 +48,7 @@ function buildRiverRows(riverLevels) {
       nome: station.river || station.name,
       local: station.name,
       nivelM: station.level_m,
-      status: station.level_m >= 4 ? "alerta" : station.level_m >= 3 ? "atenção" : "normal",
+      status: station.level_m >= 4 ? "alerta" : station.level_m >= 3 ? "atencao" : "normal",
     }));
   return rows.length ? rows : MOCK_RIOS;
 }

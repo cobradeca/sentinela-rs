@@ -325,6 +325,18 @@ a:focus-visible {
   font-size: 9px;
 }
 
+.sr-panorama-block small {
+  display: block;
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+.sr-panorama-block small + small {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--sr-border);
+}
+
 .sr-lagoa-row div span,
 .sr-voo-row small {
   display: block;
