@@ -43,17 +43,17 @@ const CATEGORY_LABELS: Record<number, string> = {
   2: "Nevoa",
   3: "Risco na via",
   4: "Obras em andamento",
-  5: "Via bloqueada",
-  6: "Via bloqueada",
-  7: "Via bloqueada",
+  5: "Ponto de atencao",
+  6: "Trafego parado",
+  7: "Ponto de atencao",
   8: "Trafego intenso",
   9: "Trafego parado",
-  10: "Via bloqueada",
-  11: "Via bloqueada",
-  14: "Via bloqueada",
+  10: "Ponto de atencao",
+  11: "Ponto de atencao",
+  14: "Ponto de atencao",
 };
 
-const BLOCKING_CATEGORIES = new Set([5, 6, 7, 10, 11, 14]);
+const BLOCKING_CATEGORIES = new Set<number>();
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -89,7 +89,8 @@ function normalizeIncident(road: typeof MONITORED_ROADS[number], incident: any) 
     ate: to,
     trecho: from && to ? `${from} -> ${to}` : from || to || road.trecho,
     descricao: event?.description || "",
-    bloqueioTotal: BLOCKING_CATEGORIES.has(category),
+    bloqueioTotal: false,
+    pontoAtencao: true,
     fonte: "TomTom Traffic",
     timestamp: new Date().toISOString(),
   };

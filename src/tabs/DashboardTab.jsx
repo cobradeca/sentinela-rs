@@ -20,7 +20,7 @@ function fmtNumber(value, decimals = 1, fallback = "--") {
   return typeof value === "number" && Number.isFinite(value) ? value.toFixed(decimals) : fallback;
 }
 
-function MiniCard({ icon, label, value, sub, action, detail, tone = "#1a6fd4", onClick }) {
+function MiniCard({ icon, label, value, sub, action, detail, tone = "#1a6fd4", onClick, loading }) {
   return (
     <div className="sr-card-v2" style={{ minHeight: 188, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: 18 }}>
       <div>
@@ -30,8 +30,10 @@ function MiniCard({ icon, label, value, sub, action, detail, tone = "#1a6fd4", o
           </div>
           <div style={{ fontSize: 13, color: "var(--sr-text)", fontWeight: 800, lineHeight: 1.25 }}>{label}</div>
         </div>
-        <div style={{ fontSize: 30, fontWeight: 900, color: "var(--sr-text)", lineHeight: 1 }}>{value}</div>
-        <div style={{ fontSize: 13, color: "var(--sr-text-muted)", marginTop: 8, lineHeight: 1.35 }}>{sub}</div>
+        <div style={{ fontSize: 30, fontWeight: 900, color: "var(--sr-text)", lineHeight: 1 }}>{loading ? "..." : value}</div>
+        <div style={{ fontSize: 13, color: "var(--sr-text-muted)", marginTop: 8, lineHeight: 1.35 }}>
+          {loading ? "Carregando dado real..." : sub}
+        </div>
         {detail && <div style={{ fontSize: 12, color: "var(--sr-text-muted)", marginTop: 10, lineHeight: 1.35 }}>{detail}</div>}
       </div>
       {action && (
@@ -95,6 +97,7 @@ export function DashboardTab({ ctx }) {
 
   const roadBRS = Array.isArray(roadBlocks?.brs) ? roadBlocks.brs : [];
   const blockedRoads = roadBRS.filter((road) => road?.status === "bloqueado");
+  const attentionRoads = roadBRS.filter((road) => road?.status === "incidente");
   const roadIncidents = roadBRS.reduce((sum, road) => sum + (Array.isArray(road?.incidents) ? road.incidents.length : 0), 0);
   const roadText = roadBlocks?.ok
     ? blockedRoads.length
@@ -112,7 +115,9 @@ export function DashboardTab({ ctx }) {
   const riversWithReading = (riverLevels?.stations || []).filter((station) => station?.ok && typeof station?.level_cm === "number");
   const blockedRoadDetails = blockedRoads.length
     ? blockedRoads.map((road) => `${road.id}: ${road.trecho}`).join(" | ")
-    : "Sem trecho bloqueado nas rotas monitoradas";
+    : attentionRoads.length
+      ? attentionRoads.map((road) => `${road.id}: ponto de atencao, sem km confirmado`).join(" | ")
+      : "Sem trecho bloqueado nas rotas monitoradas";
   const routeCities = [
     "Porto Alegre",
     "Guaiba",
@@ -152,7 +157,7 @@ export function DashboardTab({ ctx }) {
       {loading && (
         <div className="sr-loading" style={{ margin: 0 }}>
           <div className="sr-loading-spinner" />
-          <div>Analisando dados...</div>
+          <div>Carregando dados reais das fontes...</div>
         </div>
       )}
 
@@ -173,6 +178,7 @@ export function DashboardTab({ ctx }) {
           action="Ver detalhes"
           tone="#3b82f6"
           onClick={() => setActiveTab("previsao")}
+          loading={loading && rainNow == null}
         />
         <MiniCard
           icon="waves"
@@ -182,6 +188,7 @@ export function DashboardTab({ ctx }) {
           action="Ver detalhes"
           tone="#06b6d4"
           onClick={() => setActiveTab("lagoa")}
+          loading={loading && avgLevel == null}
         />
         <MiniCard
           icon="fire"
@@ -191,14 +198,16 @@ export function DashboardTab({ ctx }) {
           action="Ver detalhes"
           tone="#ef4444"
           onClick={() => setActiveTab("queimadas")}
+          loading={loading && fireCount === 0 && !queimadas?.ok}
         />
         <MiniCard
           icon="shield"
           label="Rodovias bloqueadas"
           value={String(blockedRoads.length)}
-          sub="BR-116, BR-101 e BR-471"
+          sub={attentionRoads.length ? `${attentionRoads.length} ponto(s) de atencao` : "BR-116, BR-101 e BR-471"}
           detail={blockedRoadDetails}
           tone={blockedRoads.length ? "#dc2626" : "#64748b"}
+          loading={loading && !roadBlocks?.ok}
         />
         <MiniCard
           icon="climate"
