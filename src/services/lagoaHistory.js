@@ -1,4 +1,5 @@
 import { supabase } from "../lib/supabase";
+import { fetchLagoaMonitoramentoHistorico } from "./api";
 
 const HISTORY_MAX_POINTS = 336;
 const HISTORY_LOOKBACK_HOURS = 168;
@@ -77,6 +78,27 @@ export async function loadLagoaHistory(stationIds) {
   const localCache = loadHistoryFromLocalStorage();
   if (localCache) {
     sessionHistory = normalizeHistory({ ...localCache, ...sessionHistory });
+  }
+
+  try {
+    const remote = await fetchLagoaMonitoramentoHistorico();
+    if (remote?.ok && remote.history && Object.keys(remote.history).length) {
+      const filteredRemote = Object.fromEntries(
+        Object.entries(remote.history).filter(([stationId]) => stationIds.includes(stationId))
+      );
+      const mergedRemote = normalizeHistory({ ...sessionHistory, ...filteredRemote });
+      sessionHistory = mergedRemote;
+      saveHistoryToLocalStorage(mergedRemote);
+
+      return {
+        history: mergedRemote,
+        source: "Monitoramento Lagoa + HidroSens",
+        persistent: true,
+        fetched_at: remote.fetched_at,
+      };
+    }
+  } catch {
+    // Continua para Supabase/localStorage.
   }
 
   try {

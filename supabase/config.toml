@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.awc-metar-corredor]
 verify_jwt = false
+
+[functions.lagoa-monitoramento-historico]
+verify_jwt = false

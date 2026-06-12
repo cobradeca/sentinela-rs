@@ -10,17 +10,24 @@ import {
   QueimadasVegetacao,
 } from "../components/cards";
 
-function toLagoaRows(STATIONS_LAGOA, stationData, getLagoaPointData) {
+function toLagoaRows(STATIONS_LAGOA, stationData, getLagoaPointData, lagoaHistory = {}) {
   const rows = STATIONS_LAGOA.map((point) => {
     const lagoa = getLagoaPointData(point, stationData)?.lagoa;
     if (!lagoa?.isReal || typeof lagoa.atual !== "number") return null;
+    const historyValues = (lagoaHistory[point.id] || [])
+      .map((item) => Number(item?.v))
+      .filter(Number.isFinite)
+      .slice(-7);
+    const historyTrend = historyValues.length >= 2
+      ? historyValues[historyValues.length - 1] - historyValues[historyValues.length - 2]
+      : null;
     return {
       id: point.id,
-      nome: point.displayName || point.name,
+      nome: point.name,
       subEstacao: point.rioRef || point.name,
       nivelM: lagoa.atual,
-      variacaoM: typeof lagoa.delta24h === "number" ? lagoa.delta24h : 0,
-      historico: [lagoa.atual, lagoa.atual, lagoa.atual, lagoa.atual, lagoa.atual, lagoa.atual, lagoa.atual],
+      variacaoM: typeof historyTrend === "number" ? historyTrend : null,
+      historico: historyValues.length >= 2 ? historyValues : [lagoa.atual, lagoa.atual, lagoa.atual, lagoa.atual, lagoa.atual, lagoa.atual, lagoa.atual],
       hora: lagoa.measuredAt ? new Date(lagoa.measuredAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "--:--",
       fonte: lagoa.source || "RADAR",
     };
@@ -59,6 +66,7 @@ export function DashboardTab({ ctx }) {
     activeENSO,
     formatProbability,
     getLagoaPointData,
+    lagoaHistory,
     loading,
     queimadas,
     riverLevels,
@@ -67,7 +75,7 @@ export function DashboardTab({ ctx }) {
     stationData,
   } = ctx;
 
-  const lagoaRows = toLagoaRows(STATIONS_LAGOA, stationData, getLagoaPointData);
+  const lagoaRows = toLagoaRows(STATIONS_LAGOA, stationData, getLagoaPointData, lagoaHistory);
   const rioGrande = stationData?.rs_rio_grande;
   const forecastIndexes = rioGrande?.weather?.forecastDayIndexes || [0, 1, 2, 3, 4];
   const chuva5dMm = forecastIndexes.slice(0, 5).reduce((sum, index) => {

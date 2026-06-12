@@ -19,6 +19,7 @@ import {
   INPE_FIRE_EVENTS_RS_FUNCTION_URL,
   INPE_QUEIMADAS_RS_FUNCTION_URL,
   IRI_ENSO_PROB_FUNCTION_URL,
+  LAGOA_MONITORAMENTO_HISTORICO_FUNCTION_URL,
   LAGOA_RADAR_FUNCTION_URL,
   NOAA_ENSO_FUNCTION_URL,
   RODOVIAS_RS_FUNCTION_URL,
@@ -43,6 +44,7 @@ const COPERNICUS_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 const RIVER_LEVELS_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 const ROAD_BLOCKS_CACHE_MAX_AGE_MS = 15 * 60 * 1000;
 const FLIGHT_CONDITIONS_CACHE_MAX_AGE_MS = 10 * 60 * 1000;
+const LAGOA_HISTORY_REMOTE_CACHE_MAX_AGE_MS = 30 * 60 * 1000;
 const ANA_FLOOD_VULNERABILITY_URL = "https://www.snirh.gov.br/arcgis/rest/services/SUM/vulnerabilidade_brasil/MapServer/0/query";
 const SENSORES_LAGOA_BASE_URL = "https://api-medidas-porto-7bni.onrender.com/dados";
 const SENSORES_LAGOA_MAPPING = {
@@ -294,6 +296,29 @@ export async function fetchFlightConditions() {
     return data;
   } catch (err) {
     return cached || { ok: false, aerodromos: [], error: err?.message || "timeout", fetched_at: new Date().toISOString() };
+  }
+}
+
+export async function fetchLagoaMonitoramentoHistorico() {
+  const cacheKey = "sentinela_lagoa_monitoramento_historico_v1";
+  const cached = readJsonCache(cacheKey, LAGOA_HISTORY_REMOTE_CACHE_MAX_AGE_MS);
+
+  try {
+    const res = await fetch(LAGOA_MONITORAMENTO_HISTORICO_FUNCTION_URL, {
+      signal: AbortSignal.timeout(30000),
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+
+    if (!res.ok) return cached || { ok: false, history: {}, stations: [], error: `Historico Lagoa HTTP ${res.status}`, fetched_at: new Date().toISOString() };
+
+    const data = await res.json();
+    if (!data?.ok || !data?.history) return cached || { ...data, ok: false, history: data?.history || {}, stations: data?.stations || [] };
+
+    saveJsonCache(cacheKey, data);
+    return data;
+  } catch (err) {
+    return cached || { ok: false, history: {}, stations: [], error: err?.message || "timeout", fetched_at: new Date().toISOString() };
   }
 }
 
