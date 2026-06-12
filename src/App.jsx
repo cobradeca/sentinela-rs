@@ -52,6 +52,7 @@ const PrevisaoTab = lazy(() => import("./tabs/PrevisaoTab").then((m) => ({ defau
 const LagoaDosPatosTab = lazy(() => import("./tabs/LagoaDosPatosTab").then((m) => ({ default: m.LagoaDosPatosTab })));
 const EnsoTab = lazy(() => import("./tabs/EnsoTab").then((m) => ({ default: m.EnsoTab })));
 const CptecTab = lazy(() => import("./tabs/CptecTab").then((m) => ({ default: m.CptecTab })));
+const VooTab = lazy(() => import("./tabs/VooTab").then((m) => ({ default: m.VooTab })));
 const CopernicusTab = lazy(() => import("./tabs/CopernicusTab").then((m) => ({ default: m.CopernicusTab })));
 const QueimadasTab = lazy(() => import("./tabs/QueimadasTab").then((m) => ({ default: m.QueimadasTab })));
 const AlertasTab = lazy(() => import("./tabs/AlertasTab").then((m) => ({ default: m.AlertasTab })));
@@ -67,6 +68,7 @@ const TAB_KEYS = new Set([
   "enso",
   "noticias-enso",
   "cptec",
+  "voo",
   "copernicus",
   "queimadas",
   "alertas",
@@ -1306,6 +1308,7 @@ export default function SentinelaRS() {
                 {activeTab === "enso" && <EnsoTab ctx={tabCtx} />}
                 {activeTab === "noticias-enso" && <NoticiasEnsoTab ctx={tabCtx} />}
                 {activeTab === "cptec" && <CptecTab ctx={tabCtx} />}
+                {activeTab === "voo" && <VooTab ctx={tabCtx} />}
                 {activeTab === "copernicus" && <CopernicusTab ctx={tabCtx} />}
                 {activeTab === "queimadas" && <QueimadasTab ctx={tabCtx} />}
                 {activeTab === "alertas" && <AlertasTab ctx={tabCtx} />}

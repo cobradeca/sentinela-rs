@@ -8,6 +8,7 @@ export const NAV_ITEMS = [
   { id: "enso", tab: "enso", label: "ENSO", icon: "climate" },
   { id: "noticias-enso", tab: "noticias-enso", label: "Notícias", icon: "news" },
   { id: "cptec", tab: "cptec", label: "CPTEC/INPE", icon: "cloud" },
+  { id: "voo", tab: "voo", label: "Voo", icon: "radar" },
   { id: "apis", tab: "apis", label: "Configurações", icon: "settings" },
 ];
 

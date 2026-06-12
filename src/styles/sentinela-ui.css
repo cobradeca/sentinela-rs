@@ -545,6 +545,20 @@ a:focus-visible {
   color: #38bdf8;
 }
 
+.sr-dashboard-modular {
+  display: grid;
+  gap: 18px;
+  background: #071522;
+  border-radius: 18px;
+  padding: 18px;
+}
+
+.sr-dashboard-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
 @media (max-width: 860px) {
   .sr-mod-header,
   .sr-defesa-banner {
@@ -554,7 +568,8 @@ a:focus-visible {
 
   .sr-forecast-grid,
   .sr-panorama-grid,
-  .sr-veg-grid {
+  .sr-veg-grid,
+  .sr-dashboard-two-col {
     grid-template-columns: 1fr 1fr;
   }
 
@@ -568,7 +583,8 @@ a:focus-visible {
 @media (max-width: 560px) {
   .sr-forecast-grid,
   .sr-panorama-grid,
-  .sr-veg-grid {
+  .sr-veg-grid,
+  .sr-dashboard-two-col {
     grid-template-columns: 1fr;
   }
 }
