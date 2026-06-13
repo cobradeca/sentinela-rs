@@ -589,6 +589,12 @@ a:focus-visible {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.sr-panorama-stack {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
 .sr-panorama-road-strip {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -702,6 +708,33 @@ a:focus-visible {
 .sr-enso-gauge-wrap {
   display: grid;
   place-items: center;
+}
+
+.sr-enso-band-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.sr-enso-band {
+  min-height: 54px;
+  border-radius: 12px;
+  padding: 8px 10px;
+  display: grid;
+  align-items: end;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  box-shadow: inset 0 -18px 24px rgba(0, 0, 0, 0.08);
+}
+
+.sr-enso-band small {
+  display: block;
+  font-size: 9px;
+  font-weight: 700;
+  opacity: 0.9;
 }
 
 .sr-enso-gauge {

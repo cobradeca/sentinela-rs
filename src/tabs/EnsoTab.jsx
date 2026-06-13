@@ -9,11 +9,11 @@ const phaseColors = {
 };
 
 const historicalEvents = [
-  { event: "La Nina", period: "2020-2023", color: phaseColors.laNina },
+  { event: "La Niña", period: "2020-2023", color: phaseColors.laNina },
   { event: "Neutro", period: "2018-2019", color: phaseColors.neutral },
-  { event: "El Nino", period: "2015-2016", color: phaseColors.elNino },
+  { event: "El Niño", period: "2015-2016", color: phaseColors.elNino },
   { event: "Neutro", period: "2013-2014", color: phaseColors.neutral },
-  { event: "La Nina", period: "2010-2012", color: phaseColors.laNina },
+  { event: "La Niña", period: "2010-2012", color: phaseColors.laNina },
 ];
 
 const NOAA_PROB_IMAGE = "https://www.cpc.ncep.noaa.gov/archives/enso/roni/images/2026/enso-probs-current.png";
@@ -30,10 +30,10 @@ function currentPhase(nino34) {
   if (typeof nino34 !== "number" || !Number.isFinite(nino34)) {
     return { label: "Indisponivel", key: "neutral", description: "Sem leitura validada" };
   }
-  if (nino34 >= 1.5) return { label: "Super El Nino", key: "superElNino", description: "Anomalia muito quente no Pacifico equatorial" };
-  if (nino34 >= 0.5) return { label: "El Nino", key: "elNino", description: "Anomalia quente no Pacifico equatorial" };
-  if (nino34 <= -1.5) return { label: "Super La Nina", key: "superLaNina", description: "Anomalia muito fria no Pacifico equatorial" };
-  if (nino34 <= -0.5) return { label: "La Nina", key: "laNina", description: "Anomalia fria no Pacifico equatorial" };
+  if (nino34 >= 1.5) return { label: "Super El Niño", key: "superElNino", description: "Anomalia muito quente no Pacifico equatorial" };
+  if (nino34 >= 0.5) return { label: "El Niño", key: "elNino", description: "Anomalia quente no Pacifico equatorial" };
+  if (nino34 <= -1.5) return { label: "Super La Niña", key: "superLaNina", description: "Anomalia muito fria no Pacifico equatorial" };
+  if (nino34 <= -0.5) return { label: "La Niña", key: "laNina", description: "Anomalia fria no Pacifico equatorial" };
   return { label: "Neutra", key: "neutral", description: "Sem anomalia significativa" };
 }
 
@@ -41,9 +41,9 @@ function trendText(forecast) {
   const first = Array.isArray(forecast) ? forecast[0] : null;
   if (!first) return "Tendencia indisponivel";
   const values = [
-    { label: "El Nino", value: first.en },
+    { label: "El Niño", value: first.en },
     { label: "Neutro", value: first.nu },
-    { label: "La Nina", value: first.ln },
+    { label: "La Niña", value: first.ln },
   ].filter((item) => typeof item.value === "number");
   if (!values.length) return "Tendencia indisponivel";
   const dominant = values.sort((a, b) => b.value - a.value)[0];
@@ -90,19 +90,19 @@ function Gauge({ value, phase }) {
   const clamped = typeof value === "number" ? Math.max(-2.5, Math.min(2.5, value)) : 0;
   const angle = -90 + ((clamped + 2.5) / 5) * 180;
   const bands = [
-    { label: "Super La Nina", color: phaseColors.superLaNina },
-    { label: "La Nina", color: phaseColors.laNina },
+    { label: "Super La Niña", color: phaseColors.superLaNina },
+    { label: "La Niña", color: phaseColors.laNina },
     { label: "Neutro", color: phaseColors.neutral },
-    { label: "El Nino", color: phaseColors.elNino },
-    { label: "Super El Nino", color: phaseColors.superElNino },
+    { label: "El Niño", color: phaseColors.elNino },
+    { label: "Super El Niño", color: phaseColors.superElNino },
   ];
 
   return (
     <div className="sr-enso-gauge-wrap">
       <div style={{ width: "100%", maxWidth: 420 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8, marginBottom: 16 }}>
+        <div className="sr-enso-band-row">
           {bands.map((band) => (
-            <div key={band.label} style={{ height: 10, borderRadius: 999, background: band.color, opacity: band.label === phase.label ? 1 : 0.35 }} />
+            <div key={band.label} className="sr-enso-band" style={{ background: band.color, opacity: band.label === phase.label ? 1 : 0.78, color: band.label === "Neutro" ? "#0f172a" : "#fff" }}><span>{band.label}</span><small>{band.label === "Neutro" ? "faixa central" : phase.label === band.label ? "faixa atual" : "faixa ENSO"}</small></div>
           ))}
         </div>
         <div style={{ width: 320, height: 180, margin: "0 auto", position: "relative", overflow: "hidden" }}>
@@ -111,9 +111,9 @@ function Gauge({ value, phase }) {
           <div style={{ position: "absolute", left: "50%", bottom: 16, width: 4, height: 118, background: "#0c2d4a", transformOrigin: "bottom center", transform: `translateX(-50%) rotate(${angle}deg)` }} />
           <div style={{ position: "absolute", left: "50%", bottom: 8, width: 24, height: 24, borderRadius: "50%", background: "#dbeafe", transform: "translateX(-50%)", border: "4px solid #fff" }} />
           <div style={{ position: "absolute", left: 12, right: 12, bottom: 2, display: "flex", justifyContent: "space-between", fontSize: 11, fontWeight: 800, color: "var(--sr-text-muted)" }}>
-            <span>Super La Nina</span>
+            <span>Super La Niña</span>
             <span>Neutro</span>
-            <span>Super El Nino</span>
+            <span>Super El Niño</span>
           </div>
         </div>
       </div>
@@ -145,7 +145,7 @@ export function EnsoTab({ ctx }) {
             </div>
             <div>
               <h1 style={{ margin: 0, fontSize: 34, color: "var(--sr-text)" }}>ENSO</h1>
-              <div style={{ color: "var(--sr-text-muted)", fontSize: 16 }}>El Nino-Oscilacao Sul</div>
+              <div style={{ color: "var(--sr-text-muted)", fontSize: 16 }}>El Niño-Oscilação Sul</div>
             </div>
           </div>
           <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
@@ -192,11 +192,11 @@ export function EnsoTab({ ctx }) {
         </div>
         <div style={{ display: "grid", gap: 8, marginTop: 14 }}>
           {[
-            ["Super La Nina", "<= -1.5 °C", phaseColors.superLaNina],
-            ["La Nina", "-1.5 °C a -0.5 °C", phaseColors.laNina],
+            ["Super La Niña", "<= -1.5 °C", phaseColors.superLaNina],
+            ["La Niña", "-1.5 °C a -0.5 °C", phaseColors.laNina],
             ["Neutro", "-0.5 °C a +0.5 °C", phaseColors.neutral],
-            ["El Nino", "+0.5 °C a +1.5 °C", phaseColors.elNino],
-            ["Super El Nino", ">= +1.5 °C", phaseColors.superElNino],
+            ["El Niño", "+0.5 °C a +1.5 °C", phaseColors.elNino],
+            ["Super El Niño", ">= +1.5 °C", phaseColors.superElNino],
           ].map(([label, range, color]) => (
             <div key={label} style={{ padding: 12, borderRadius: 10, background: `${color}10`, color, fontWeight: 800 }}>
               {label}<br /><span style={{ color: "var(--sr-text)", fontWeight: 700 }}>{range}</span>
@@ -217,9 +217,9 @@ export function EnsoTab({ ctx }) {
             <thead>
               <tr>
                 <th>Trimestre</th>
-                <th>La Nina</th>
+                <th>La Niña</th>
                 <th>Neutro</th>
-                <th>El Nino</th>
+                <th>El Niño</th>
               </tr>
             </thead>
             <tbody>
@@ -239,11 +239,11 @@ export function EnsoTab({ ctx }) {
         </div>
 
         <div className="sr-card-v2">
-          <h3 className="sr-card-title">Impactos historicos no RS</h3>
+          <h3 className="sr-card-title">Impactos históricos no RS</h3>
           {[
-            ["La Nina", "Maior chance de chuvas abaixo da media no RS", phaseColors.laNina],
+            ["La Niña", "Maior chance de chuvas abaixo da média no RS", phaseColors.laNina],
             ["Neutro", "Comportamento mais proximo da normalidade", phaseColors.neutral],
-            ["El Nino", "Maior chance de chuvas acima da media no RS", phaseColors.elNino],
+            ["El Niño", "Maior chance de chuvas acima da média no RS", phaseColors.elNino],
           ].map(([label, text, color]) => (
             <div key={label} style={{ display: "flex", gap: 12, padding: "10px 0", borderBottom: "1px solid var(--sr-border)" }}>
               <span className="sr-status-dot" style={{ background: color, marginTop: 6 }} />
@@ -280,11 +280,11 @@ export function EnsoTab({ ctx }) {
         </div>
 
         <div className="sr-card-v2">
-          <h3 className="sr-card-title">Impactos historicos no RS</h3>
+          <h3 className="sr-card-title">Impactos históricos no RS</h3>
           {[
-            ["La Nina", "Maior chance de chuvas abaixo da media no RS", phaseColors.laNina],
+            ["La Niña", "Maior chance de chuvas abaixo da média no RS", phaseColors.laNina],
             ["Neutro", "Comportamento mais proximo da normalidade", phaseColors.neutral],
-            ["El Nino", "Maior chance de chuvas acima da media no RS", phaseColors.elNino],
+            ["El Niño", "Maior chance de chuvas acima da média no RS", phaseColors.elNino],
           ].map(([label, text, color]) => (
             <div key={label} style={{ display: "flex", gap: 12, padding: "10px 0", borderBottom: "1px solid var(--sr-border)" }}>
               <span className="sr-status-dot" style={{ background: color, marginTop: 6 }} />

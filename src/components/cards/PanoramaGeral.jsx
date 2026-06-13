@@ -71,7 +71,7 @@ export function PanoramaGeral({
         <div className="sr-mod-badge">Dados informativos • nao sao alertas ⓘ</div>
       </header>
 
-      <div className="sr-panorama-grid sr-panorama-grid-main">
+      <div className="sr-panorama-stack">
         <div className="sr-panorama-block">
           <span>≈ Lagoa dos Patos</span>
           <strong>{nivelMedio.toFixed(2).replace(".", ",")} m</strong>
