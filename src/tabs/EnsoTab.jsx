@@ -100,9 +100,28 @@ function Gauge({ value, phase }) {
   return (
     <div className="sr-enso-gauge-wrap">
       <div style={{ width: "100%", maxWidth: 420 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8, marginBottom: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: 8, marginBottom: 16 }}>
           {bands.map((band) => (
-            <div key={band.label} style={{ height: 10, borderRadius: 999, background: band.color, opacity: band.label === phase.label ? 1 : 0.35 }} />
+            <div
+              key={band.label}
+              style={{
+                height: 42,
+                borderRadius: 12,
+                background: band.color,
+                opacity: band.label === phase.label ? 1 : 0.48,
+                color: "#fff",
+                display: "grid",
+                placeItems: "center",
+                textAlign: "center",
+                padding: "6px 8px",
+                fontSize: 10,
+                fontWeight: 800,
+                lineHeight: 1.15,
+                boxShadow: band.label === phase.label ? "0 10px 18px rgba(12,45,74,0.16)" : "none",
+              }}
+            >
+              {band.label}
+            </div>
           ))}
         </div>
         <div style={{ width: 320, height: 180, margin: "0 auto", position: "relative", overflow: "hidden" }}>
@@ -110,11 +129,6 @@ function Gauge({ value, phase }) {
           <div style={{ position: "absolute", left: 28, right: 28, top: 28, height: 250, borderRadius: "250px 250px 0 0", background: "var(--sr-card)" }} />
           <div style={{ position: "absolute", left: "50%", bottom: 16, width: 4, height: 118, background: "#0c2d4a", transformOrigin: "bottom center", transform: `translateX(-50%) rotate(${angle}deg)` }} />
           <div style={{ position: "absolute", left: "50%", bottom: 8, width: 24, height: 24, borderRadius: "50%", background: "#dbeafe", transform: "translateX(-50%)", border: "4px solid #fff" }} />
-          <div style={{ position: "absolute", left: 12, right: 12, bottom: 2, display: "flex", justifyContent: "space-between", fontSize: 11, fontWeight: 800, color: "var(--sr-text-muted)" }}>
-            <span>Super La Nina</span>
-            <span>Neutro</span>
-            <span>Super El Nino</span>
-          </div>
         </div>
       </div>
       <div className="sr-enso-current">
@@ -190,19 +204,7 @@ export function EnsoTab({ ctx }) {
             <Gauge value={activeENSO.nino34} phase={phase} />
           </div>
         </div>
-        <div style={{ display: "grid", gap: 8, marginTop: 14 }}>
-          {[
-            ["Super La Nina", "<= -1.5 °C", phaseColors.superLaNina],
-            ["La Nina", "-1.5 °C a -0.5 °C", phaseColors.laNina],
-            ["Neutro", "-0.5 °C a +0.5 °C", phaseColors.neutral],
-            ["El Nino", "+0.5 °C a +1.5 °C", phaseColors.elNino],
-            ["Super El Nino", ">= +1.5 °C", phaseColors.superElNino],
-          ].map(([label, range, color]) => (
-            <div key={label} style={{ padding: 12, borderRadius: 10, background: `${color}10`, color, fontWeight: 800 }}>
-              {label}<br /><span style={{ color: "var(--sr-text)", fontWeight: 700 }}>{range}</span>
-            </div>
-          ))}
-        </div>
+        <div style={{ color: "var(--sr-text-muted)", fontSize: 12, marginTop: 14 }}>A classificação já aparece no velocímetro acima; abaixo fica apenas o resumo do trimestre.</div>
       </div>
 
       <div className="sr-grid-2">
@@ -239,22 +241,6 @@ export function EnsoTab({ ctx }) {
         </div>
 
         <div className="sr-card-v2">
-          <h3 className="sr-card-title">Impactos historicos no RS</h3>
-          {[
-            ["La Nina", "Maior chance de chuvas abaixo da media no RS", phaseColors.laNina],
-            ["Neutro", "Comportamento mais proximo da normalidade", phaseColors.neutral],
-            ["El Nino", "Maior chance de chuvas acima da media no RS", phaseColors.elNino],
-          ].map(([label, text, color]) => (
-            <div key={label} style={{ display: "flex", gap: 12, padding: "10px 0", borderBottom: "1px solid var(--sr-border)" }}>
-              <span className="sr-status-dot" style={{ background: color, marginTop: 6 }} />
-              <div><strong style={{ color }}>{label}</strong><div style={{ color: "var(--sr-text-muted)", fontSize: 13 }}>{text}</div></div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="sr-grid-3">
-        <div className="sr-card-v2">
           <h3 className="sr-card-title">Regiao Nino 3.4</h3>
           <div style={{ borderRadius: 12, overflow: "hidden", border: "1px solid var(--sr-border)", background: "#fff" }}>
             <img
@@ -275,20 +261,6 @@ export function EnsoTab({ ctx }) {
             <div key={`${item.event}-${item.period}`} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: "1px solid var(--sr-border)" }}>
               <span><span className="sr-status-dot" style={{ background: item.color }} /> {item.event}</span>
               <strong>{item.period}</strong>
-            </div>
-          ))}
-        </div>
-
-        <div className="sr-card-v2">
-          <h3 className="sr-card-title">Impactos historicos no RS</h3>
-          {[
-            ["La Nina", "Maior chance de chuvas abaixo da media no RS", phaseColors.laNina],
-            ["Neutro", "Comportamento mais proximo da normalidade", phaseColors.neutral],
-            ["El Nino", "Maior chance de chuvas acima da media no RS", phaseColors.elNino],
-          ].map(([label, text, color]) => (
-            <div key={label} style={{ display: "flex", gap: 12, padding: "10px 0", borderBottom: "1px solid var(--sr-border)" }}>
-              <span className="sr-status-dot" style={{ background: color, marginTop: 6 }} />
-              <div><strong style={{ color }}>{label}</strong><div style={{ color: "var(--sr-text-muted)", fontSize: 13 }}>{text}</div></div>
             </div>
           ))}
         </div>

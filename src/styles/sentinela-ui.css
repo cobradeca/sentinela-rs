@@ -586,7 +586,7 @@ a:focus-visible {
 }
 
 .sr-panorama-grid-main {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: 1fr;
 }
 
 .sr-panorama-road-strip {
@@ -1550,7 +1550,6 @@ body[data-theme="dark"] .sr-weather-temp {
 
   .sr-grid-2-1,
   .sr-grid-3,
-  .sr-panorama-grid-main,
   .sr-panorama-road-strip {
     grid-template-columns: 1fr;
   }
