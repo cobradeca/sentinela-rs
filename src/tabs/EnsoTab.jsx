@@ -134,7 +134,6 @@ export function EnsoTab({ ctx }) {
   const fetchedAt = activeENSO.probabilityFetchedAt || activeENSO.observedFetchedAt || lastUpdate;
   const observedReady = typeof activeENSO.nino34 === "number" && Number.isFinite(activeENSO.nino34);
   const probReady = forecast.length > 0;
-  const topProb = forecast[0] || {};
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -174,21 +173,35 @@ export function EnsoTab({ ctx }) {
         </div>
       </div>
 
-      <div className="sr-grid-2">
-        <div className="sr-card-v2">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-            <div>
-              <h3 className="sr-card-title">Probabilidade IRI/CCSR</h3>
-              <div style={{ color: "var(--sr-text-muted)", fontSize: 13 }}>Curva derivada do endpoint de previsao trimestral</div>
-            </div>
+      <div className="sr-card-v2">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <div>
+            <h3 className="sr-card-title">Indice Nino 3.4 (°C)</h3>
+            <div style={{ color: "var(--sr-text-muted)", fontSize: 13 }}>Probabilidade IRI/CCSR e classificacao oficial em um unico bloco</div>
           </div>
-          <MiniLine forecast={forecast} field="en" color={phaseColors.elNino} />
-          <div style={{ fontSize: 12, color: "var(--sr-text-muted)" }}>Fonte: IRI/CCSR ENSO Forecast.</div>
+          <div style={{ color: "var(--sr-text-muted)", fontSize: 12 }}>Fonte: NOAA / CPC + IRI / CCSR</div>
         </div>
-
-        <div className="sr-card-v2">
-          <h3 className="sr-card-title">Indice Nino 3.4 (°C) - Atual</h3>
-          <Gauge value={activeENSO.nino34} phase={phase} />
+        <div className="sr-grid-2" style={{ marginTop: 10 }}>
+          <div>
+            <MiniLine forecast={forecast} field="en" color={phaseColors.elNino} />
+            <div style={{ fontSize: 12, color: "var(--sr-text-muted)" }}>Curva derivada do endpoint de previsao trimestral.</div>
+          </div>
+          <div>
+            <Gauge value={activeENSO.nino34} phase={phase} />
+          </div>
+        </div>
+        <div style={{ display: "grid", gap: 8, marginTop: 14 }}>
+          {[
+            ["Super La Nina", "<= -1.5 °C", phaseColors.superLaNina],
+            ["La Nina", "-1.5 °C a -0.5 °C", phaseColors.laNina],
+            ["Neutro", "-0.5 °C a +0.5 °C", phaseColors.neutral],
+            ["El Nino", "+0.5 °C a +1.5 °C", phaseColors.elNino],
+            ["Super El Nino", ">= +1.5 °C", phaseColors.superElNino],
+          ].map(([label, range, color]) => (
+            <div key={label} style={{ padding: 12, borderRadius: 10, background: `${color}10`, color, fontWeight: 800 }}>
+              {label}<br /><span style={{ color: "var(--sr-text)", fontWeight: 700 }}>{range}</span>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -197,10 +210,9 @@ export function EnsoTab({ ctx }) {
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 12, flexWrap: "wrap" }}>
             <div>
               <h3 className="sr-card-title" style={{ marginBottom: 4 }}>Probabilidade por trimestre</h3>
-              <div style={{ color: "var(--sr-text-muted)", fontSize: 12 }}>Sem atalho para tabela; os dados ja aparecem na curva e no resumo.</div>
+              <div style={{ color: "var(--sr-text-muted)", fontSize: 12 }}>Os dados ja aparecem na curva e no resumo.</div>
             </div>
           </div>
-
           <table className="sr-data-table">
             <thead>
               <tr>
@@ -227,19 +239,17 @@ export function EnsoTab({ ctx }) {
         </div>
 
         <div className="sr-card-v2">
-          <h3 className="sr-card-title">Classificacao dos indices</h3>
+          <h3 className="sr-card-title">Impactos historicos no RS</h3>
           {[
-            ["Super La Nina", "<= -1.5 °C", phaseColors.superLaNina],
-            ["La Nina", "-1.5 °C a -0.5 °C", phaseColors.laNina],
-            ["Neutro", "-0.5 °C a +0.5 °C", phaseColors.neutral],
-            ["El Nino", "+0.5 °C a +1.5 °C", phaseColors.elNino],
-            ["Super El Nino", ">= +1.5 °C", phaseColors.superElNino],
-          ].map(([label, range, color]) => (
-            <div key={label} style={{ padding: 14, borderRadius: 10, background: `${color}12`, color, fontWeight: 800, marginBottom: 10 }}>
-              {label}<br /><span style={{ color: "var(--sr-text)", fontWeight: 700 }}>{range}</span>
+            ["La Nina", "Maior chance de chuvas abaixo da media no RS", phaseColors.laNina],
+            ["Neutro", "Comportamento mais proximo da normalidade", phaseColors.neutral],
+            ["El Nino", "Maior chance de chuvas acima da media no RS", phaseColors.elNino],
+          ].map(([label, text, color]) => (
+            <div key={label} style={{ display: "flex", gap: 12, padding: "10px 0", borderBottom: "1px solid var(--sr-border)" }}>
+              <span className="sr-status-dot" style={{ background: color, marginTop: 6 }} />
+              <div><strong style={{ color }}>{label}</strong><div style={{ color: "var(--sr-text-muted)", fontSize: 13 }}>{text}</div></div>
             </div>
           ))}
-          <div style={{ fontSize: 12, color: "var(--sr-text-muted)" }}>Anomalia da TSM na regiao Nino 3.4.</div>
         </div>
       </div>
 
@@ -260,6 +270,16 @@ export function EnsoTab({ ctx }) {
         </div>
 
         <div className="sr-card-v2">
+          <h3 className="sr-card-title">Ultimos eventos</h3>
+          {historicalEvents.map((item) => (
+            <div key={`${item.event}-${item.period}`} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: "1px solid var(--sr-border)" }}>
+              <span><span className="sr-status-dot" style={{ background: item.color }} /> {item.event}</span>
+              <strong>{item.period}</strong>
+            </div>
+          ))}
+        </div>
+
+        <div className="sr-card-v2">
           <h3 className="sr-card-title">Impactos historicos no RS</h3>
           {[
             ["La Nina", "Maior chance de chuvas abaixo da media no RS", phaseColors.laNina],
@@ -269,16 +289,6 @@ export function EnsoTab({ ctx }) {
             <div key={label} style={{ display: "flex", gap: 12, padding: "10px 0", borderBottom: "1px solid var(--sr-border)" }}>
               <span className="sr-status-dot" style={{ background: color, marginTop: 6 }} />
               <div><strong style={{ color }}>{label}</strong><div style={{ color: "var(--sr-text-muted)", fontSize: 13 }}>{text}</div></div>
-            </div>
-          ))}
-        </div>
-
-        <div className="sr-card-v2">
-          <h3 className="sr-card-title">Ultimos eventos</h3>
-          {historicalEvents.map((item) => (
-            <div key={`${item.event}-${item.period}`} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: "1px solid var(--sr-border)" }}>
-              <span><span className="sr-status-dot" style={{ background: item.color }} /> {item.event}</span>
-              <strong>{item.period}</strong>
             </div>
           ))}
         </div>

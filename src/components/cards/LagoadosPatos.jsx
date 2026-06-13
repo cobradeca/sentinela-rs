@@ -96,11 +96,7 @@ export function LagoadosPatos({ className = "", data = [], loading = false, erro
   }
 
   const currentCount = rows.filter((row) => Number.isFinite(row?.nivelM)).length;
-  const criticalRows = [...rows]
-    .sort((a, b) => stationRank(b) - stationRank(a))
-    .filter(isCritical)
-    .slice(0, 3);
-  const visibleRows = criticalRows.length ? criticalRows : [...rows].sort((a, b) => stationRank(b) - stationRank(a)).slice(0, 3);
+  const visibleRows = [...rows].sort((a, b) => stationRank(b) - stationRank(a));
   const maxLevel = rows.map((row) => Number(row?.nivelM)).filter(Number.isFinite);
   const status = rows.some((row) => Number(row?.nivelM) >= 1.2)
     ? "Alerta"
@@ -135,7 +131,6 @@ export function LagoadosPatos({ className = "", data = [], loading = false, erro
 
       <div className="sr-lagoa-table sr-lagoa-table-compact">
         {visibleRows.map((row) => {
-          const hasLevel = Number.isFinite(row?.nivelM);
           const history = Array.isArray(row?.historico) ? row.historico : [];
           const trend = Number.isFinite(row?.variacaoM)
             ? row.variacaoM

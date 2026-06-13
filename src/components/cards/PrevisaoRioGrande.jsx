@@ -15,18 +15,18 @@ function dateLabel(dateIso) {
 function WeatherIcon({ code }) {
   const stroke = "currentColor";
   if (code >= 95) {
-    return <svg viewBox="0 0 48 48"><path d="M14 28a10 10 0 0110-10h2a8 8 0 110 16H16a6 6 0 01-2-6z" fill="none" stroke={stroke} strokeWidth="3" /><path d="M22 34l-4 8M30 34l-4 8M27 33l5 6" stroke="#facc15" strokeWidth="3" /></svg>;
+    return <svg viewBox="0 0 48 48"><path d="M13 29a9 9 0 018-9h2a7 7 0 110 14H16a5 5 0 01-3-5z" fill="#475569" opacity="0.9" /><path d="M20 34l-3 7M28 34l-3 7M36 34l-3 7" stroke="#38bdf8" strokeWidth="3" strokeLinecap="round" /><path d="M22 12l3 6h-6z" fill="#facc15" /></svg>;
   }
   if (code >= 51) {
-    return <svg viewBox="0 0 48 48"><path d="M14 28a10 10 0 0110-10h2a8 8 0 110 16H16a6 6 0 01-2-6z" fill="none" stroke={stroke} strokeWidth="3" /><path d="M18 36l-3 6M26 36l-3 6M34 36l-3 6" stroke="#38bdf8" strokeWidth="3" /></svg>;
+    return <svg viewBox="0 0 48 48"><path d="M13 29a9 9 0 018-9h2a7 7 0 110 14H16a5 5 0 01-3-5z" fill="#94a3b8" opacity="0.95" /><path d="M19 35l-3 6M27 35l-3 6M35 35l-3 6" stroke="#38bdf8" strokeWidth="3.25" strokeLinecap="round" /></svg>;
   }
   if (code >= 3) {
-    return <svg viewBox="0 0 48 48"><path d="M14 30a10 10 0 0110-10h2a8 8 0 110 16H16a6 6 0 01-2-6z" fill="none" stroke={stroke} strokeWidth="3" /></svg>;
+    return <svg viewBox="0 0 48 48"><path d="M13 30a9 9 0 018-9h2a7 7 0 110 14H16a5 5 0 01-3-5z" fill="#cbd5e1" /><path d="M18 17a6 6 0 017-4 7 7 0 017 7" stroke="#94a3b8" strokeWidth="3" fill="none" strokeLinecap="round" /></svg>;
   }
   if (code >= 1) {
-    return <svg viewBox="0 0 48 48"><circle cx="18" cy="18" r="8" fill="none" stroke="#f59e0b" strokeWidth="3" /><path d="M20 32a9 9 0 018-7h2a6 6 0 110 12H22a5 5 0 01-2-5z" fill="none" stroke={stroke} strokeWidth="3" /></svg>;
+    return <svg viewBox="0 0 48 48"><circle cx="17" cy="17" r="8" fill="#f59e0b" opacity="0.9" /><path d="M20 31a8 8 0 017-6h2a6 6 0 110 12H22a5 5 0 01-2-6z" fill="#e2e8f0" /><path d="M21 36l-2 4M29 36l-2 4" stroke="#38bdf8" strokeWidth="3" strokeLinecap="round" /></svg>;
   }
-  return <svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="9" fill="none" stroke="#f59e0b" strokeWidth="3" /><path d="M24 4v7M24 37v7M4 24h7M37 24h7M10 10l5 5M33 33l5 5M38 10l-5 5M15 33l-5 5" stroke="#f59e0b" strokeWidth="3" /></svg>;
+  return <svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="9" fill="#f59e0b" /><path d="M24 4v7M24 37v7M4 24h7M37 24h7M10 10l5 5M33 33l5 5M38 10l-5 5M15 33l-5 5" stroke="#f59e0b" strokeWidth="3" strokeLinecap="round" /></svg>;
 }
 
 function normalizeDaily(data) {
