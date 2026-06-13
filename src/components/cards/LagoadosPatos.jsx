@@ -1,25 +1,22 @@
-export const MOCK_LAGOA = [
-  { id: "lagoa_patos_poa", nome: "Itapua", subEstacao: "Norte da Lagoa", nivelM: 0.41, variacaoM: -0.03, historico: [0.46, 0.45, 0.44, 0.43, 0.43, 0.42, 0.41], hora: "07:30", fonte: "Monitoramento" },
-  { id: "lagoa_patos_pelotas", nome: "Pelotas / Laranjal", subEstacao: "HidroSens", nivelM: 0.32, variacaoM: -0.02, historico: [0.36, 0.35, 0.35, 0.34, 0.33, 0.33, 0.32], hora: "07:20", fonte: "HIDROSENS" },
-  { id: "lagoa_rio_grande", nome: "Rio Grande", subEstacao: "Barra", nivelM: 0.18, variacaoM: 0.04, historico: [0.12, 0.13, 0.14, 0.16, 0.17, 0.17, 0.18], hora: "07:10", fonte: "Monitoramento" },
-  { id: "lagoa_sao_lourenco", nome: "Sao Lourenco do Sul", subEstacao: "Barrinha", nivelM: 0.55, variacaoM: -0.05, historico: [0.62, 0.61, 0.6, 0.59, 0.58, 0.56, 0.55], hora: "07:15", fonte: "Monitoramento" },
-  { id: "lagoa_patos_arambare", nome: "Arambare", subEstacao: "Centro", nivelM: 0.48, variacaoM: 0, historico: [0.47, 0.48, 0.48, 0.49, 0.48, 0.48, 0.48], hora: "07:35", fonte: "Monitoramento" },
-  { id: "lagoa_sao_jose_norte", nome: "Sao Jose do Norte", subEstacao: "Margem leste", nivelM: 0.37, variacaoM: -0.01, historico: [0.39, 0.39, 0.38, 0.38, 0.37, 0.37, 0.37], hora: "07:25", fonte: "Monitoramento" },
-];
+export const MOCK_LAGOA = [];
 
-function Sparkline({ values, color = "#3b82f6" }) {
-  const safeValues = values?.filter(Number.isFinite) || [];
-  if (safeValues.length < 2) return <span style={{ color: "var(--sr-text-muted)" }}>—</span>;
-  const width = 82;
+function Sparkline({ values, color = "#2563eb" }) {
+  const safeValues = Array.isArray(values) ? values.filter((value) => Number.isFinite(value)) : [];
+  if (safeValues.length < 2) return <span className="sr-lagoa-empty-note">sem historico suficiente</span>;
+
+  const width = 96;
   const height = 28;
   const min = Math.min(...safeValues);
   const max = Math.max(...safeValues);
   const range = max - min || 1;
-  const points = safeValues.map((value, index) => {
-    const x = (index / (safeValues.length - 1)) * width;
-    const y = height - ((value - min) / range) * height;
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  }).join(" ");
+  const points = safeValues
+    .map((value, index) => {
+      const x = (index / (safeValues.length - 1)) * width;
+      const y = height - ((value - min) / range) * height;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+
   return (
     <svg viewBox={`0 0 ${width} ${height}`} className="sr-mod-spark" aria-hidden="true">
       <polyline points={points} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -27,29 +24,52 @@ function Sparkline({ values, color = "#3b82f6" }) {
   );
 }
 
-function trendLabel(value) {
-  if (!Number.isFinite(value)) return "—";
+function formatMeters(value) {
+  return Number.isFinite(value) ? `${value.toFixed(2).replace(".", ",")} m` : "—";
+}
+
+function formatTrend(value) {
+  if (!Number.isFinite(value)) return "sem historico suficiente";
   if (Math.abs(value) < 0.005) return "estavel";
   return `${value > 0 ? "+" : ""}${(value * 100).toFixed(0)} cm`;
 }
 
 function trendClass(value) {
-  if (!Number.isFinite(value) || Math.abs(value) < 0.005) return "";
+  if (!Number.isFinite(value) || Math.abs(value) < 0.005) return "is-muted";
   return value > 0 ? "sr-var-up" : "sr-var-down";
 }
 
 function stationRank(row) {
   const level = Number(row?.nivelM);
-  const variation = Number(row?.variacaoM);
-  return (Number.isFinite(level) ? level : 0) + Math.max(0, Number.isFinite(variation) ? variation : 0);
+  const trend = Number(row?.variacaoM);
+  const historySize = Array.isArray(row?.historico) ? row.historico.length : 0;
+  const levelRank = Number.isFinite(level) ? level : 0;
+  const trendRank = Number.isFinite(trend) && trend > 0 ? trend : 0;
+  const historyRank = historySize >= 2 ? 0.25 : 0;
+  return levelRank + trendRank + historyRank;
 }
 
-export function LagoadosPatos({ className = "", data = MOCK_LAGOA, loading = false, error = null, onRetry, highlightStationId = "lagoa_patos_pelotas" }) {
+function isCritical(row) {
+  const level = Number(row?.nivelM);
+  return Number.isFinite(level) && level >= 0.8;
+}
+
+function pickHighlight(rows, highlightStationId) {
+  return (
+    rows.find((row) => row.id === highlightStationId) ||
+    rows.find((row) => row.id === "lagoa_patos_pelotas") ||
+    rows[0] ||
+    null
+  );
+}
+
+export function LagoadosPatos({ className = "", data = [], loading = false, error = null, onRetry, highlightStationId = "lagoa_patos_pelotas" }) {
   if (loading) {
     return (
       <section className={`sr-mod-card ${className}`}>
         <div className="sr-mod-skeleton h-5 w-1-3" />
-        <div className="sr-mod-skeleton h-36 w-full mt-4" />
+        <div className="sr-mod-skeleton h-12 w-full mt-3" />
+        <div className="sr-mod-skeleton h-40 w-full mt-4" />
       </section>
     );
   }
@@ -65,37 +85,100 @@ export function LagoadosPatos({ className = "", data = MOCK_LAGOA, loading = fal
     );
   }
 
-  const rows = Array.isArray(data) && data.length ? data : MOCK_LAGOA;
-  const highlight = rows.find((row) => row.id === highlightStationId) || rows[0];
-  const topRows = [...rows]
+  const rows = Array.isArray(data) ? data.filter(Boolean) : [];
+  if (!rows.length) {
+    return (
+      <section className={`sr-mod-card ${className}`}>
+        <header className="sr-mod-header">
+          <div className="sr-mod-title"><span>~</span> Lagoa dos Patos</div>
+          <span className="sr-source-pill is-muted">sem dados</span>
+        </header>
+        <div className="sr-lagoa-empty-state">
+          <strong>Sem leitura real disponivel.</strong>
+          <span>Aguarde a sincronizacao das estacoes monitoradas.</span>
+        </div>
+      </section>
+    );
+  }
+
+  const highlight = pickHighlight(rows, highlightStationId);
+  const highlightTrend = highlight?.historico?.length >= 2
+    ? highlight.historico[highlight.historico.length - 1] - highlight.historico[highlight.historico.length - 2]
+    : null;
+  const highlightHistory = Array.isArray(highlight?.historico) ? highlight.historico : [];
+  const currentCount = rows.filter((row) => Number.isFinite(row?.nivelM)).length;
+  const criticalRows = [...rows]
+    .sort((a, b) => stationRank(b) - stationRank(a))
+    .filter((row) => row.id !== highlight?.id && isCritical(row))
+    .slice(0, 3);
+  const fallbackRows = criticalRows.length ? criticalRows : [...rows]
     .filter((row) => row.id !== highlight?.id)
     .sort((a, b) => stationRank(b) - stationRank(a))
     .slice(0, 3);
-  const status = rows.some((row) => row.nivelM >= 1.2) ? "Alerta" : rows.some((row) => row.nivelM >= 0.8) ? "Atencao" : "Normal";
+  const status = rows.some((row) => Number(row?.nivelM) >= 1.2)
+    ? "Alerta"
+    : rows.some((row) => Number(row?.nivelM) >= 0.8)
+    ? "Atencao"
+    : "Normal";
 
   return (
     <section className={`sr-mod-card ${className}`}>
       <header className="sr-mod-header">
-        <div className="sr-mod-title"><span>≋</span> Lagoa dos Patos</div>
-        <span className="sr-source-pill">{status}</span>
+        <div>
+          <div className="sr-mod-title"><span>~</span> Lagoa dos Patos</div>
+          <div className="sr-mod-subtitle">Pelotas / Laranjal em destaque, sem mistura com dado falso.</div>
+        </div>
+        <span className={`sr-source-pill status-${status.toLowerCase()}`}>{status}</span>
       </header>
 
-      <div className="sr-panorama-block" style={{ marginBottom: 12 }}>
-        <span>{highlight.nome}</span>
-        <strong>{highlight.nivelM.toFixed(2).replace(".", ",")} m</strong>
-        <small>{highlight.subEstacao} • {highlight.fonte}</small>
-        <em className={trendClass(highlight.variacaoM)}>{trendLabel(highlight.variacaoM)}</em>
-        <Sparkline values={highlight.historico} />
+      <div className="sr-lagoa-feature">
+        <div className="sr-lagoa-feature-main">
+          <span className="sr-lagoa-feature-kicker">Leitura em destaque</span>
+          <strong>{highlight?.nome || "Pelotas / Laranjal"}</strong>
+          <div className="sr-lagoa-feature-value">{formatMeters(highlight?.nivelM)}</div>
+          <div className="sr-lagoa-feature-meta">
+            <span>{highlight?.subEstacao || highlight?.fonte || "Fonte real"}</span>
+            <span>{highlight?.hora ? `Atualizado ${highlight.hora}` : "Sem horario informado"}</span>
+          </div>
+        </div>
+        <div className="sr-lagoa-feature-side">
+          <span className="sr-lagoa-feature-kicker">Tendencia 24h</span>
+          <strong className={trendClass(highlightTrend)}>{formatTrend(highlightTrend)}</strong>
+          <Sparkline values={highlightHistory} />
+          <span className="sr-lagoa-feature-hint">
+            {highlightHistory.length >= 2 ? "Historico real de 7 dias" : "Sem historico suficiente"}
+          </span>
+        </div>
       </div>
 
-      <div className="sr-lagoa-table">
-        {topRows.map((row) => (
+      <div className="sr-lagoa-mini-grid">
+        <div className="sr-lagoa-mini-card">
+          <span>Estacoes com leitura</span>
+          <strong>{currentCount}/{rows.length}</strong>
+        </div>
+        <div className="sr-lagoa-mini-card">
+          <span>Maior nivel atual</span>
+          <strong>{formatMeters(Math.max(...rows.map((row) => Number(row?.nivelM)).filter(Number.isFinite)))}</strong>
+        </div>
+        <div className="sr-lagoa-mini-card">
+          <span>Historico valido</span>
+          <strong>{highlightHistory.length >= 2 ? "7 dias" : "Sem historico suficiente"}</strong>
+        </div>
+      </div>
+
+      <div className="sr-lagoa-table sr-lagoa-table-compact">
+        {fallbackRows.length ? fallbackRows.map((row) => (
           <div key={row.id} className="sr-lagoa-row sr-lagoa-row-compact">
-            <div><strong>{row.nome}</strong><span>{row.fonte}</span></div>
-            <strong>{row.nivelM.toFixed(2).replace(".", ",")} m</strong>
-            <span className={trendClass(row.variacaoM)}>{trendLabel(row.variacaoM)}</span>
+            <div>
+              <strong>{row.nome}</strong>
+              <span>{row.subEstacao || row.fonte || "Fonte real"}</span>
+            </div>
+            <strong>{formatMeters(row.nivelM)}</strong>
+            <span className={trendClass(row.variacaoM)}>{formatTrend(row.variacaoM)}</span>
           </div>
-        ))}
+        )) : (
+          <div className="sr-lagoa-empty-note">Sem estacoes criticas no momento.</div>
+        )}
       </div>
     </section>
   );

@@ -27,12 +27,13 @@ function toLagoaRows(STATIONS_LAGOA, stationData, getLagoaPointData, lagoaHistor
       subEstacao: point.rioRef || point.name,
       nivelM: lagoa.atual,
       variacaoM: typeof historyTrend === "number" ? historyTrend : null,
-      historico: historyValues.length >= 2 ? historyValues : [lagoa.atual, lagoa.atual, lagoa.atual, lagoa.atual, lagoa.atual, lagoa.atual, lagoa.atual],
+      historico: historyValues.length >= 2 ? historyValues : [],
+      temHistorico: historyValues.length >= 2,
       hora: lagoa.measuredAt ? new Date(lagoa.measuredAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "--:--",
       fonte: lagoa.source || "RADAR",
     };
   }).filter(Boolean);
-  return rows.length >= 4 ? rows.slice(0, 6) : MOCK_LAGOA;
+  return rows;
 }
 
 function buildRoadRows(roadBlocks) {
@@ -107,7 +108,7 @@ export function DashboardTab({ ctx }) {
         loading={loading && !stationData?.rs_rio_grande}
       />
 
-      <LagoadosPatos data={lagoaRows} loading={loading && lagoaRows === MOCK_LAGOA} />
+      <LagoadosPatos data={lagoaRows} loading={loading && lagoaRows.length === 0} />
 
       <div className="sr-dashboard-two-col">
         <PrevisaoRioGrande />
