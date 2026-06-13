@@ -23,7 +23,9 @@ function celsius(value) {
 }
 
 function currentPhase(nino34) {
-  if (typeof nino34 !== "number" || !Number.isFinite(nino34)) return { label: "Indisponivel", key: "neutral", description: "Sem leitura validada" };
+  if (typeof nino34 !== "number" || !Number.isFinite(nino34)) {
+    return { label: "Indisponivel", key: "neutral", description: "Sem leitura validada" };
+  }
   if (nino34 >= 0.5) return { label: "El Nino", key: "elNino", description: "Anomalia quente no Pacifico equatorial" };
   if (nino34 <= -0.5) return { label: "La Nina", key: "laNina", description: "Anomalia fria no Pacifico equatorial" };
   return { label: "Neutra", key: "neutral", description: "Sem anomalia significativa" };
@@ -96,54 +98,51 @@ function Gauge({ value, phase }) {
 }
 
 export function EnsoTab({ ctx }) {
-  const {
-    activeENSO,
-    formatDateTimeBR,
-    lastUpdate,
-    safeEnsoForecast,
-  } = ctx;
+  const { activeENSO, formatDateTimeBR, lastUpdate, safeEnsoForecast } = ctx;
 
   const forecast = safeEnsoForecast(activeENSO.forecast);
   const phase = currentPhase(activeENSO.nino34);
-  const firstForecast = forecast[0] || {};
   const fetchedAt = activeENSO.probabilityFetchedAt || activeENSO.observedFetchedAt || lastUpdate;
+  const observedReady = typeof activeENSO.nino34 === "number" && Number.isFinite(activeENSO.nino34);
+  const probReady = forecast.length > 0;
+  const topProb = forecast[0] || {};
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{ width: 64, height: 64, borderRadius: "50%", background: "linear-gradient(135deg,#dbeafe,#60a5fa)", display: "grid", placeItems: "center", color: "#1d4ed8" }}>
-            <NavIcon name="waves" size={34} />
+      <div className="sr-card-v2" style={{ display: "grid", gap: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ width: 64, height: 64, borderRadius: "50%", background: "linear-gradient(135deg,#dbeafe,#60a5fa)", display: "grid", placeItems: "center", color: "#1d4ed8" }}>
+              <NavIcon name="waves" size={34} />
+            </div>
+            <div>
+              <h1 style={{ margin: 0, fontSize: 34, color: "var(--sr-text)" }}>ENSO</h1>
+              <div style={{ color: "var(--sr-text-muted)", fontSize: 16 }}>El Niño-Oscilação Sul</div>
+            </div>
           </div>
-          <div>
-            <h1 style={{ margin: 0, fontSize: 34, color: "var(--sr-text)" }}>ENSO</h1>
-            <div style={{ color: "var(--sr-text-muted)", fontSize: 16 }}>El Nino-Oscilacao Sul</div>
+          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", color: "var(--sr-text-muted)", fontSize: 13 }}>
+              <NavIcon name="clock" size={16} />
+              <span>Última atualização:<br />{fetchedAt ? formatDateTimeBR(fetchedAt) : "--"}</span>
+            </div>
+            <div className="sr-btn-outline">Fonte: NOAA / CPC <NavIcon name="info" size={16} /></div>
           </div>
         </div>
-        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-          <div style={{ display: "flex", gap: 8, alignItems: "center", color: "var(--sr-text-muted)", fontSize: 13 }}>
-            <NavIcon name="clock" size={16} />
-            <span>Ultima atualizacao:<br />{fetchedAt ? formatDateTimeBR(fetchedAt) : "--"}</span>
-          </div>
-          <div className="sr-btn-outline">
-            Fonte: NOAA / CPC <NavIcon name="info" size={16} />
-          </div>
-        </div>
-      </div>
 
-      <div className="sr-card-v2" style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr 1fr 1fr", gap: 0, padding: 0, overflow: "hidden" }}>
-        {[
-          ["Situacao atual", phase.label.toUpperCase(), phase.description],
-          ["Indice Nino 3.4 (°C)", celsius(activeENSO.nino34), "NOAA/CPC observado"],
-          ["Tendencia (proximos 3 meses)", trendText(forecast), "IRI/CCSR probabilistico"],
-          ["Atualizacao dos dados", fetchedAt ? formatDateTimeBR(fetchedAt).split(",")[0] : "--", activeENSO.probabilityReferenceDate || "consulta atual"],
-        ].map(([label, value, sub], index) => (
-          <div key={label} style={{ padding: 22, borderLeft: index ? "1px solid var(--sr-border)" : "none" }}>
-            <div className="sr-kpi-label">{label}</div>
-            <div style={{ fontSize: index === 0 ? 26 : 24, fontWeight: 900, color: index === 0 ? phaseColors[phase.key] : "var(--sr-text)", marginTop: 8 }}>{value}</div>
-            <div className="sr-kpi-sublabel">{sub}</div>
-          </div>
-        ))}
+        <div className="sr-kpi-row" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+          {[
+            ["Situação atual", phase.label.toUpperCase(), phase.description],
+            ["Índice Niño 3.4 (°C)", celsius(activeENSO.nino34), observedReady ? "NOAA/CPC observado" : "Sem leitura validada"],
+            ["Tendência (3 meses)", trendText(forecast), probReady ? "IRI/CCSR probabilístico" : "Sem curva validada"],
+            ["Dados da probabilidade", fetchedAt ? formatDateTimeBR(fetchedAt).split(",")[0] : "--", activeENSO.probabilityReferenceDate || "consulta atual"],
+          ].map(([label, value, sub]) => (
+            <div key={label} className="sr-card-v2" style={{ margin: 0, padding: 18, borderRadius: 8 }}>
+              <div className="sr-kpi-label">{label}</div>
+              <div style={{ fontSize: 26, fontWeight: 900, color: label === "Situação atual" ? phaseColors[phase.key] : "var(--sr-text)", marginTop: 8 }}>{value}</div>
+              <div className="sr-kpi-sublabel">{sub}</div>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="sr-grid-2">
@@ -151,7 +150,7 @@ export function EnsoTab({ ctx }) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
             <div>
               <h3 className="sr-card-title">Probabilidade IRI/CCSR</h3>
-              <div style={{ color: "var(--sr-text-muted)", fontSize: 13 }}>Curva derivada do endpoint de previsao trimestral</div>
+              <div style={{ color: "var(--sr-text-muted)", fontSize: 13 }}>Curva derivada do endpoint de previsão trimestral</div>
             </div>
             <button type="button" className="sr-btn-outline">Ver tabela <NavIcon name="dashboard" size={14} /></button>
           </div>
@@ -160,7 +159,7 @@ export function EnsoTab({ ctx }) {
         </div>
 
         <div className="sr-card-v2">
-          <h3 className="sr-card-title">Indice Nino 3.4 (°C) - Atual</h3>
+          <h3 className="sr-card-title">Índice Niño 3.4 (°C) - Atual</h3>
           <Gauge value={activeENSO.nino34} phase={phase} />
         </div>
       </div>
@@ -172,9 +171,9 @@ export function EnsoTab({ ctx }) {
             <thead>
               <tr>
                 <th>Trimestre</th>
-                <th>El Nino</th>
+                <th>El Niño</th>
                 <th>Neutro</th>
-                <th>La Nina</th>
+                <th>La Niña</th>
               </tr>
             </thead>
             <tbody>
@@ -187,42 +186,42 @@ export function EnsoTab({ ctx }) {
                 </tr>
               ))}
               {!forecast.length && (
-                <tr><td colSpan="4">Sem previsao probabilistica validada no momento.</td></tr>
+                <tr><td colSpan="4">Sem previsão probabilística validada no momento.</td></tr>
               )}
             </tbody>
           </table>
         </div>
 
         <div className="sr-card-v2">
-          <h3 className="sr-card-title">Classificacao dos indices</h3>
+          <h3 className="sr-card-title">Classificação dos índices</h3>
           {[
-            ["El Nino", ">= +0.5 °C", phaseColors.elNino],
+            ["El Niño", ">= +0.5 °C", phaseColors.elNino],
             ["Neutro", "-0.5 °C a +0.5 °C", "#64748b"],
-            ["La Nina", "<= -0.5 °C", phaseColors.laNina],
+            ["La Niña", "<= -0.5 °C", phaseColors.laNina],
           ].map(([label, range, color]) => (
             <div key={label} style={{ padding: 14, borderRadius: 10, background: `${color}12`, color, fontWeight: 800, marginBottom: 10 }}>
               {label}<br /><span style={{ color: "var(--sr-text)", fontWeight: 700 }}>{range}</span>
             </div>
           ))}
-          <div style={{ fontSize: 12, color: "var(--sr-text-muted)" }}>Anomalia da TSM na regiao Nino 3.4.</div>
+          <div style={{ fontSize: 12, color: "var(--sr-text-muted)" }}>Anomalia da TSM na região Niño 3.4.</div>
         </div>
       </div>
 
       <div className="sr-grid-3">
         <div className="sr-card-v2">
-          <h3 className="sr-card-title">Regiao Nino 3.4</h3>
+          <h3 className="sr-card-title">Região Niño 3.4</h3>
           <div style={{ height: 180, borderRadius: 12, background: "linear-gradient(180deg,#bfdbfe,#eff6ff)", position: "relative", overflow: "hidden" }}>
-            <div style={{ position: "absolute", left: "24%", right: "18%", top: "45%", height: 34, border: "2px solid #ef4444", background: "rgba(239,68,68,0.08)", display: "grid", placeItems: "center", color: "#ef4444", fontWeight: 800 }}>Nino 3.4</div>
+            <div style={{ position: "absolute", left: "24%", right: "18%", top: "45%", height: 34, border: "2px solid #ef4444", background: "rgba(239,68,68,0.08)", display: "grid", placeItems: "center", color: "#ef4444", fontWeight: 800 }}>Niño 3.4</div>
           </div>
-          <p style={{ color: "var(--sr-text-muted)", fontSize: 13 }}>Area monitorada no Pacifico Equatorial: 5°N-5°S, 170°W-120°W.</p>
+          <p style={{ color: "var(--sr-text-muted)", fontSize: 13 }}>Área monitorada no Pacífico Equatorial: 5°N-5°S, 170°W-120°W.</p>
         </div>
 
         <div className="sr-card-v2">
-          <h3 className="sr-card-title">Impactos historicos no RS</h3>
+          <h3 className="sr-card-title">Impactos históricos no RS</h3>
           {[
-            ["La Nina", "Maior chance de chuva abaixo da media no RS", phaseColors.laNina],
-            ["Neutro", "Comportamento mais proximo da normalidade", "#64748b"],
-            ["El Nino", "Maior chance de chuva acima da media no RS", phaseColors.elNino],
+            ["La Niña", "Maior chance de chuvas abaixo da média no RS", phaseColors.laNina],
+            ["Neutro", "Comportamento mais próximo da normalidade", "#64748b"],
+            ["El Niño", "Maior chance de chuvas acima da média no RS", phaseColors.elNino],
           ].map(([label, text, color]) => (
             <div key={label} style={{ display: "flex", gap: 12, padding: "10px 0", borderBottom: "1px solid var(--sr-border)" }}>
               <span className="sr-status-dot" style={{ background: color, marginTop: 6 }} />
@@ -232,7 +231,7 @@ export function EnsoTab({ ctx }) {
         </div>
 
         <div className="sr-card-v2">
-          <h3 className="sr-card-title">Ultimos eventos</h3>
+          <h3 className="sr-card-title">Últimos eventos</h3>
           {historicalEvents.map((item) => (
             <div key={`${item.event}-${item.period}`} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: "1px solid var(--sr-border)" }}>
               <span><span className="sr-status-dot" style={{ background: item.color }} /> {item.event}</span>
@@ -245,9 +244,10 @@ export function EnsoTab({ ctx }) {
       <div className="sr-info-banner">
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <NavIcon name="info" size={20} />
-          <span>ENSO e um fenomeno natural do Pacifico Equatorial. No Sentinela-RS ele e contexto climatico, nao alerta local.</span>
+          <span>ENSO é um fenômeno natural do Pacífico Equatorial. No Sentinela-RS ele é contexto climático, não alerta local.</span>
         </div>
       </div>
     </div>
   );
 }
+

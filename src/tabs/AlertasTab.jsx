@@ -14,80 +14,37 @@ export function AlertasTab({ ctx }) {
     return order.indexOf(a.risk_level) - order.indexOf(b.risk_level);
   });
 
-  const smallCard = {
-    padding: "9px 10px",
-    background: dark ? "rgba(0,0,0,0.22)" : "rgba(255,255,255,0.55)",
-    border: `1px solid ${t.border}`,
-    borderRadius: 5,
-  };
-
   const topOfficialAlert = orderedAlerts[0] || null;
   const topLevel = topOfficialAlert?.risk_level || "NORMAL";
   const topRisk = RISK_LEVELS[topLevel] || RISK_LEVELS.NORMAL;
   const topColor = topOfficialAlert ? getRiskColor(topLevel) : "#22c55e";
 
-  const officialAlertsPanel = orderedAlerts.length > 0 ? (
-    <div style={{ display: "grid", gap: 10 }}>
-      {orderedAlerts.map((alert, i) => {
-        const level = alert.risk_level || "ALERTA";
-        const risk = RISK_LEVELS[level] || RISK_LEVELS.ALERTA;
-        const riskColor = getRiskColor(level);
-        const riskBg = getRiskBg(level);
-        const when = alert.at ? formatDateTimeBR(alert.at) : "sem horário";
-
-        return (
-          <div
-            key={alert.id || `${alert.station || "defesa-civil"}-${i}`}
-            style={{
-              padding: "13px 15px",
-              background: riskBg,
-              border: `1px solid ${riskColor}55`,
-              borderLeft: `4px solid ${riskColor}`,
-              borderRadius: 6,
-            }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 7 }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: riskColor }}>
-                {risk.icon} {risk.label.toUpperCase()} - Defesa Civil RS
-              </div>
-              <div style={{ fontSize: 10, color: t.textMuted, whiteSpace: "nowrap" }}>{when}</div>
-            </div>
-            <div style={{ fontSize: 12, color: t.textMuted, lineHeight: 1.55 }}>{alert.message}</div>
-            {(alert.url || alert.link) && (
-              <a
-                href={alert.url || alert.link}
-                target="_blank"
-                rel="noreferrer"
-                style={{ display: "inline-block", marginTop: 9, fontSize: 11, color: t.accent }}
-              >
-                Ver aviso oficial
-              </a>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  ) : null;
+  const smallCard = {
+    padding: "10px 12px",
+    background: dark ? "rgba(0,0,0,0.22)" : "rgba(255,255,255,0.6)",
+    border: `1px solid ${t.border}`,
+    borderRadius: 8,
+  };
 
   return (
     <div style={{ display: "grid", gap: 12 }}>
       <div
         style={{
-          padding: "14px 15px",
+          padding: "16px",
           background: topOfficialAlert ? (dark ? "rgba(239,68,68,0.09)" : "rgba(239,68,68,0.05)") : (dark ? "rgba(34,197,94,0.07)" : "rgba(34,197,94,0.05)"),
           border: `1px solid ${topColor}55`,
           borderLeft: `4px solid ${topColor}`,
-          borderRadius: 6,
+          borderRadius: 8,
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
           <div style={{ flex: "1 1 280px", minWidth: 220 }}>
             <div className="sr-section-eyebrow">PRIORIDADE OPERACIONAL</div>
-            <div style={{ fontSize: 16, fontWeight: 900, color: topColor, marginTop: 4 }}>
+            <div style={{ fontSize: 18, fontWeight: 900, color: topColor, marginTop: 6 }}>
               {topOfficialAlert ? `${topRisk.icon} ${topRisk.label.toUpperCase()} - Defesa Civil RS` : "Sem aviso oficial ativo no RSS"}
             </div>
-            <div style={{ fontSize: 11, color: t.textMuted, lineHeight: 1.55, marginTop: 7 }}>
-              {topOfficialAlert ? topOfficialAlert.message : "Continue acompanhando os canais oficiais. Em situacao de risco, ligue para os numeros abaixo."}
+            <div style={{ fontSize: 12, color: t.textMuted, lineHeight: 1.6, marginTop: 8 }}>
+              {topOfficialAlert ? topOfficialAlert.message : "Continue acompanhando os canais oficiais. Em situação de risco, ligue para os números abaixo."}
             </div>
             <div className="sr-source-badges" aria-label="Fontes dos avisos oficiais">
               <span className="sr-source-badge is-official">Defesa Civil RS</span>
@@ -102,14 +59,55 @@ export function AlertasTab({ ctx }) {
         </div>
       </div>
 
-      {officialAlertsPanel}
+      {orderedAlerts.length > 0 && (
+        <div style={{ display: "grid", gap: 10 }}>
+          {orderedAlerts.map((alert, i) => {
+            const level = alert.risk_level || "ALERTA";
+            const risk = RISK_LEVELS[level] || RISK_LEVELS.ALERTA;
+            const riskColor = getRiskColor(level);
+            const riskBg = getRiskBg(level);
+            const when = alert.at ? formatDateTimeBR(alert.at) : "sem horário";
+
+            return (
+              <div
+                key={alert.id || `${alert.station || "defesa-civil"}-${i}`}
+                style={{
+                  padding: "13px 15px",
+                  background: riskBg,
+                  border: `1px solid ${riskColor}55`,
+                  borderLeft: `4px solid ${riskColor}`,
+                  borderRadius: 8,
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 7 }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: riskColor }}>
+                    {risk.icon} {risk.label.toUpperCase()} - Defesa Civil RS
+                  </div>
+                  <div style={{ fontSize: 10, color: t.textMuted, whiteSpace: "nowrap" }}>{when}</div>
+                </div>
+                <div style={{ fontSize: 12, color: t.textMuted, lineHeight: 1.55 }}>{alert.message}</div>
+                {(alert.url || alert.link) && (
+                  <a
+                    href={alert.url || alert.link}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ display: "inline-block", marginTop: 9, fontSize: 11, color: t.accent }}
+                  >
+                    Ver aviso oficial
+                  </a>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <div
         style={{
-          padding: "13px 15px",
+          padding: "14px 16px",
           background: dark ? "rgba(14,165,233,0.08)" : "rgba(14,165,233,0.06)",
           border: "1px solid rgba(14,165,233,0.32)",
-          borderRadius: 6,
+          borderRadius: 8,
           color: dark ? "#bae6fd" : "#075985",
           lineHeight: 1.6,
         }}
@@ -149,7 +147,7 @@ export function AlertasTab({ ctx }) {
           padding: "13px 15px",
           background: dark ? "rgba(234,179,8,0.07)" : "rgba(234,179,8,0.05)",
           border: "1px solid rgba(234,179,8,0.28)",
-          borderRadius: 6,
+          borderRadius: 8,
           color: dark ? "#fef08a" : "#854d0e",
           fontSize: 11,
           lineHeight: 1.7,
@@ -167,7 +165,7 @@ export function AlertasTab({ ctx }) {
           padding: "13px 15px",
           background: dark ? "rgba(255,255,255,0.025)" : "rgba(0,0,0,0.02)",
           border: `1px solid ${t.border}`,
-          borderRadius: 6,
+          borderRadius: 8,
         }}
       >
         <div style={{ fontSize: 10, letterSpacing: 2, marginBottom: 8, color: t.textMuted }}>DICAS OFICIAIS DE PREVENÇÃO</div>
@@ -188,3 +186,4 @@ export function AlertasTab({ ctx }) {
     </div>
   );
 }
+
