@@ -69,6 +69,7 @@ export function DashboardTab({ ctx }) {
     getLagoaPointData,
     lagoaHistory,
     loading,
+    copernicusNdvi,
     queimadas,
     riverLevels,
     roadBlocks,
@@ -87,8 +88,18 @@ export function DashboardTab({ ctx }) {
   const firstForecast = ensoForecast[0] || {};
   const queimadasData = {
     focos24h: queimadas?.foci?.length ?? queimadas?.count ?? 0,
-    ndviMedio: 0.64,
-    historico7dias: [0.58, 0.6, 0.57, 0.63, 0.61, 0.66, 0.64],
+    ndvi_mean: copernicusNdvi?.ndvi_mean,
+    ndviMedio: copernicusNdvi?.ndvi_mean,
+    historico7dias: Array.isArray(copernicusNdvi?.history_ndvi) ? copernicusNdvi.history_ndvi : [],
+    vegetation_percent: copernicusNdvi?.vegetation_percent,
+    low_vegetation_percent: copernicusNdvi?.low_vegetation_percent,
+    valid_coverage_percent: copernicusNdvi?.valid_coverage_percent,
+    period: copernicusNdvi?.period,
+    source: copernicusNdvi?.source,
+    method: copernicusNdvi?.method,
+    limitation: copernicusNdvi?.limitation,
+    status: copernicusNdvi?.ok ? "ativo" : "sem leitura",
+    aoi: copernicusNdvi?.aoi,
   };
 
   return (

@@ -26,6 +26,7 @@ import {
   fetchInmetForecast,
   fetchIriEnsoProbabilities,
   fetchLagoaRadarLevels,
+  fetchMarineWeather,
   fetchNoaaEnso,
   fetchQueimadas,
   fetchRoadBlocksRs,
@@ -497,6 +498,7 @@ export default function SentinelaRS() {
   const [copernicusS1, setCopernicusS1] = useState(null);
   const [copernicusNdvi, setCopernicusNdvi] = useState(null);
   const [copernicusEms, setCopernicusEms] = useState(null);
+  const [marineWeather, setMarineWeather] = useState(null);
   const [expandedCard, setExpandedCard] = useState(null); // para detalhe do card
   const [riskExplain, setRiskExplain] = useState(null);
   const [ensoNoticias, setEnsoNoticias] = useState(null);
@@ -741,6 +743,7 @@ export default function SentinelaRS() {
         const tempCurrent = typeof weather.current?.temperature_2m === "number" ? weather.current.temperature_2m : null;
         const precipCurrent = typeof weather.current?.precipitation === "number" ? weather.current.precipitation : null;
         const windCurrent = typeof weather.current?.wind_speed_10m === "number" ? weather.current.wind_speed_10m : null;
+        const windCurrentDirection = typeof weather.current?.wind_direction_10m === "number" ? weather.current.wind_direction_10m : null;
         const weatherCurrentCode = typeof weather.current?.weather_code === "number" ? weather.current.weather_code : null;
         const windMax = windMaxValues.length ? Math.max(...windMaxValues) : 0;
 
@@ -776,7 +779,7 @@ export default function SentinelaRS() {
         const order = ["NORMAL", "ATENCAO", "ALERTA", "EMERGENCIA", "CRITICO"];
         const calculatedRisk = order.indexOf(levelRisk) > order.indexOf(baseRisk) ? levelRisk : baseRisk;
         const risk = st.type === "cidade" && hasMonitoringSignal({ precip, tempMin, windMax, dailyPrecip: precipValues }) ? "MONITORAR" : calculatedRisk;
-        results[st.id] = { weather, inmet, lagoa, precip, observedPrecip24h, tempMin, tempCurrent, precipCurrent, windCurrent, weatherCurrentCode, windMax, risk, radarLevel };
+        results[st.id] = { weather, inmet, lagoa, precip, observedPrecip24h, tempMin, tempCurrent, precipCurrent, windCurrent, windCurrentDirection, weatherCurrentCode, windMax, risk, radarLevel };
       } catch { results[st.id] = { error: true, risk: "NORMAL" }; }
     });
     const floodVulnerabilityStart = Date.now();
@@ -911,6 +914,29 @@ export default function SentinelaRS() {
 
     loadCptecProducts();
     const iv = setInterval(loadCptecProducts, 6 * 60 * 60 * 1000);
+
+    return () => {
+      alive = false;
+      clearInterval(iv);
+    };
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+
+    async function loadMarineWeather() {
+      try {
+        const data = await fetchMarineWeather(-32.03, -52.09);
+        if (!alive) return;
+        setMarineWeather(data);
+      } catch {
+        if (!alive) return;
+        setMarineWeather(null);
+      }
+    }
+
+    loadMarineWeather();
+    const iv = setInterval(loadMarineWeather, 6 * 60 * 60 * 1000);
 
     return () => {
       alive = false;
@@ -1190,8 +1216,9 @@ export default function SentinelaRS() {
     formatDateTimeBR, formatProbability, formatSignedCelsius, getFallbackWarningText, getLagoaMaxMay2024, getLagoaMeasuredAt, getLagoaPointData, getLagoaSourceText,
     getResponsibleAgencyText, getRiskBg, getRiskColor, getRiskLevel, getValidatedSourceHealth, lagoaHistory, lagoaHistoryMeta, lagoaStatusColor, lagoaStatusLabel, lagoaSummary, lastUpdate,
     ensoNoticias, ensoNoticiasLoading, icmbioUcs, inpeFireEvents, loadAllData, loadEnsoNoticias, loadQueimadas, percentValue, qLoading, queimadas, riverLevels, roadBlocks, s, safeEnsoForecast, selData, selStation, setActiveTab, setExpanded, setExpandedCard, setRiskExplain, setSelStation, sourceHealth, stationData, t, wmoDesc, wmoEmoji,
+    marineWeather,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [stationData, alerts, dark, activeTab, selStation, selData, loading, lastUpdate, sourceHealth, lagoaHistory, lagoaHistoryMeta, expanded, expandedCard, riskExplain, queimadas, inpeFireEvents, censipamFireEvents, qLoading, copernicusWater, copernicusS1, copernicusNdvi, copernicusEms, cptecProducts, effisHealth, icmbioUcs, activeENSO, ensoNoticias, ensoNoticiasLoading, riverLevels, roadBlocks]);
+  }), [stationData, alerts, dark, activeTab, selStation, selData, loading, lastUpdate, sourceHealth, lagoaHistory, lagoaHistoryMeta, expanded, expandedCard, riskExplain, queimadas, inpeFireEvents, censipamFireEvents, qLoading, copernicusWater, copernicusS1, copernicusNdvi, copernicusEms, cptecProducts, effisHealth, icmbioUcs, activeENSO, ensoNoticias, ensoNoticiasLoading, riverLevels, roadBlocks, marineWeather]);
 
   const renderNavButton = (tab, compact = false) => {
     const labelText = tab.label;

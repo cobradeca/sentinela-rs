@@ -38,6 +38,7 @@ export function PrevisaoTab({ ctx }) {
   const avgMin = tempMinValues.length ? tempMinValues.reduce((a, b) => a + b, 0) / tempMinValues.length : null;
   const totalPrecip = precipValues.reduce((a, b) => a + b, 0);
   const avgWind = windValues.length ? windValues.reduce((a, b) => a + b, 0) / windValues.length : null;
+  const windCurrentDirection = selData?.windCurrentDirection;
 
   const maxPrecip = Math.max(...precipValues, 1);
 
@@ -178,6 +179,7 @@ export function PrevisaoTab({ ctx }) {
                 { l: "Precipitação", v: `${selData.precip?.toFixed(0)} mm`, alert: selData.precip > 50 },
                 { l: "Temp. mínima", v: `${selData.tempMin?.toFixed(1)}°C`, alert: selData.tempMin < 5 },
                 { l: "Vento máx.", v: `${selData.windMax?.toFixed(0)} km/h`, alert: selData.windMax > 40 },
+                { l: "Direção atual", v: windCurrentDirection != null ? `${windCurrentDirection.toFixed(0)}°` : "Indisponível", alert: false },
                 {
                   l: "Contexto ENSO",
                   v: ensoObservedAvailable

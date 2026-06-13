@@ -66,6 +66,7 @@ export function LagoaDosPatosTab({ ctx }) {
     getLagoaSourceText,
     lagoaHistory,
     lagoaStatusColor,
+    marineWeather,
     selData,
     setActiveTab,
     stationData,
@@ -103,6 +104,14 @@ export function LagoaDosPatosTab({ ctx }) {
       : "Normal";
 
   const poaWeather = selData?.weather?.current;
+  const marineCurrent = marineWeather?.current || null;
+  const seaTemperature = typeof marineCurrent?.sea_surface_temperature === "number" ? marineCurrent.sea_surface_temperature : null;
+  const marineDirection = typeof marineCurrent?.wave_direction === "number"
+    ? marineCurrent.wave_direction
+    : typeof poaWeather?.wind_direction_10m === "number"
+      ? poaWeather.wind_direction_10m
+      : null;
+  const marineWindSpeed = typeof poaWeather?.wind_speed_10m === "number" ? poaWeather.wind_speed_10m : null;
 
   return (
     <div style={{ display: "grid", gap: 14 }}>
@@ -284,9 +293,9 @@ export function LagoaDosPatosTab({ ctx }) {
       <details className="sr-card-v2">
         <summary className="sr-card-title" style={{ cursor: "pointer" }}>Condicoes atuais</summary>
         {[
-          { label: "Temperatura da agua", value: "19,4 C" },
-          { label: "Vento medio", value: poaWeather?.wind_speed_10m != null ? `${poaWeather.wind_speed_10m.toFixed(0)} km/h` : "—" },
-          { label: "Direcao do vento", value: "NE (45 deg)" },
+          { label: "Temperatura da agua", value: seaTemperature != null ? `${seaTemperature.toFixed(1)} °C` : "sem leitura" },
+          { label: "Vento medio", value: marineWindSpeed != null ? `${marineWindSpeed.toFixed(0)} km/h` : "—" },
+          { label: "Direcao do vento", value: marineDirection != null ? `${marineDirection.toFixed(0)}°` : "—" },
           { label: "Pressao atmosferica", value: poaWeather?.surface_pressure != null ? `${poaWeather.surface_pressure.toFixed(0)} hPa` : "—" },
         ].map((item) => (
           <div key={item.label} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid var(--sr-border)", fontSize: 13 }}>
