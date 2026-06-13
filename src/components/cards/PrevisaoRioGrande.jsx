@@ -75,8 +75,11 @@ export function PrevisaoRioGrande({ className = "" }) {
             <span>{dateLabel(day.date)}</span>
             <div className="sr-weather-svg"><WeatherIcon code={day.code} /></div>
             <b>{Number(day.rain || 0).toFixed(0)} mm</b>
-            <small>↗ {Number(day.wind || 0).toFixed(0)} km/h</small>
-            <div><span>{Number(day.min || 0).toFixed(0)}°</span> <span>{Number(day.max || 0).toFixed(0)}°</span></div>
+            <small><span className="sr-forecast-label">vel</span> ↗ {Number(day.wind || 0).toFixed(0)} km/h</small>
+            <div>
+              <span><span className="sr-forecast-label">mín</span> {Number(day.min || 0).toFixed(0)}°</span>
+              <span><span className="sr-forecast-label">máx</span> {Number(day.max || 0).toFixed(0)}°</span>
+            </div>
           </div>
         ))}
       </div>

@@ -28,11 +28,11 @@ function arcPath(startAngle, endAngle, r = 86) {
 }
 
 function phaseFromOni(oni) {
-  if (oni <= -1.5) return "La Nina Forte";
-  if (oni <= -0.5) return "La Nina";
+  if (oni <= -1.5) return "Super La Niña";
+  if (oni <= -0.5) return "La Niña";
   if (oni < 0.5) return "Neutro";
-  if (oni < 1.5) return "El Nino";
-  return "El Nino Forte";
+  if (oni < 1.5) return "El Niño";
+  return "Super El Niño";
 }
 
 export function ENSOCard({ className = "", data = MOCK_ENSO, loading = false, error = null, onRetry }) {
@@ -68,13 +68,16 @@ export function ENSOCard({ className = "", data = MOCK_ENSO, loading = false, er
 
       <div className="sr-enso-gauge-wrap">
         <svg viewBox="0 0 220 132" className="sr-enso-gauge" aria-label={`Condição ENSO ${condicao}`}>
-          <path d={arcPath(0, 36)} stroke="#1d4ed8" />
+          <path d={arcPath(0, 36)} stroke="#1e3a8a" />
           <path d={arcPath(36, 72)} stroke="#60a5fa" />
           <path d={arcPath(72, 108)} stroke="#94a3b8" />
           <path d={arcPath(108, 144)} stroke="#fb923c" />
-          <path d={arcPath(144, 180)} stroke="#dc2626" />
-          <text x="34" y="116" className="sr-enso-label">La Niña</text>
-          <text x="164" y="116" className="sr-enso-label">El Niño</text>
+          <path d={arcPath(144, 180)} stroke="#7f1d1d" />
+          <text x="14" y="116" className="sr-enso-label">Super La Niña</text>
+          <text x="60" y="100" className="sr-enso-label">La Niña</text>
+          <text x="110" y="76" className="sr-enso-label">Neutro</text>
+          <text x="158" y="100" className="sr-enso-label">El Niño</text>
+          <text x="206" y="116" className="sr-enso-label" textAnchor="end">Super El Niño</text>
           <g className="sr-enso-needle" style={{ transform: `rotate(${angle - 90}deg)` }}>
             <line x1="110" y1="110" x2="110" y2="42" />
           </g>

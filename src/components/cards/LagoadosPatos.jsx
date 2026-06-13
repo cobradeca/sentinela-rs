@@ -1,17 +1,14 @@
 export const MOCK_LAGOA = [];
 
 function Sparkline({ values, color = "#2563eb" }) {
-  const safeValues = Array.isArray(values) ? values.filter(Number.isFinite) : [];
-  if (safeValues.length < 2) return <span className="sr-lagoa-empty-note">sem historico suficiente</span>;
-
   const width = 96;
   const height = 28;
-  const min = Math.min(...safeValues);
-  const max = Math.max(...safeValues);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
   const range = max - min || 1;
-  const points = safeValues
+  const points = values
     .map((value, index) => {
-      const x = (index / (safeValues.length - 1)) * width;
+      const x = (index / (values.length - 1)) * width;
       const y = height - ((value - min) / range) * height;
       return `${x.toFixed(1)},${y.toFixed(1)}`;
     })
@@ -94,10 +91,9 @@ export function LagoadosPatos({ className = "", data = [], loading = false, erro
 
       <div className="sr-lagoa-table">
         {rows.map((row) => {
-          const history = Array.isArray(row?.historico) ? row.historico : [];
-          const trend = history.length >= 2
-            ? history[history.length - 1] - history[history.length - 2]
-            : null;
+          const history = Array.isArray(row?.historico) ? row.historico.filter(Number.isFinite) : [];
+          const hasHistory = history.length >= 2;
+          const trend = hasHistory ? history[history.length - 1] - history[history.length - 2] : null;
           const trendLabel = formatTrend(trend);
           return (
             <div key={row.id} className="sr-lagoa-row">
@@ -106,8 +102,14 @@ export function LagoadosPatos({ className = "", data = [], loading = false, erro
                 <span>{row.subEstacao || row.fonte || "Fonte real"}</span>
               </div>
               <strong>{formatMeters(row.nivelM)}</strong>
-              <span className={trendClass(trend)}>{trendLabel || "sem historico suficiente"}</span>
-              <Sparkline values={history} />
+              {hasHistory ? (
+                <>
+                  <span className={trendClass(trend)}>{trendLabel}</span>
+                  <Sparkline values={history} />
+                </>
+              ) : (
+                <span className="sr-lagoa-empty-note" style={{ gridColumn: "3 / span 2" }}>sem historico suficiente</span>
+              )}
             </div>
           );
         })}
