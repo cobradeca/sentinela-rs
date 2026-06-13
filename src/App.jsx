@@ -1246,14 +1246,14 @@ export default function SentinelaRS() {
     }
   };
 
-  const weatherWidget = activeTab === "dashboard" && poaData ? (
-      <div className="sr-weather-widget">
+  const weatherWidget = false && activeTab === "dashboard" && poaData ? (
+    <div className="sr-weather-widget">
       <span style={{ fontSize: 22 }}>{wmoEmoji(poaData.weatherCurrentCode ?? 0)}</span>
       <div>
         <div className="sr-weather-temp">
-          {typeof poaData.tempCurrent === "number" ? `${poaData.tempCurrent.toFixed(1)} °C` : "—"}
+          {typeof poaData.tempCurrent === "number" ? `${poaData.tempCurrent.toFixed(0)}°C` : "—"}
         </div>
-        <div style={{ fontSize: 11, color: "var(--sr-text-muted)" }}>Porto Alegre, RS</div>
+        <div style={{ fontSize: 11, color: "var(--sr-text-muted)" }}>Porto Alegre</div>
       </div>
     </div>
   ) : null;

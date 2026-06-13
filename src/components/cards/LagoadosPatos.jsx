@@ -1,7 +1,7 @@
 export const MOCK_LAGOA = [];
 
 function Sparkline({ values, color = "#2563eb" }) {
-  const safeValues = Array.isArray(values) ? values.filter((value) => Number.isFinite(value)) : [];
+  const safeValues = Array.isArray(values) ? values.filter(Number.isFinite) : [];
   if (safeValues.length < 2) return <span className="sr-lagoa-empty-note">sem historico suficiente</span>;
 
   const width = 96;
@@ -29,7 +29,7 @@ function formatMeters(value) {
 }
 
 function formatTrend(value) {
-  if (!Number.isFinite(value)) return "sem historico suficiente";
+  if (!Number.isFinite(value)) return null;
   if (Math.abs(value) < 0.005) return "estavel";
   return `${value > 0 ? "+" : ""}${(value * 100).toFixed(0)} cm`;
 }
@@ -39,28 +39,14 @@ function trendClass(value) {
   return value > 0 ? "sr-var-up" : "sr-var-down";
 }
 
-function stationRank(row) {
-  const level = Number(row?.nivelM);
-  const trend = Number(row?.variacaoM);
-  const historySize = Array.isArray(row?.historico) ? row.historico.length : 0;
-  const levelRank = Number.isFinite(level) ? level : 0;
-  const trendRank = Number.isFinite(trend) && trend > 0 ? trend : 0;
-  const historyRank = historySize >= 2 ? 0.25 : 0;
-  return levelRank + trendRank + historyRank;
-}
-
-function isCritical(row) {
-  const level = Number(row?.nivelM);
-  return Number.isFinite(level) && level >= 0.8;
-}
-
 export function LagoadosPatos({ className = "", data = [], loading = false, error = null, onRetry }) {
   if (loading) {
     return (
       <section className={`sr-mod-card ${className}`}>
         <div className="sr-mod-skeleton h-5 w-1-3" />
         <div className="sr-mod-skeleton h-12 w-full mt-3" />
-        <div className="sr-mod-skeleton h-40 w-full mt-4" />
+        <div className="sr-mod-skeleton h-12 w-full mt-2" />
+        <div className="sr-mod-skeleton h-12 w-full mt-2" />
       </section>
     );
   }
@@ -77,81 +63,54 @@ export function LagoadosPatos({ className = "", data = [], loading = false, erro
   }
 
   const rows = Array.isArray(data) ? data.filter(Boolean) : [];
+
   if (!rows.length) {
     return (
       <section className={`sr-mod-card ${className}`}>
         <header className="sr-mod-header">
-          <div>
-            <div className="sr-mod-title"><span>~</span> Lagoa dos Patos</div>
-            <div className="sr-mod-subtitle">Sem leitura real disponivel.</div>
-          </div>
+          <div className="sr-mod-title"><span>~</span> Lagoa dos Patos</div>
           <span className="sr-source-pill is-muted">sem dados</span>
         </header>
         <div className="sr-lagoa-empty-state">
-          <strong>Aguarde a sincronizacao das estacoes monitoradas.</strong>
-          <span>O painel nao inventa niveis, tendencias ou historicos.</span>
+          <strong>Sem leitura real disponivel.</strong>
+          <span>Aguarde a sincronizacao das estacoes monitoradas.</span>
         </div>
       </section>
     );
   }
 
-  const currentCount = rows.filter((row) => Number.isFinite(row?.nivelM)).length;
-  const visibleRows = [...rows].sort((a, b) => stationRank(b) - stationRank(a));
-  const maxLevel = rows.map((row) => Number(row?.nivelM)).filter(Number.isFinite);
   const status = rows.some((row) => Number(row?.nivelM) >= 1.2)
     ? "Alerta"
     : rows.some((row) => Number(row?.nivelM) >= 0.8)
-      ? "Atencao"
-      : "Normal";
+    ? "Atencao"
+    : "Normal";
 
   return (
     <section className={`sr-mod-card ${className}`}>
       <header className="sr-mod-header">
-        <div>
-          <div className="sr-mod-title"><span>~</span> Lagoa dos Patos</div>
-          <div className="sr-mod-subtitle">Seis estacoes empilhadas com leitura atual, tendencia real e historico valido.</div>
-        </div>
+        <div className="sr-mod-title"><span>~</span> Lagoa dos Patos</div>
         <span className={`sr-source-pill status-${status.toLowerCase()}`}>{status}</span>
       </header>
 
-      <div className="sr-lagoa-mini-grid">
-        <div className="sr-lagoa-mini-card">
-          <span>Estacoes com leitura</span>
-          <strong>{currentCount}/{rows.length}</strong>
-        </div>
-        <div className="sr-lagoa-mini-card">
-          <span>Maior nivel atual</span>
-          <strong>{maxLevel.length ? formatMeters(Math.max(...maxLevel)) : "—"}</strong>
-        </div>
-        <div className="sr-lagoa-mini-card">
-          <span>Historico valido</span>
-          <strong>{rows.some((row) => Array.isArray(row?.historico) && row.historico.length >= 2) ? "7 dias" : "Sem historico suficiente"}</strong>
-        </div>
-      </div>
-
-      <div className="sr-lagoa-table sr-lagoa-table-compact">
-        {visibleRows.map((row) => {
+      <div className="sr-lagoa-table">
+        {rows.map((row) => {
           const history = Array.isArray(row?.historico) ? row.historico : [];
-          const trend = Number.isFinite(row?.variacaoM)
-            ? row.variacaoM
-            : history.length >= 2
-              ? history[history.length - 1] - history[history.length - 2]
-              : null;
+          const trend = history.length >= 2
+            ? history[history.length - 1] - history[history.length - 2]
+            : null;
+          const trendLabel = formatTrend(trend);
           return (
-            <div key={row.id} className="sr-lagoa-row sr-lagoa-row-compact">
+            <div key={row.id} className="sr-lagoa-row">
               <div>
                 <strong>{row.nome}</strong>
                 <span>{row.subEstacao || row.fonte || "Fonte real"}</span>
               </div>
               <strong>{formatMeters(row.nivelM)}</strong>
-              <span className={trendClass(trend)}>{formatTrend(trend)}</span>
-              <span className="sr-lagoa-spark-cell">
-                <Sparkline values={history} />
-              </span>
+              <span className={trendClass(trend)}>{trendLabel || "sem historico suficiente"}</span>
+              <Sparkline values={history} />
             </div>
           );
         })}
-        {!visibleRows.length && <div className="sr-lagoa-empty-note">Sem estacoes criticas no momento.</div>}
       </div>
     </section>
   );

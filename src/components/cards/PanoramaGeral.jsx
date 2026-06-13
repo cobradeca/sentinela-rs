@@ -25,10 +25,6 @@ const statusColor = {
   alerta: "#f87171",
 };
 
-function formatRoadText(road) {
-  return `${road.br}: ${road.status}`;
-}
-
 export function PanoramaGeral({
   className = "",
   lagoa = MOCK_LAGOA,
@@ -39,8 +35,8 @@ export function PanoramaGeral({
   error = null,
   onRetry,
 }) {
-  const nivelMedio = lagoa.length ? lagoa.reduce((sum, item) => sum + item.nivelM, 0) / lagoa.length : 0;
-  const variacaoMedia = lagoa.length ? lagoa.reduce((sum, item) => sum + item.variacaoM, 0) / lagoa.length : 0;
+  const nivelMedio = lagoa.reduce((sum, item) => sum + item.nivelM, 0) / lagoa.length;
+  const variacaoMedia = lagoa.reduce((sum, item) => sum + item.variacaoM, 0) / lagoa.length;
 
   if (loading) {
     return (
@@ -71,9 +67,9 @@ export function PanoramaGeral({
         <div className="sr-mod-badge">Dados informativos • nao sao alertas ⓘ</div>
       </header>
 
-      <div className="sr-panorama-stack">
+      <div className="sr-panorama-grid">
         <div className="sr-panorama-block">
-          <span>≈ Lagoa dos Patos</span>
+          <span>≋ Lagoa dos Patos</span>
           <strong>{nivelMedio.toFixed(2).replace(".", ",")} m</strong>
           <small>Nivel medio</small>
           <em className={variacaoMedia > 0 ? "sr-var-up" : "sr-var-down"}>
@@ -89,7 +85,7 @@ export function PanoramaGeral({
         </div>
 
         <div className="sr-panorama-block">
-          <span>≈ Niveis dos Rios</span>
+          <span>≋ Niveis dos Rios</span>
           {rios.map((rio) => (
             <small key={rio.nome}>
               <b>{rio.nome}</b> {rio.nivelM.toFixed(2)} m
@@ -100,21 +96,26 @@ export function PanoramaGeral({
         </div>
       </div>
 
-      <div className="sr-panorama-road-strip">
-        {rodovias.map((road) => (
-          <div key={road.br} className="sr-panorama-road">
-            <strong><span style={{ color: statusColor[road.status] || statusColor.Normal }}>●</span> {road.br}</strong>
-            <span>{road.trecho}</span>
-            <small>{road.detalhe || formatRoadText(road)}</small>
-          </div>
-        ))}
+      <div className="sr-panorama-roads">
+        <span className="sr-panorama-roads-title">Rodovias</span>
+        <div className="sr-panorama-roads-list">
+          {rodovias.map((road) => (
+            <div key={road.br} className="sr-panorama-roads-item">
+              <b style={{ color: statusColor[road.status] || statusColor.Normal }}>●</b>
+              <div>
+                <strong>{road.br}</strong> — {road.status}
+                <small>{road.trecho}{road.detalhe ? ` · ${road.detalhe}` : ""}</small>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="sr-defesa-banner">
         <div className="sr-defesa-logo">DEFESA<br />CIVIL</div>
         <p><strong>Atencao:</strong> os alertas oficiais sobre eventos adversos sao emitidos pela Defesa Civil RS. Em caso de riscos, siga as orientacoes dos canais oficiais e ligue <strong>199</strong>.</p>
-        <a href="https://defesacivil.rs.gov.br/" target="_blank" rel="noreferrer">Defesa Civil RS - saiba mais →</a>
-        <a href="https://api.whatsapp.com/send?phone=555133338000" target="_blank" rel="noreferrer">WhatsApp →</a>
+        <a href="https://defesacivil.rs.gov.br/" target="_blank" rel="noreferrer">Defesa Civil RS - saiba mais ↗</a>
+        <a href="https://api.whatsapp.com/send?phone=555133338000" target="_blank" rel="noreferrer">WhatsApp ↗</a>
       </div>
     </section>
   );

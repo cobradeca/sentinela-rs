@@ -1,4 +1,5 @@
 import { NavIcon } from "../components/layout/NavIcons";
+import { WeatherIcon } from "../components/layout/WeatherIcon";
 import { STATIONS_CIDADES } from "../config/stations";
 
 export function PrevisaoTab({ ctx }) {
@@ -21,7 +22,6 @@ export function PrevisaoTab({ ctx }) {
     setRiskExplain,
     setSelStation,
     wmoDesc,
-    wmoEmoji,
   } = ctx;
 
   const forecastDayIndexes = selData?.weather?.forecastDayIndexes
@@ -129,7 +129,7 @@ export function PrevisaoTab({ ctx }) {
                   <div key={date} className={`sr-forecast-day-card${i === 0 ? " is-today" : ""}`}>
                     <div className="sr-day-name">{i === 0 ? "Hoje" : dayNames[dd.getDay()]}</div>
                     <div className="sr-day-date">{dd.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</div>
-                    <div className="sr-emoji">{wmoEmoji(c)}</div>
+                    <div className="sr-emoji"><WeatherIcon code={c} size={32} /></div>
                     <div className="sr-tmax">{tx.toFixed(0)}°</div>
                     <div className="sr-tmin">{tn.toFixed(0)}°</div>
                     <div className="sr-detail">🌧 {p.toFixed(1)} mm</div>
