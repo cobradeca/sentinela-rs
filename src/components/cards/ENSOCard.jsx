@@ -57,7 +57,7 @@ export function ENSOCard({ className = "", data = MOCK_ENSO, loading = false, er
 
   // Agulha: pivô em (800,800) do viewBox original 1600x1000, apontando para cima
   // Reduzimos o viewBox para mostrar só a parte útil (gauge) — crop do SVG original
-  const needlePoints = "764.54,772.30 1138.61,366.59 835.46,827.70";
+  const needlePoints = "774.47,780.06 1043.80,487.94 825.53,819.94";
 
   return (
     <section className={`sr-mod-card ${className}`}>
@@ -81,34 +81,18 @@ export function ENSOCard({ className = "", data = MOCK_ENSO, loading = false, er
               <stop offset="55%" stopColor="#25292E"/>
               <stop offset="100%" stopColor="#0D0F12"/>
             </linearGradient>
-            <linearGradient id="enso-g0" x1="0" y1="0" x2="1" y2="0">
+            <linearGradient id="enso-g0" x1="150" y1="0" x2="1450" y2="0" gradientUnits="userSpaceOnUse">
               <stop offset="0%" stopColor="#0A2F8F"/>
-              <stop offset="100%" stopColor="#48B9F2"/>
-            </linearGradient>
-            <linearGradient id="enso-g1" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#48B9F2"/>
-              <stop offset="100%" stopColor="#D9DDE2"/>
-            </linearGradient>
-            <linearGradient id="enso-g2" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#D9DDE2"/>
-              <stop offset="100%" stopColor="#F59A23"/>
-            </linearGradient>
-            <linearGradient id="enso-g3" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#F59A23"/>
-              <stop offset="100%" stopColor="#E31B23"/>
-            </linearGradient>
-            <linearGradient id="enso-g4" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#E31B23"/>
               <stop offset="100%" stopColor="#8B0000"/>
             </linearGradient>
           </defs>
 
           {/* Arcos */}
           <path d="M 150.00,800.00 A 650,650 0 0 1 274.14,417.94 L 484.48,570.76 A 390,390 0 0 0 410.00,800.00 Z" fill="url(#enso-g0)"/>
-          <path d="M 274.14,417.94 A 650,650 0 0 1 599.14,181.81 L 679.48,429.09 A 390,390 0 0 0 484.48,570.76 Z" fill="url(#enso-g1)"/>
-          <path d="M 599.14,181.81 A 650,650 0 0 1 1000.86,181.81 L 920.52,429.09 A 390,390 0 0 0 679.48,429.09 Z" fill="url(#enso-g2)"/>
-          <path d="M 1000.86,181.81 A 650,650 0 0 1 1325.86,417.94 L 1115.52,570.76 A 390,390 0 0 0 920.52,429.09 Z" fill="url(#enso-g3)"/>
-          <path d="M 1325.86,417.94 A 650,650 0 0 1 1450.00,800.00 L 1190.00,800.00 A 390,390 0 0 0 1115.52,570.76 Z" fill="url(#enso-g4)"/>
+          <path d="M 274.14,417.94 A 650,650 0 0 1 599.14,181.81 L 679.48,429.09 A 390,390 0 0 0 484.48,570.76 Z" fill="url(#enso-g0)"/>
+          <path d="M 599.14,181.81 A 650,650 0 0 1 1000.86,181.81 L 920.52,429.09 A 390,390 0 0 0 679.48,429.09 Z" fill="url(#enso-g0)"/>
+          <path d="M 1000.86,181.81 A 650,650 0 0 1 1325.86,417.94 L 1115.52,570.76 A 390,390 0 0 0 920.52,429.09 Z" fill="url(#enso-g0)"/>
+          <path d="M 1325.86,417.94 A 650,650 0 0 1 1450.00,800.00 L 1190.00,800.00 A 390,390 0 0 0 1115.52,570.76 Z" fill="url(#enso-g0)"/>
 
           {/* Divisórias */}
           <line x1="410.00" y1="800.00" x2="150.00" y2="800.00" stroke="#FFFFFF" strokeOpacity="0.35" strokeWidth="3"/>
@@ -119,11 +103,11 @@ export function ENSOCard({ className = "", data = MOCK_ENSO, loading = false, er
           <line x1="1190.00" y1="800.00" x2="1450.00" y2="800.00" stroke="#FFFFFF" strokeOpacity="0.35" strokeWidth="3"/>
 
           {/* Labels */}
-          <text x="300.70" y="637.77" textAnchor="middle" dominantBaseline="middle" transform="rotate(-72.00 300.70 637.77)" fontFamily="Arial, Helvetica, sans-serif" fontSize="46" fontWeight="700" letterSpacing="1.5" fill="#FFFFFF">LA NIÑA FORTE</text>
-          <text x="491.41" y="375.27" textAnchor="middle" dominantBaseline="middle" transform="rotate(-36.00 491.41 375.27)" fontFamily="Arial, Helvetica, sans-serif" fontSize="46" fontWeight="700" letterSpacing="1.5" fill="#FFFFFF">LA NIÑA</text>
-          <text x="800.00" y="275.00" textAnchor="middle" dominantBaseline="middle" fontFamily="Arial, Helvetica, sans-serif" fontSize="46" fontWeight="700" letterSpacing="1.5" fill="var(--sr-text, #30343A)">NEUTRO</text>
-          <text x="1108.59" y="375.27" textAnchor="middle" dominantBaseline="middle" transform="rotate(36.00 1108.59 375.27)" fontFamily="Arial, Helvetica, sans-serif" fontSize="46" fontWeight="700" letterSpacing="1.5" fill="#FFFFFF">EL NIÑO</text>
-          <text x="1299.30" y="637.77" textAnchor="middle" dominantBaseline="middle" transform="rotate(72.00 1299.30 637.77)" fontFamily="Arial, Helvetica, sans-serif" fontSize="38" fontWeight="700" letterSpacing="1.5" fill="#FFFFFF">SUPER EL NIÑO</text>
+          <text x="300.70" y="637.77" textAnchor="middle" dominantBaseline="middle" transform="rotate(-72.00 300.70 637.77)" fontFamily="Arial, Helvetica, sans-serif" fontSize="32" fontWeight="700" letterSpacing="1.5" fill="#FFFFFF">LA NIÑA FORTE</text>
+          <text x="491.41" y="375.27" textAnchor="middle" dominantBaseline="middle" transform="rotate(-36.00 491.41 375.27)" fontFamily="Arial, Helvetica, sans-serif" fontSize="32" fontWeight="700" letterSpacing="1.5" fill="#FFFFFF">LA NIÑA</text>
+          <text x="800.00" y="275.00" textAnchor="middle" dominantBaseline="middle" fontFamily="Arial, Helvetica, sans-serif" fontSize="32" fontWeight="700" letterSpacing="1.5" fill="var(--sr-text, #30343A)">NEUTRO</text>
+          <text x="1108.59" y="375.27" textAnchor="middle" dominantBaseline="middle" transform="rotate(36.00 1108.59 375.27)" fontFamily="Arial, Helvetica, sans-serif" fontSize="32" fontWeight="700" letterSpacing="1.5" fill="#FFFFFF">EL NIÑO</text>
+          <text x="1299.30" y="637.77" textAnchor="middle" dominantBaseline="middle" transform="rotate(72.00 1299.30 637.77)" fontFamily="Arial, Helvetica, sans-serif" fontSize="26" fontWeight="700" letterSpacing="1.5" fill="#FFFFFF">SUPER EL NIÑO</text>
 
           {/* Agulha — rotação em torno do pivô (800,800) */}
           <g filter="url(#enso-shadow)" transform={`rotate(${angle}, 800, 800)`}>
