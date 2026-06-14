@@ -27,7 +27,7 @@ function normalizeDaily(data) {
   }));
 }
 
-export function PrevisaoRioGrande({ className = "", onNavigate }) {
+export function PrevisaoRioGrande({ className = "", onNavigate, userCity }) {
   const [state, setState] = useState({ loading: true, error: null, days: [], updatedAt: null });
 
   const load = async () => {
@@ -66,7 +66,7 @@ export function PrevisaoRioGrande({ className = "", onNavigate }) {
   return (
     <section className={`sr-mod-card ${className}`}>
       <header className="sr-mod-header">
-        <div className="sr-mod-title"><span>☁</span> PREVISÃO • Acumulado de chuva (mm)</div>
+        <div className="sr-mod-title"><span>☁</span> PREVISÃO{userCity ? ` • ${userCity}` : " • Acumulado de chuva (mm)"}</div>
         <div className="sr-mod-badge">Fonte: Open-Meteo • Atualizado: {state.updatedAt?.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</div>
       </header>
       <div className="sr-forecast-grid">

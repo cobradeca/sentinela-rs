@@ -76,6 +76,7 @@ export function DashboardTab({ ctx }) {
     safeEnsoForecast,
     setActiveTab,
     stationData,
+    userCity,
   } = ctx;
 
   const lagoaRows = toLagoaRows(STATIONS_LAGOA, stationData, getLagoaPointData, lagoaHistory);
@@ -123,7 +124,7 @@ export function DashboardTab({ ctx }) {
       <LagoadosPatos data={lagoaRows} loading={loading && lagoaRows.length === 0} onNavigate={setActiveTab} />
 
       <div className="sr-dashboard-two-col">
-        <PrevisaoRioGrande onNavigate={setActiveTab} />
+        <PrevisaoRioGrande onNavigate={setActiveTab} userCity={userCity} />
         <ENSOCard
           onNavigate={setActiveTab}
           data={{

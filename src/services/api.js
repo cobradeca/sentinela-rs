@@ -276,26 +276,79 @@ export async function fetchRoadBlocksRs() {
   }
 }
 
+// Mapeia resposta da Aviation Weather API para shape interno
+function mapAwcMetar(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const vis = typeof raw.visib === "number" ? raw.visib * 1.852 // SM → km
+    : typeof raw.visib === "string" && raw.visib === "10+" ? 18.5 : null;
+  const ceiling = Array.isArray(raw.clouds)
+    ? raw.clouds.find((c) => c.cover === "BKN" || c.cover === "OVC")?.base ?? null
+    : null;
+  return {
+    icao: raw.station_id || "",
+    cidade: raw.station_id || "",
+    ventoKt: typeof raw.wdir === "number" ? raw.wspd : null,
+    ventoDir: typeof raw.wdir === "number" ? raw.wdir : null,
+    rajadaKt: typeof raw.wgst === "number" && raw.wgst > 0 ? raw.wgst : null,
+    visKm: vis,
+    tetoFt: ceiling,
+    raw: raw.rawOb || "",
+    obs: raw.wxString || (ceiling != null ? `${ceiling} ft` : "CAVOK"),
+  };
+}
+
+const ICAO_CORREDOR = ["SBPA", "SBPK", "SBRG"];
+
 export async function fetchFlightConditions() {
   const cacheKey = "sentinela_flight_conditions_awc_v1";
   const cached = readJsonCache(cacheKey, FLIGHT_CONDITIONS_CACHE_MAX_AGE_MS);
 
+  // 1. Aviation Weather Center (sem chave, gratuito)
+  try {
+    const ids = ICAO_CORREDOR.join(",");
+    const res = await fetch(
+      `https://aviationweather.gov/api/data/metar?ids=${ids}&format=json&taf=false`,
+      { signal: AbortSignal.timeout(10000) }
+    );
+    if (res.ok) {
+      const raw = await res.json();
+      if (Array.isArray(raw) && raw.length > 0) {
+        const aerodromos = ICAO_CORREDOR.map((icao) => {
+          const found = raw.find((r) => r.station_id === icao);
+          return found ? mapAwcMetar(found) : { icao, cidade: icao, obs: "Sem METAR", ventoKt: null, ventoDir: null, visKm: null, tetoFt: null };
+        });
+        const result = { ok: true, aerodromos, source: "Aviation Weather Center / NOAA", fetched_at: new Date().toISOString() };
+        saveJsonCache(cacheKey, result);
+        return result;
+      }
+    }
+  } catch (_) { /* fallthrough */ }
+
+  // 2. Fallback: Supabase Edge Function
   try {
     const res = await fetch(AWC_METAR_CORREDOR_FUNCTION_URL, {
       signal: AbortSignal.timeout(15000),
       cache: "no-store",
       headers: { Accept: "application/json" },
     });
-
     if (!res.ok) return cached || { ok: false, aerodromos: [], error: `AWC METAR HTTP ${res.status}`, fetched_at: new Date().toISOString() };
-
     const data = await res.json();
     if (!data?.ok || !Array.isArray(data?.aerodromos)) return cached || { ...data, ok: false, aerodromos: data?.aerodromos || [] };
-
     saveJsonCache(cacheKey, data);
     return data;
   } catch (err) {
     return cached || { ok: false, aerodromos: [], error: err?.message || "timeout", fetched_at: new Date().toISOString() };
+  }
+}
+
+export async function fetchUserCity() {
+  try {
+    const res = await fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.city || data?.region || null;
+  } catch {
+    return null;
   }
 }
 
