@@ -477,6 +477,7 @@ export default function SentinelaRS() {
   const [stationData, setStationData] = useState({});
   const [loading, setLoading] = useState(true);
   const [splashDone, setSplashDone] = useState(false);
+  const [splashProgress, setSplashProgress] = useState(0);
   const splashTimerRef = useRef(null);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [lagoaHistory, setLagoaHistory] = useState({});
@@ -663,6 +664,7 @@ export default function SentinelaRS() {
 
   const loadAllData = useCallback(async () => {
     setLoading(true);
+    setSplashProgress(5);
     try {
     const results = {};
     const health = { ...sourceHealthRef.current };
@@ -713,6 +715,8 @@ export default function SentinelaRS() {
       };
     }
 
+    const _totalStations = ALL_STATIONS.length || 1;
+    let _stationsDone = 0;
     await mapWithConcurrency(ALL_STATIONS, 4, async (st) => {
       try {
         const weather = await (async () => {
@@ -784,9 +788,15 @@ export default function SentinelaRS() {
         const calculatedRisk = order.indexOf(levelRisk) > order.indexOf(baseRisk) ? levelRisk : baseRisk;
         const risk = st.type === "cidade" && hasMonitoringSignal({ precip, tempMin, windMax, dailyPrecip: precipValues }) ? "MONITORAR" : calculatedRisk;
         results[st.id] = { weather, inmet, lagoa, precip, observedPrecip24h, tempMin, tempCurrent, precipCurrent, windCurrent, windCurrentDirection, weatherCurrentCode, windMax, risk, radarLevel };
-      } catch { results[st.id] = { error: true, risk: "NORMAL" }; }
+        _stationsDone++;
+        setSplashProgress(Math.round(5 + (_stationsDone / _totalStations) * 60));
+      } catch { results[st.id] = { error: true, risk: "NORMAL" };
+        _stationsDone++;
+        setSplashProgress(Math.round(5 + (_stationsDone / _totalStations) * 60));
+      }
     });
     const floodVulnerabilityStart = Date.now();
+    setSplashProgress(70);
     try {
       const floodVulnerability = await fetchAnaFloodVulnerability(STATIONS);
       Object.entries(floodVulnerability.by_station || {}).forEach(([stationId, context]) => {
@@ -812,6 +822,7 @@ export default function SentinelaRS() {
       };
     }
     const defesaStart = Date.now();
+    setSplashProgress(85);
     const officialAlerts = await fetchDefesaCivilAlerts();
     health["Defesa Civil RS"] = { ok: Array.isArray(officialAlerts), lastOk: Array.isArray(officialAlerts) ? new Date().toISOString() : health["Defesa Civil RS"]?.lastOk || null, latencyMs: Date.now() - defesaStart, error: null };
     health["Carga geral"] = { ok: true, lastOk: new Date().toISOString(), latencyMs: Date.now() - t0, error: null };
@@ -821,6 +832,7 @@ export default function SentinelaRS() {
       ...health,
     };
     sourceHealthRef.current = mergedHealth;
+    setSplashProgress(100);
     setSourceHealth({ ...mergedHealth });
     setStationData(results);
     setRiverLevels(riverLevelsData);
@@ -1278,7 +1290,10 @@ export default function SentinelaRS() {
         <div className="sr-splash-inner">
           <img src="/sentinela-rs/brand/sentinela-rs-logo.png" alt="Sentinela RS" className="sr-splash-logo" />
           <div className="sr-splash-title">SENTINELA RS</div>
-          <div className="sr-splash-dots"><span /><span /><span /></div>
+          <div className="sr-splash-bar-wrap">
+            <div className="sr-splash-bar" style={{ width: `${splashProgress}%` }} />
+          </div>
+          <div className="sr-splash-pct">{splashProgress}%</div>
         </div>
       </div>
     );
