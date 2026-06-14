@@ -139,7 +139,7 @@ export function DashboardTab({ ctx }) {
 
       <div className="sr-dashboard-two-col">
         <QueimadasVegetacao data={queimadasData} loading={loading && !queimadas} onNavigate={setActiveTab} />
-        <CondicoesVoo />
+        <CondicoesVoo onNavigate={setActiveTab} />
       </div>
     </div>
   );

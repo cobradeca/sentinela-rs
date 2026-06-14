@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchFlightConditions } from "../../services/api";
+import { NavIcon } from "../layout/NavIcons";
 
 export const MOCK_VOO = [
   { ok: false, icao: "SBPA", cidade: "Porto Alegre", class: "CARREGANDO", obs: "Aguardando METAR" },
@@ -48,7 +49,7 @@ function formatCeiling(row) {
   return `${row.tetoFt} ft`;
 }
 
-export function CondicoesVoo({ className = "", data = null, loading = false, error = null, onRetry }) {
+export function CondicoesVoo({ className = "", data = null, loading = false, error = null, onRetry, onNavigate }) {
   const [state, setState] = useState({ loading: !data, error: null, rows: data || MOCK_VOO, fetchedAt: null, source: null });
 
   useEffect(() => {
@@ -121,6 +122,14 @@ export function CondicoesVoo({ className = "", data = null, loading = false, err
           );
         })}
       </div>
+
+      {onNavigate && (
+        <footer className="sr-mod-footer" style={{ display: "flex", justifyContent: "flex-end" }}>
+          <button type="button" className="sr-btn-link" onClick={() => onNavigate("voo")}>
+            Ver detalhes <NavIcon name="chevron" size={13} />
+          </button>
+        </footer>
+      )}
     </section>
   );
 }
