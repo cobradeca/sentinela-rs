@@ -14,7 +14,6 @@ function dateLabel(dateIso) {
   return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(date);
 }
 
-
 function normalizeDaily(data) {
   const daily = data?.daily || {};
   return (daily.time || []).map((date, index) => ({
@@ -38,7 +37,7 @@ export function PrevisaoRioGrande({ className = "", onNavigate, userCity }) {
       const data = await response.json();
       setState({ loading: false, error: null, days: normalizeDaily(data), updatedAt: new Date() });
     } catch (error) {
-      setState({ loading: false, error: error?.message || "Falha ao carregar previsão", days: [], updatedAt: null });
+      setState({ loading: false, error: error?.message || "Falha ao carregar previsao", days: [], updatedAt: null });
     }
   };
 
@@ -76,8 +75,8 @@ export function PrevisaoRioGrande({ className = "", onNavigate, userCity }) {
             <span>{dateLabel(day.date)}</span>
             <div className="sr-weather-svg"><WeatherIcon code={day.code} /></div>
             <b>{Number(day.rain || 0).toFixed(0)} mm</b>
-            <small><span className="sr-forecast-label">vel</span> ↗ {Number(day.wind || 0).toFixed(0)} km/h</small>
-            <div>
+            <small className="sr-forecast-metric"><span className="sr-forecast-label">vel</span> ↗ {Number(day.wind || 0).toFixed(0)} km/h</small>
+            <div className="sr-forecast-minmax">
               <span><span className="sr-forecast-label">mín</span> {Number(day.min || 0).toFixed(0)}°</span>
               <span><span className="sr-forecast-label">máx</span> {Number(day.max || 0).toFixed(0)}°</span>
             </div>

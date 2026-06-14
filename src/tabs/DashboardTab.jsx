@@ -125,6 +125,10 @@ export function DashboardTab({ ctx }) {
 
       <div className="sr-dashboard-two-col">
         <PrevisaoRioGrande onNavigate={setActiveTab} userCity={userCity} />
+        <QueimadasVegetacao data={queimadasData} loading={loading && !queimadas} onNavigate={setActiveTab} />
+      </div>
+
+      <div className="sr-dashboard-two-col">
         <ENSOCard
           onNavigate={setActiveTab}
           data={{
@@ -135,10 +139,6 @@ export function DashboardTab({ ctx }) {
             atualizadoEm: activeENSO.probabilityReferenceDate || "Atual",
           }}
         />
-      </div>
-
-      <div className="sr-dashboard-two-col">
-        <QueimadasVegetacao data={queimadasData} loading={loading && !queimadas} onNavigate={setActiveTab} />
         <CondicoesVoo onNavigate={setActiveTab} />
       </div>
     </div>

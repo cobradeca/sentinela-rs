@@ -1430,6 +1430,23 @@ body[data-theme="dark"] .sr-weather-temp {
   margin-top: 6px;
 }
 
+.sr-forecast-metric {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.sr-forecast-minmax {
+  display: grid;
+  gap: 2px;
+}
+
+.sr-forecast-minmax span {
+  white-space: nowrap;
+}
+
 /* ── Combined chart (previsão) ─────────────────────────────── */
 
 .sr-combo-chart {
