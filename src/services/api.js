@@ -380,50 +380,6 @@ export async function fetchFlightConditions() {
   const cacheKey = "sentinela_flight_conditions_awc_v1";
   const cached = readJsonCache(cacheKey, FLIGHT_CONDITIONS_CACHE_MAX_AGE_MS);
 
-  const fetchFromAwc = async (airport) => {
-    const [metarRes, tafRes] = await Promise.allSettled([
-      fetch(`https://aviationweather.gov/api/data/metar?ids=${airport.icao}&format=json`, {
-        signal: AbortSignal.timeout(10000),
-      }),
-      fetch(`https://aviationweather.gov/api/data/taf?ids=${airport.icao}&format=json`, {
-        signal: AbortSignal.timeout(10000),
-      }),
-    ]);
-
-    const parseResponse = async (responsePromise) => {
-      if (responsePromise.status !== "fulfilled" || !responsePromise.value.ok) return null;
-      const text = await responsePromise.value.text();
-      if (!text || !text.trim()) return null;
-      try {
-        return JSON.parse(text);
-      } catch {
-        return null;
-      }
-    };
-
-    const metar = await parseResponse(metarRes);
-    const taf = await parseResponse(tafRes);
-    const metarRow = Array.isArray(metar) ? metar[0] : metar;
-    const tafRow = Array.isArray(taf) ? taf[0] : taf;
-    const normalizedMetar = metarRow ? mapAwcMetar(metarRow, airport) : null;
-    const normalizedTaf = tafRow ? normalizeAwcTaf(tafRow, airport) : null;
-
-    return {
-      ok: Boolean(normalizedMetar || normalizedTaf),
-      icao: airport.icao,
-      cidade: airport.cidade,
-      ...normalizedMetar,
-      class: normalizedMetar?.class || (normalizedTaf?.class ?? "SEM METAR"),
-      obs: normalizedMetar?.obs || "Sem METAR recente na AWC",
-      taf: normalizedTaf,
-      tafSummary: normalizedTaf?.summary || buildTafSummary(tafRow),
-      rawTaf: tafRow?.rawTAF || null,
-      tafIssueTime: tafRow?.issueTime || null,
-      source: "Aviation Weather Center / NOAA",
-    };
-  };
-
-  // 1. Primário: Supabase Edge Function (AWC/NOAA + complemento CheckWX por aeródromo)
   try {
     const res = await fetch(AWC_METAR_CORREDOR_FUNCTION_URL, {
       signal: AbortSignal.timeout(15000),
@@ -436,16 +392,6 @@ export async function fetchFlightConditions() {
         saveJsonCache(cacheKey, data);
         return data;
       }
-    }
-  } catch (_) { /* fallthrough */ }
-
-  // 2. Fallback: AWC/NOAA direto do cliente (sem complemento CheckWX)
-  try {
-    const aerodromos = await Promise.all(ICAO_CORREDOR.map((airport) => fetchFromAwc(airport)));
-    const result = { ok: aerodromos.some((airport) => airport.ok), aerodromos, source: "Aviation Weather Center / NOAA", fetched_at: new Date().toISOString() };
-    if (result.ok) {
-      saveJsonCache(cacheKey, result);
-      return result;
     }
   } catch (_) { /* fallthrough */ }
 
