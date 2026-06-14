@@ -301,7 +301,8 @@ function mapAwcMetar(raw, airport) {
 const ICAO_CORREDOR = [
   { icao: "SBPA", cidade: "Porto Alegre" },
   { icao: "SBPK", cidade: "Pelotas" },
-  { icao: "SBRG", cidade: "Rio Grande" },
+  { icao: "SBCO", cidade: "Canoas" },
+  { icao: "SBSM", cidade: "Santa Maria" },
 ];
 
 function classifyFromWeather(visKm, tetoFt) {

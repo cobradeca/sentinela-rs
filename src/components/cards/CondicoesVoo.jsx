@@ -5,13 +5,15 @@ import { NavIcon } from "../layout/NavIcons";
 export const MOCK_VOO = [
   { ok: false, icao: "SBPA", cidade: "Porto Alegre", class: "CARREGANDO", obs: "Aguardando METAR" },
   { ok: false, icao: "SBPK", cidade: "Pelotas", class: "CARREGANDO", obs: "Aguardando METAR" },
-  { ok: false, icao: "SBRG", cidade: "Rio Grande", class: "CARREGANDO", obs: "Aguardando METAR" },
+  { ok: false, icao: "SBCO", cidade: "Canoas", class: "CARREGANDO", obs: "Aguardando METAR" },
+  { ok: false, icao: "SBSM", cidade: "Santa Maria", class: "CARREGANDO", obs: "Aguardando METAR" },
 ];
 
 const ERROR_VOO = [
   { ok: false, icao: "SBPA", cidade: "Porto Alegre", class: "SEM DADOS", obs: "Fonte indisponível" },
   { ok: false, icao: "SBPK", cidade: "Pelotas", class: "SEM DADOS", obs: "Fonte indisponível" },
-  { ok: false, icao: "SBRG", cidade: "Rio Grande", class: "SEM DADOS", obs: "Fonte indisponível" },
+  { ok: false, icao: "SBCO", cidade: "Canoas", class: "SEM DADOS", obs: "Fonte indispon?vel" },
+  { ok: false, icao: "SBSM", cidade: "Santa Maria", class: "SEM DADOS", obs: "Fonte indispon?vel" },
 ];
 
 function classifyFlight(row) {
@@ -111,7 +113,7 @@ export function CondicoesVoo({ className = "", data = null, loading = false, err
       <header className="sr-mod-header sr-mod-header-voo">
         <div className="sr-mod-title">
           <span>✈</span> CONDIÇÕES DE VOO
-          <span className="sr-mod-subtitle">Corredor POA–Rio Grande</span>
+          <span className="sr-mod-subtitle">Corredor POA, Pelotas, Canoas e Santa Maria</span>
         </div>
         <div className="sr-mod-badge">{state.source || "AWC/NOAA"}{updatedAt ? ` • ${updatedAt}` : ""}</div>
       </header>

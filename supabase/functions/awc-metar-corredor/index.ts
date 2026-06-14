@@ -4,7 +4,8 @@ const AWC_TAF_URL = "https://aviationweather.gov/api/data/taf";
 const AERODROMES = [
   { icao: "SBPA", cidade: "Porto Alegre" },
   { icao: "SBPK", cidade: "Pelotas" },
-  { icao: "SBRG", cidade: "Rio Grande" },
+  { icao: "SBCO", cidade: "Canoas" },
+  { icao: "SBSM", cidade: "Santa Maria" },
 ];
 
 const corsHeaders = {
@@ -198,7 +199,7 @@ async function fetchAirport(airport: { icao: string; cidade: string }) {
   let tafSource = normalizedTaf ? "Aviation Weather Center / NOAA" : null;
 
   // Complemento: CheckWX preenche METAR e/ou TAF quando o AWC não retorna
-  // leitura recente para o aeródromo (comum em SBPK/SBRG).
+  // leitura recente para o aeródromo (comum em SBPK/SBCO/SBSM).
   const checkwxKey = getCheckwxKey();
   if (checkwxKey && (!normalizedMetar || !normalizedTaf)) {
     const [checkwxMetar, checkwxTaf] = await Promise.all([
