@@ -7,6 +7,12 @@ export const MOCK_VOO = [
   { ok: false, icao: "SBRG", cidade: "Rio Grande", class: "CARREGANDO", obs: "Aguardando METAR" },
 ];
 
+const ERROR_VOO = [
+  { ok: false, icao: "SBPA", cidade: "Porto Alegre", class: "SEM DADOS", obs: "Fonte indisponível" },
+  { ok: false, icao: "SBPK", cidade: "Pelotas", class: "SEM DADOS", obs: "Fonte indisponível" },
+  { ok: false, icao: "SBRG", cidade: "Rio Grande", class: "SEM DADOS", obs: "Fonte indisponível" },
+];
+
 function classifyFlight(row) {
   if (row.class) {
     const label = String(row.class).toUpperCase();
@@ -56,7 +62,7 @@ export function CondicoesVoo({ className = "", data = null, loading = false, err
     fetchFlightConditions()
       .then((result) => {
         if (cancelled) return;
-        const rows = Array.isArray(result?.aerodromos) && result.aerodromos.length ? result.aerodromos : MOCK_VOO;
+        const rows = Array.isArray(result?.aerodromos) && result.aerodromos.length ? result.aerodromos : ERROR_VOO;
         setState({
           loading: false,
           error: result?.ok ? null : result?.error || "METAR indisponivel",
@@ -67,7 +73,7 @@ export function CondicoesVoo({ className = "", data = null, loading = false, err
       })
       .catch((err) => {
         if (cancelled) return;
-        setState({ loading: false, error: err?.message || "METAR indisponivel", rows: MOCK_VOO, fetchedAt: null, source: null });
+        setState({ loading: false, error: err?.message || "METAR indisponivel", rows: ERROR_VOO, fetchedAt: null, source: null });
       });
 
     return () => {
@@ -79,7 +85,7 @@ export function CondicoesVoo({ className = "", data = null, loading = false, err
   const effectiveError = error || state.error;
 
   if (effectiveLoading) return <section className={`sr-mod-card ${className}`}><div className="sr-mod-skeleton h-40 w-full" /></section>;
-  if (effectiveError && state.rows === MOCK_VOO) {
+  if (effectiveError && state.rows === ERROR_VOO) {
     return (
       <section className={`sr-mod-card ${className}`}>
         <div className="sr-mod-error">
