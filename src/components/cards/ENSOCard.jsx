@@ -67,7 +67,7 @@ export function ENSOCard({ className = "", data = MOCK_ENSO, loading = false, er
 
       <div className="sr-enso-gauge-wrap">
         <svg
-          viewBox="100 130 1400 720"
+          viewBox="100 130 1400 770"
           className="sr-enso-gauge"
           aria-label={`Condição ENSO ${condicao}`}
           style={{ width: "100%", maxWidth: 420, display: "block", margin: "0 auto" }}
@@ -83,6 +83,9 @@ export function ENSOCard({ className = "", data = MOCK_ENSO, loading = false, er
             </linearGradient>
             <linearGradient id="enso-g0" x1="150" y1="0" x2="1450" y2="0" gradientUnits="userSpaceOnUse">
               <stop offset="0%" stopColor="#0A2F8F"/>
+              <stop offset="25%" stopColor="#48B9F2"/>
+              <stop offset="50%" stopColor="#D9DDE2"/>
+              <stop offset="75%" stopColor="#F59A23"/>
               <stop offset="100%" stopColor="#8B0000"/>
             </linearGradient>
           </defs>
