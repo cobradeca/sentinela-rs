@@ -1,3 +1,5 @@
+import { NavIcon } from "../layout/NavIcons";
+
 export const MOCK_LAGOA = [];
 
 function Sparkline({ values, color = "#2563eb" }) {
@@ -36,7 +38,7 @@ function trendClass(value) {
   return value > 0 ? "sr-var-up" : "sr-var-down";
 }
 
-export function LagoadosPatos({ className = "", data = [], loading = false, error = null, onRetry }) {
+export function LagoadosPatos({ className = "", data = [], loading = false, error = null, onRetry, onNavigate }) {
   if (loading) {
     return (
       <section className={`sr-mod-card ${className}`}>
@@ -86,7 +88,14 @@ export function LagoadosPatos({ className = "", data = [], loading = false, erro
     <section className={`sr-mod-card ${className}`}>
       <header className="sr-mod-header">
         <div className="sr-mod-title"><span>~</span> Lagoa dos Patos</div>
-        <span className={`sr-source-pill status-${status.toLowerCase()}`}>{status}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span className={`sr-source-pill status-${status.toLowerCase()}`}>{status}</span>
+          {onNavigate && (
+            <button type="button" className="sr-btn-link" onClick={() => onNavigate("lagoa")}>
+              Ver detalhes <NavIcon name="chevron" size={13} />
+            </button>
+          )}
+        </div>
       </header>
 
       <div className="sr-lagoa-table">

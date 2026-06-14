@@ -74,6 +74,7 @@ export function DashboardTab({ ctx }) {
     riverLevels,
     roadBlocks,
     safeEnsoForecast,
+    setActiveTab,
     stationData,
   } = ctx;
 
@@ -119,11 +120,12 @@ export function DashboardTab({ ctx }) {
         loading={loading && !stationData?.rs_rio_grande}
       />
 
-      <LagoadosPatos data={lagoaRows} loading={loading && lagoaRows.length === 0} />
+      <LagoadosPatos data={lagoaRows} loading={loading && lagoaRows.length === 0} onNavigate={setActiveTab} />
 
       <div className="sr-dashboard-two-col">
-        <PrevisaoRioGrande />
+        <PrevisaoRioGrande onNavigate={setActiveTab} />
         <ENSOCard
+          onNavigate={setActiveTab}
           data={{
             oni: typeof activeENSO.nino34 === "number" ? activeENSO.nino34 : 0,
             condicao: activeENSO.phase === "EL_NINO" ? "El Nino" : activeENSO.phase === "LA_NINA" ? "La Nina" : "Neutro",
@@ -135,7 +137,7 @@ export function DashboardTab({ ctx }) {
       </div>
 
       <div className="sr-dashboard-two-col">
-        <QueimadasVegetacao data={queimadasData} loading={loading && !queimadas} />
+        <QueimadasVegetacao data={queimadasData} loading={loading && !queimadas} onNavigate={setActiveTab} />
         <CondicoesVoo />
       </div>
     </div>

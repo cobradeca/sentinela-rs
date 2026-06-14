@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { NavIcon } from "../layout/NavIcons";
 import { WeatherIcon } from "../layout/WeatherIcon";
 
 const API_URL = "https://api.open-meteo.com/v1/forecast?latitude=-32.035&longitude=-52.099&daily=weathercode,precipitation_sum,windspeed_10m_max,temperature_2m_min,temperature_2m_max&timezone=America/Sao_Paulo&forecast_days=5";
@@ -26,7 +27,7 @@ function normalizeDaily(data) {
   }));
 }
 
-export function PrevisaoRioGrande({ className = "" }) {
+export function PrevisaoRioGrande({ className = "", onNavigate }) {
   const [state, setState] = useState({ loading: true, error: null, days: [], updatedAt: null });
 
   const load = async () => {
@@ -83,6 +84,13 @@ export function PrevisaoRioGrande({ className = "" }) {
           </div>
         ))}
       </div>
+      {onNavigate && (
+        <footer className="sr-mod-footer" style={{ display: "flex", justifyContent: "flex-end" }}>
+          <button type="button" className="sr-btn-link" onClick={() => onNavigate("previsao")}>
+            Ver detalhes <NavIcon name="chevron" size={13} />
+          </button>
+        </footer>
+      )}
     </section>
   );
 }
