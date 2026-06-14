@@ -511,6 +511,11 @@ a:focus-visible {
   margin-top: 2px;
 }
 
+.sr-voo-row span strong,
+.sr-voo-row span small {
+  display: block;
+}
+
 .sr-mod-spark {
   width: 100%;
   height: auto;

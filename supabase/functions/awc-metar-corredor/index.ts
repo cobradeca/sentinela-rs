@@ -1,4 +1,5 @@
 const AWC_METAR_URL = "https://aviationweather.gov/api/data/metar";
+const AWC_TAF_URL = "https://aviationweather.gov/api/data/taf";
 
 const AERODROMES = [
   { icao: "SBPA", cidade: "Porto Alegre" },
@@ -14,6 +15,7 @@ const corsHeaders = {
 
 function toNumber(value: unknown) {
   if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.toUpperCase() === "VRB") return null;
   const parsed = Number(String(value || "").replace("+", ""));
   return Number.isFinite(parsed) ? parsed : null;
 }
@@ -34,26 +36,107 @@ function lowestCeilingFt(clouds: unknown) {
   return ceilings.length ? Math.min(...ceilings) : null;
 }
 
-function normalizeMetar(row: any) {
-  const icao = String(row?.icaoId || row?.icao || "").toUpperCase();
-  const aerodrome = AERODROMES.find((item) => item.icao === icao);
+function classifyFromWeather(visKm: number | null, tetoFt: number | null) {
+  if (typeof visKm !== "number" || typeof tetoFt !== "number") return "SEM METAR";
+  if (visKm < 1.6 || tetoFt < 500) return "LIFR";
+  if (visKm < 5 || tetoFt < 1000) return "IFR";
+  if (visKm < 8 || tetoFt < 3000) return "MVFR";
+  return "VFR";
+}
+
+function normalizeMetar(row: any, airport: { icao: string; cidade: string }) {
+  const icao = String(row?.icaoId || row?.icao || airport.icao).toUpperCase();
   const tetoFt = lowestCeilingFt(row?.clouds);
   const gust = toNumber(row?.wgst);
 
   return {
     ok: true,
     icao,
-    cidade: aerodrome?.cidade || row?.name || icao,
-    ventoDir: toNumber(row?.wdir),
+    cidade: airport?.cidade || row?.name || icao,
+    ventoDir: row?.wdir === "VRB" ? null : toNumber(row?.wdir),
     ventoKt: toNumber(row?.wspd),
     rajadaKt: typeof gust === "number" && gust > 0 ? gust : null,
     visKm: visibilityMilesToKm(row?.visib),
     tetoFt,
-    class: row?.fltCat || null,
+    class: row?.fltCat || classifyFromWeather(visibilityMilesToKm(row?.visib), tetoFt),
     obs: row?.wxString || "METAR",
     raw: row?.rawOb || null,
     reportTime: row?.reportTime || null,
     receiptTime: row?.receiptTime || null,
+  };
+}
+
+function normalizeTafForecast(fcst: any) {
+  if (!fcst || typeof fcst !== "object") return null;
+  const tetoFt = lowestCeilingFt(fcst?.clouds);
+  const gust = toNumber(fcst?.wgst);
+  const visKm = visibilityMilesToKm(fcst?.visib);
+
+  return {
+    timeFrom: fcst.timeFrom || null,
+    timeTo: fcst.timeTo || null,
+    change: fcst.fcstChange || null,
+    probability: fcst.probability || null,
+    ventoDir: fcst?.wdir === "VRB" ? null : toNumber(fcst?.wdir),
+    ventoKt: toNumber(fcst?.wspd),
+    rajadaKt: typeof gust === "number" && gust > 0 ? gust : null,
+    visKm,
+    tetoFt,
+    class: classifyFromWeather(visKm, tetoFt),
+    obs: fcst?.wxString || null,
+  };
+}
+
+function buildTafSummary(taf: any) {
+  if (!taf || !Array.isArray(taf.fcsts) || !taf.fcsts.length) return null;
+  const current = taf.fcsts.find((fcst: any) => !fcst.fcstChange) || taf.fcsts[0];
+  const windDir = current?.wdir == null ? "VRB" : `${current.wdir}°`;
+  const wind = current?.wspd == null ? null : `${windDir} ${current.wspd} kt`;
+  const vis = current?.visib == null ? null : current.visib === "6+" || current.visib === "10+" ? "10 km ou mais" : `${Math.round(Number(current.visib) * 1.60934 * 10) / 10} km`;
+  const cloud = Array.isArray(current?.clouds) && current.clouds.length
+    ? current.clouds
+      .filter((item: any) => item?.cover)
+      .map((item: any) => `${item.cover}${item.base ? ` ${item.base} ft` : ""}`)
+      .join(", ")
+    : null;
+  const pieces = [wind, vis, cloud].filter(Boolean);
+  return pieces.length ? pieces.join(" • ") : "TAF disponivel";
+}
+
+async function fetchJson(url: string) {
+  const response = await fetch(url, { headers: { Accept: "application/json" } });
+  if (!response.ok) return null;
+  const text = await response.text();
+  if (!text.trim()) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+async function fetchAirport(airport: { icao: string; cidade: string }) {
+  const [metar, taf] = await Promise.all([
+    fetchJson(`${AWC_METAR_URL}?ids=${airport.icao}&format=json`),
+    fetchJson(`${AWC_TAF_URL}?ids=${airport.icao}&format=json`),
+  ]);
+
+  const metarRow = Array.isArray(metar) ? metar[0] : metar;
+  const tafRow = Array.isArray(taf) ? taf[0] : taf;
+  const normalizedMetar = metarRow ? normalizeMetar(metarRow, airport) : null;
+  const normalizedTaf = tafRow ? normalizeTafForecast((tafRow.fcsts || []).find((fcst: any) => !fcst.fcstChange) || tafRow.fcsts?.[0]) : null;
+
+  return {
+    ok: Boolean(normalizedMetar || normalizedTaf),
+    icao: airport.icao,
+    cidade: airport.cidade,
+    ...(normalizedMetar || {}),
+    class: normalizedMetar?.class || normalizedTaf?.class || "SEM METAR",
+    obs: normalizedMetar?.obs || "Sem METAR recente na AWC",
+    taf: normalizedTaf,
+    tafSummary: buildTafSummary(tafRow),
+    rawTaf: tafRow?.rawTAF || null,
+    tafIssueTime: tafRow?.issueTime || null,
   };
 }
 
@@ -69,38 +152,8 @@ Deno.serve(async (req) => {
     });
   }
 
-  const params = new URLSearchParams({
-    ids: AERODROMES.map((item) => item.icao).join(","),
-    format: "json",
-  });
-
   try {
-    const response = await fetch(`${AWC_METAR_URL}?${params.toString()}`, {
-      headers: { Accept: "application/json" },
-    });
-
-    if (!response.ok) {
-      throw new Error(`AWC METAR HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-    const rows = Array.isArray(data) ? data.map(normalizeMetar).filter((row) => row.icao) : [];
-    const byIcao = new Map(rows.map((row) => [row.icao, row]));
-    const aerodromos = AERODROMES.map((item) => byIcao.get(item.icao) || {
-      ok: false,
-      icao: item.icao,
-      cidade: item.cidade,
-      ventoDir: null,
-      ventoKt: null,
-      rajadaKt: null,
-      visKm: null,
-      tetoFt: null,
-      class: "SEM METAR",
-      obs: "Sem METAR recente na AWC",
-      raw: null,
-      reportTime: null,
-      receiptTime: null,
-    });
+    const aerodromos = await Promise.all(AERODROMES.map((airport) => fetchAirport(airport)));
 
     return new Response(JSON.stringify({
       ok: aerodromos.some((item) => item.ok),
@@ -108,7 +161,7 @@ Deno.serve(async (req) => {
       source_url: "https://aviationweather.gov/data/api/",
       fetched_at: new Date().toISOString(),
       aerodromos,
-      note: "METAR operacional observado. Visibilidade convertida de milhas estatutarias para km quando necessario.",
+      note: "METAR operacional observado. TAF incluído como contexto de previsão curta.",
     }), {
       headers: {
         ...corsHeaders,
@@ -120,7 +173,7 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({
       ok: false,
       source: "Aviation Weather Center / NOAA",
-      error: err?.message || "falha ao consultar AWC METAR",
+      error: err?.message || "falha ao consultar AWC",
       fetched_at: new Date().toISOString(),
       aerodromos: AERODROMES.map((item) => ({
         ok: false,

@@ -9,9 +9,9 @@ export const MOCK_VOO = [
 ];
 
 const ERROR_VOO = [
-  { ok: false, icao: "SBPA", cidade: "Porto Alegre", class: "SEM DADOS", obs: "Fonte indisponível" },
-  { ok: false, icao: "SBPK", cidade: "Pelotas", class: "SEM DADOS", obs: "Fonte indisponível" },
-  { ok: false, icao: "SBRG", cidade: "Rio Grande", class: "SEM DADOS", obs: "Fonte indisponível" },
+  { ok: false, icao: "SBPA", cidade: "Porto Alegre", class: "SEM DADOS", obs: "Fonte indispon?vel" },
+  { ok: false, icao: "SBPK", cidade: "Pelotas", class: "SEM DADOS", obs: "Fonte indispon?vel" },
+  { ok: false, icao: "SBRG", cidade: "Rio Grande", class: "SEM DADOS", obs: "Fonte indispon?vel" },
 ];
 
 function classifyFlight(row) {
@@ -30,7 +30,7 @@ function classifyFlight(row) {
 
 function formatWind(row) {
   if (typeof row.ventoKt !== "number") return "Sem leitura";
-  const dir = typeof row.ventoDir === "number" ? `${row.ventoDir}°` : "VRB";
+  const dir = typeof row.ventoDir === "number" ? `${row.ventoDir}?` : "VRB";
   return (
     <>
       {dir} {row.ventoKt} kt
@@ -49,7 +49,7 @@ function formatCeiling(row) {
   return `${row.tetoFt} ft`;
 }
 
-export function CondicoesVoo({ className = "", data = null, loading = false, error = null, onRetry, onNavigate }) {
+export function CondicoesVoo({ className = "", data = null, loading = false, error = null, onRetry, onNavigate, compact = true }) {
   const [state, setState] = useState({ loading: !data, error: null, rows: data || MOCK_VOO, fetchedAt: null, source: null });
 
   useEffect(() => {
@@ -101,13 +101,16 @@ export function CondicoesVoo({ className = "", data = null, loading = false, err
     <section className={`sr-mod-card ${className}`}>
       <header className="sr-mod-header sr-mod-header-voo">
         <div className="sr-mod-title">
-          <span>✈</span> CONDIÇÕES DE VOO
-          <span className="sr-mod-subtitle">Corredor POA–Rio Grande</span>
+          <span>?</span> CONDI??ES DE VOO
+          <span className="sr-mod-subtitle">Corredor POA?Rio Grande</span>
         </div>
-        <div className="sr-mod-badge">{state.source || "AWC/NOAA"}{state.fetchedAt ? ` • ${new Date(state.fetchedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : ""}</div>
+        <div className="sr-mod-badge">{state.source || "AWC/NOAA"}{state.fetchedAt ? ` ? ${new Date(state.fetchedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : ""}</div>
       </header>
       <div className="sr-voo-table">
-        <div className="sr-voo-head"><span>Aerodromo</span><span>Vento</span><span>Visibilidade</span><span>Teto</span><span>Class.</span><span>Obs.</span></div>
+        <div className="sr-voo-head">
+          <span>Aerodromo</span><span>Vento</span><span>Visibilidade</span><span>Teto</span><span>Class.</span>
+          {!compact && <span>Obs.</span>}
+        </div>
         {state.rows.map((row) => {
           const flight = classifyFlight(row);
           return (
@@ -117,7 +120,12 @@ export function CondicoesVoo({ className = "", data = null, loading = false, err
               <span>{formatVisibility(row)}</span>
               <span>{formatCeiling(row)}</span>
               <span className="sr-flight-pill" style={{ background: `${flight.color}22`, color: flight.color }}>{flight.label}</span>
-              <span title={row.raw || row.obs || ""}>{row.obs || "METAR"}</span>
+              {!compact && (
+                <span title={row.raw || row.rawTaf || row.obs || ""}>
+                  <strong>{row.obs || "METAR"}</strong>
+                  {row.tafSummary ? <small>TAF: {row.tafSummary}</small> : row.rawTaf ? <small>TAF dispon?vel</small> : null}
+                </span>
+              )}
             </div>
           );
         })}

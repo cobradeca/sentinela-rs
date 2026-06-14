@@ -277,50 +277,157 @@ export async function fetchRoadBlocksRs() {
 }
 
 // Mapeia resposta da Aviation Weather API para shape interno
-function mapAwcMetar(raw) {
+function mapAwcMetar(raw, airport) {
   if (!raw || typeof raw !== "object") return null;
-  const vis = typeof raw.visib === "number" ? raw.visib * 1.852 // SM → km
+  const vis = typeof raw.visib === "number" ? raw.visib * 1.852 // SM ? km
     : typeof raw.visib === "string" && raw.visib === "10+" ? 18.5 : null;
   const ceiling = Array.isArray(raw.clouds)
     ? raw.clouds.find((c) => c.cover === "BKN" || c.cover === "OVC")?.base ?? null
     : null;
   return {
     icao: raw.station_id || "",
-    cidade: raw.station_id || "",
+    cidade: airport?.cidade || raw.station_id || "",
     ventoKt: typeof raw.wdir === "number" ? raw.wspd : null,
     ventoDir: typeof raw.wdir === "number" ? raw.wdir : null,
     rajadaKt: typeof raw.wgst === "number" && raw.wgst > 0 ? raw.wgst : null,
     visKm: vis,
     tetoFt: ceiling,
+    class: raw.fltCat || null,
     raw: raw.rawOb || "",
     obs: raw.wxString || (ceiling != null ? `${ceiling} ft` : "CAVOK"),
   };
 }
 
-const ICAO_CORREDOR = ["SBPA", "SBPK", "SBRG"];
+const ICAO_CORREDOR = [
+  { icao: "SBPA", cidade: "Porto Alegre" },
+  { icao: "SBPK", cidade: "Pelotas" },
+  { icao: "SBRG", cidade: "Rio Grande" },
+];
 
+function classifyFromWeather(visKm, tetoFt) {
+  if (typeof visKm !== "number" || typeof tetoFt !== "number") return "SEM METAR";
+  if (visKm < 1.6 || tetoFt < 500) return "LIFR";
+  if (visKm < 5 || tetoFt < 1000) return "IFR";
+  if (visKm < 8 || tetoFt < 3000) return "MVFR";
+  return "VFR";
+}
+
+function normalizeTafForecast(fcst) {
+  if (!fcst || typeof fcst !== "object") return null;
+  const visib = fcst.visib;
+  const visibilityKm = visib === "6+" || visib === "10+" ? 10 : typeof visib === "number" ? Math.round(visib * 1.60934 * 10) / 10 : null;
+  const ceilingFt = Array.isArray(fcst.clouds)
+    ? fcst.clouds
+      .filter((cloud) => ["BKN", "OVC", "VV"].includes(String(cloud?.cover || "").toUpperCase()))
+      .map((cloud) => toNumber(cloud?.base))
+      .filter((base) => typeof base === "number")
+      .reduce((min, base) => Math.min(min, base), Number.POSITIVE_INFINITY)
+    : null;
+  const tetoFt = Number.isFinite(ceilingFt) ? ceilingFt : null;
+  const ventoDir = toNumber(fcst.wdir);
+  const ventoKt = toNumber(fcst.wspd);
+  const rajadaKt = toNumber(fcst.wgst);
+
+  return {
+    timeFrom: fcst.timeFrom || null,
+    timeTo: fcst.timeTo || null,
+    change: fcst.fcstChange || null,
+    probability: fcst.probability || null,
+    ventoDir,
+    ventoKt,
+    rajadaKt: typeof rajadaKt === "number" && rajadaKt > 0 ? rajadaKt : null,
+    visKm: visibilityKm,
+    tetoFt,
+    class: classifyFromWeather(visibilityKm, tetoFt),
+    obs: fcst.wxString || (Array.isArray(fcst.clouds) && fcst.clouds.length ? fcst.clouds.map((cloud) => `${cloud.cover}${cloud.base ? String(cloud.base).padStart(3, "0") : ""}`).join(" ") : null),
+  };
+}
+
+function buildTafSummary(taf) {
+  if (!taf || !Array.isArray(taf.fcsts) || !taf.fcsts.length) return null;
+  const current = taf.fcsts.find((fcst) => !fcst.fcstChange) || taf.fcsts[0];
+  const windDir = current?.wdir == null ? "VRB" : `${current.wdir}?`;
+  const wind = current?.wspd == null ? null : `${windDir} ${current.wspd} kt`;
+  const vis = current?.visib == null ? null : current.visib === "6+" || current.visib === "10+" ? "10 km ou mais" : `${Math.round(Number(current.visib) * 1.60934 * 10) / 10} km`;
+  const cloud = Array.isArray(current?.clouds) && current.clouds.length
+    ? current.clouds
+      .filter((item) => item?.cover)
+      .map((item) => `${item.cover}${item.base ? ` ${item.base} ft` : ""}`)
+      .join(", ")
+    : null;
+  const pieces = [wind, vis, cloud].filter(Boolean);
+  return pieces.length ? pieces.join(" ? ") : "TAF disponivel";
+}
+
+function normalizeAwcTaf(raw, airport) {
+  if (!raw || typeof raw !== "object") return null;
+  const firstForecast = Array.isArray(raw.fcsts) ? raw.fcsts.find((fcst) => !fcst.fcstChange) || raw.fcsts[0] : null;
+  const normalizedFirst = normalizeTafForecast(firstForecast);
+
+  return {
+    icao: raw.icaoId || airport?.icao || "",
+    cidade: airport?.cidade || raw.name || raw.icaoId || "",
+    issueTime: raw.issueTime || null,
+    validTimeFrom: raw.validTimeFrom || null,
+    validTimeTo: raw.validTimeTo || null,
+    rawTAF: raw.rawTAF || "",
+    summary: buildTafSummary(raw),
+    ...normalizedFirst,
+  };
+}
 export async function fetchFlightConditions() {
   const cacheKey = "sentinela_flight_conditions_awc_v1";
   const cached = readJsonCache(cacheKey, FLIGHT_CONDITIONS_CACHE_MAX_AGE_MS);
 
-  // 1. Aviation Weather Center (sem chave, gratuito)
-  try {
-    const ids = ICAO_CORREDOR.join(",");
-    const res = await fetch(
-      `https://aviationweather.gov/api/data/metar?ids=${ids}&format=json&taf=false`,
-      { signal: AbortSignal.timeout(10000) }
-    );
-    if (res.ok) {
-      const raw = await res.json();
-      if (Array.isArray(raw) && raw.length > 0) {
-        const aerodromos = ICAO_CORREDOR.map((icao) => {
-          const found = raw.find((r) => r.station_id === icao);
-          return found ? mapAwcMetar(found) : { icao, cidade: icao, obs: "Sem METAR", ventoKt: null, ventoDir: null, visKm: null, tetoFt: null };
-        });
-        const result = { ok: true, aerodromos, source: "Aviation Weather Center / NOAA", fetched_at: new Date().toISOString() };
-        saveJsonCache(cacheKey, result);
-        return result;
+  const fetchFromAwc = async (airport) => {
+    const [metarRes, tafRes] = await Promise.allSettled([
+      fetch(`https://aviationweather.gov/api/data/metar?ids=${airport.icao}&format=json`, {
+        signal: AbortSignal.timeout(10000),
+      }),
+      fetch(`https://aviationweather.gov/api/data/taf?ids=${airport.icao}&format=json`, {
+        signal: AbortSignal.timeout(10000),
+      }),
+    ]);
+
+    const parseResponse = async (responsePromise) => {
+      if (responsePromise.status !== "fulfilled" || !responsePromise.value.ok) return null;
+      const text = await responsePromise.value.text();
+      if (!text || !text.trim()) return null;
+      try {
+        return JSON.parse(text);
+      } catch {
+        return null;
       }
+    };
+
+    const metar = await parseResponse(metarRes);
+    const taf = await parseResponse(tafRes);
+    const metarRow = Array.isArray(metar) ? metar[0] : metar;
+    const tafRow = Array.isArray(taf) ? taf[0] : taf;
+    const normalizedMetar = metarRow ? mapAwcMetar(metarRow, airport) : null;
+    const normalizedTaf = tafRow ? normalizeAwcTaf(tafRow, airport) : null;
+
+    return {
+      ok: Boolean(normalizedMetar || normalizedTaf),
+      icao: airport.icao,
+      cidade: airport.cidade,
+      ...normalizedMetar,
+      class: normalizedMetar?.class || (normalizedTaf?.class ?? "SEM METAR"),
+      obs: normalizedMetar?.obs || "Sem METAR recente na AWC",
+      taf: normalizedTaf,
+      tafSummary: normalizedTaf?.summary || buildTafSummary(tafRow),
+      rawTaf: tafRow?.rawTAF || null,
+      tafIssueTime: tafRow?.issueTime || null,
+      source: "Aviation Weather Center / NOAA",
+    };
+  };
+
+  try {
+    const aerodromos = await Promise.all(ICAO_CORREDOR.map((airport) => fetchFromAwc(airport)));
+    const result = { ok: aerodromos.some((airport) => airport.ok), aerodromos, source: "Aviation Weather Center / NOAA", fetched_at: new Date().toISOString() };
+    if (result.ok) {
+      saveJsonCache(cacheKey, result);
+      return result;
     }
   } catch (_) { /* fallthrough */ }
 
