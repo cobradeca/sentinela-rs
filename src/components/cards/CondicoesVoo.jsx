@@ -9,9 +9,9 @@ export const MOCK_VOO = [
 ];
 
 const ERROR_VOO = [
-  { ok: false, icao: "SBPA", cidade: "Porto Alegre", class: "SEM DADOS", obs: "Fonte indispon?vel" },
-  { ok: false, icao: "SBPK", cidade: "Pelotas", class: "SEM DADOS", obs: "Fonte indispon?vel" },
-  { ok: false, icao: "SBRG", cidade: "Rio Grande", class: "SEM DADOS", obs: "Fonte indispon?vel" },
+  { ok: false, icao: "SBPA", cidade: "Porto Alegre", class: "SEM DADOS", obs: "Fonte indisponível" },
+  { ok: false, icao: "SBPK", cidade: "Pelotas", class: "SEM DADOS", obs: "Fonte indisponível" },
+  { ok: false, icao: "SBRG", cidade: "Rio Grande", class: "SEM DADOS", obs: "Fonte indisponível" },
 ];
 
 function classifyFlight(row) {
@@ -30,7 +30,7 @@ function classifyFlight(row) {
 
 function formatWind(row) {
   if (typeof row.ventoKt !== "number") return "Sem leitura";
-  const dir = typeof row.ventoDir === "number" ? `${row.ventoDir}?` : "VRB";
+  const dir = typeof row.ventoDir === "number" ? `${row.ventoDir}°` : "VRB";
   return (
     <>
       {dir} {row.ventoKt} kt
@@ -47,6 +47,13 @@ function formatVisibility(row) {
 function formatCeiling(row) {
   if (typeof row.tetoFt !== "number") return "Sem teto";
   return `${row.tetoFt} ft`;
+}
+
+function formatTime(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 }
 
 export function CondicoesVoo({ className = "", data = null, loading = false, error = null, onRetry, onNavigate, compact = true }) {
@@ -66,7 +73,7 @@ export function CondicoesVoo({ className = "", data = null, loading = false, err
         const rows = Array.isArray(result?.aerodromos) && result.aerodromos.length ? result.aerodromos : ERROR_VOO;
         setState({
           loading: false,
-          error: result?.ok ? null : result?.error || "METAR indisponivel",
+          error: result?.ok ? null : result?.error || "METAR indisponível",
           rows,
           fetchedAt: result?.fetched_at || null,
           source: result?.source || "Aviation Weather Center / NOAA",
@@ -74,7 +81,7 @@ export function CondicoesVoo({ className = "", data = null, loading = false, err
       })
       .catch((err) => {
         if (cancelled) return;
-        setState({ loading: false, error: err?.message || "METAR indisponivel", rows: ERROR_VOO, fetchedAt: null, source: null });
+        setState({ loading: false, error: err?.message || "METAR indisponível", rows: ERROR_VOO, fetchedAt: null, source: null });
       });
 
     return () => {
@@ -97,33 +104,63 @@ export function CondicoesVoo({ className = "", data = null, loading = false, err
     );
   }
 
+  const updatedAt = formatTime(state.fetchedAt);
+
   return (
     <section className={`sr-mod-card ${className}`}>
       <header className="sr-mod-header sr-mod-header-voo">
         <div className="sr-mod-title">
-          <span>?</span> CONDI??ES DE VOO
-          <span className="sr-mod-subtitle">Corredor POA?Rio Grande</span>
+          <span>✈</span> CONDIÇÕES DE VOO
+          <span className="sr-mod-subtitle">Corredor POA–Rio Grande</span>
         </div>
-        <div className="sr-mod-badge">{state.source || "AWC/NOAA"}{state.fetchedAt ? ` ? ${new Date(state.fetchedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : ""}</div>
+        <div className="sr-mod-badge">{state.source || "AWC/NOAA"}{updatedAt ? ` • ${updatedAt}` : ""}</div>
       </header>
-      <div className="sr-voo-table">
+
+      <div className={`sr-voo-table ${compact ? "sr-voo-table--compact" : "sr-voo-table--detail"}`}>
         <div className="sr-voo-head">
-          <span>Aerodromo</span><span>Vento</span><span>Visibilidade</span><span>Teto</span><span>Class.</span>
-          {!compact && <span>Obs.</span>}
+          <span>Aeródromo</span><span>Vento</span><span>Visibilidade</span><span>Teto</span><span>Class.</span>
+          {!compact && <span>METAR / TAF</span>}
         </div>
         {state.rows.map((row) => {
           const flight = classifyFlight(row);
+          const hasMetar = Boolean(row.raw);
           return (
             <div key={row.icao} className="sr-voo-row">
               <span><strong>{row.icao}</strong><small>{row.cidade}</small></span>
               <span>{formatWind(row)}</span>
               <span>{formatVisibility(row)}</span>
               <span>{formatCeiling(row)}</span>
-              <span className="sr-flight-pill" style={{ background: `${flight.color}22`, color: flight.color }}>{flight.label}</span>
+              <span>
+                <span className="sr-flight-pill" style={{ background: `${flight.color}22`, color: flight.color }}>{flight.label}</span>
+                {compact && (
+                  <small className="sr-voo-compact-note">
+                    {hasMetar ? "METAR" : row.tafSummary || row.taf ? "Só TAF" : "Sem leitura"}
+                  </small>
+                )}
+              </span>
+
               {!compact && (
-                <span title={row.raw || row.rawTaf || row.obs || ""}>
-                  <strong>{row.obs || "METAR"}</strong>
-                  {row.tafSummary ? <small>TAF: {row.tafSummary}</small> : row.rawTaf ? <small>TAF dispon?vel</small> : null}
+                <span className="sr-voo-detail">
+                  {hasMetar ? (
+                    <>
+                      <strong>METAR{row.metarSource ? ` (${row.metarSource})` : ""}</strong>
+                      <small className="sr-voo-raw" title={row.raw}>{row.raw}</small>
+                      {row.reportTime && <small>Observado: {formatTime(row.reportTime)}</small>}
+                    </>
+                  ) : (
+                    <strong className="sr-voo-missing">Sem METAR recente</strong>
+                  )}
+
+                  {row.rawTaf ? (
+                    <>
+                      <strong style={{ marginTop: 6 }}>TAF{row.tafSource ? ` (${row.tafSource})` : ""}</strong>
+                      {row.tafSummary && <small>{row.tafSummary}</small>}
+                      <small className="sr-voo-raw" title={row.rawTaf}>{row.rawTaf}</small>
+                      {row.tafIssueTime && <small>Emitido: {formatTime(row.tafIssueTime)}</small>}
+                    </>
+                  ) : (
+                    <strong className="sr-voo-missing" style={{ marginTop: 6 }}>Sem TAF recente</strong>
+                  )}
                 </span>
               )}
             </div>
@@ -131,13 +168,14 @@ export function CondicoesVoo({ className = "", data = null, loading = false, err
         })}
       </div>
 
-      {onNavigate && (
-        <footer className="sr-mod-footer" style={{ display: "flex", justifyContent: "flex-end" }}>
-          <button type="button" className="sr-btn-link" onClick={() => onNavigate("voo")}>
+      <footer className="sr-mod-footer">
+        Fonte: AWC/NOAA, com complemento CheckWX quando o aeródromo não tem METAR/TAF recente na AWC. Apoio tático — confirme em operações críticas.
+        {onNavigate && (
+          <button type="button" className="sr-btn-link" onClick={() => onNavigate("voo")} style={{ float: "right" }}>
             Ver detalhes <NavIcon name="chevron" size={13} />
           </button>
-        </footer>
-      )}
+        )}
+      </footer>
     </section>
   );
 }

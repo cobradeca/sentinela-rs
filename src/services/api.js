@@ -422,6 +422,23 @@ export async function fetchFlightConditions() {
     };
   };
 
+  // 1. Primário: Supabase Edge Function (AWC/NOAA + complemento CheckWX por aeródromo)
+  try {
+    const res = await fetch(AWC_METAR_CORREDOR_FUNCTION_URL, {
+      signal: AbortSignal.timeout(15000),
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.ok && Array.isArray(data?.aerodromos)) {
+        saveJsonCache(cacheKey, data);
+        return data;
+      }
+    }
+  } catch (_) { /* fallthrough */ }
+
+  // 2. Fallback: AWC/NOAA direto do cliente (sem complemento CheckWX)
   try {
     const aerodromos = await Promise.all(ICAO_CORREDOR.map((airport) => fetchFromAwc(airport)));
     const result = { ok: aerodromos.some((airport) => airport.ok), aerodromos, source: "Aviation Weather Center / NOAA", fetched_at: new Date().toISOString() };
@@ -431,21 +448,7 @@ export async function fetchFlightConditions() {
     }
   } catch (_) { /* fallthrough */ }
 
-  // 2. Fallback: Supabase Edge Function
-  try {
-    const res = await fetch(AWC_METAR_CORREDOR_FUNCTION_URL, {
-      signal: AbortSignal.timeout(15000),
-      cache: "no-store",
-      headers: { Accept: "application/json" },
-    });
-    if (!res.ok) return cached || { ok: false, aerodromos: [], error: `AWC METAR HTTP ${res.status}`, fetched_at: new Date().toISOString() };
-    const data = await res.json();
-    if (!data?.ok || !Array.isArray(data?.aerodromos)) return cached || { ...data, ok: false, aerodromos: data?.aerodromos || [] };
-    saveJsonCache(cacheKey, data);
-    return data;
-  } catch (err) {
-    return cached || { ok: false, aerodromos: [], error: err?.message || "timeout", fetched_at: new Date().toISOString() };
-  }
+  return cached || { ok: false, aerodromos: [], error: "METAR/TAF indisponível", fetched_at: new Date().toISOString() };
 }
 
 export async function fetchUserCity() {

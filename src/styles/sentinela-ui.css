@@ -719,14 +719,50 @@ body[data-theme="dark"] .sr-panorama-roads {
 }
 
 .sr-voo-head {
-  grid-template-columns: 1.2fr 1fr 1fr 0.8fr 0.8fr 0.8fr;
   color: var(--sr-text-muted);
   font-weight: 800;
   font-size: 9px;
 }
 
-.sr-voo-row {
-  grid-template-columns: 1.2fr 1fr 1fr 0.8fr 0.8fr 0.8fr;
+.sr-voo-table--compact .sr-voo-head,
+.sr-voo-table--compact .sr-voo-row {
+  grid-template-columns: 1.2fr 1fr 1fr 0.8fr 0.9fr;
+}
+
+.sr-voo-table--detail .sr-voo-head,
+.sr-voo-table--detail .sr-voo-row {
+  grid-template-columns: 1fr 0.9fr 0.9fr 0.7fr 0.6fr 2.2fr;
+  align-items: start;
+}
+
+.sr-voo-compact-note {
+  display: block;
+  margin-top: 4px;
+  text-align: center;
+}
+
+.sr-voo-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 0;
+}
+
+.sr-voo-detail strong {
+  font-size: 10px;
+  color: var(--sr-text);
+}
+
+.sr-voo-missing {
+  color: var(--sr-text-muted);
+  font-weight: 500;
+}
+
+.sr-voo-raw {
+  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 9px;
+  word-break: break-all;
+  color: var(--sr-text-muted);
 }
 
 .sr-enso-gauge-wrap {

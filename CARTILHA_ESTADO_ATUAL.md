@@ -89,6 +89,7 @@ Somente cidades que beiram a Lagoa dos Patos com régua e endpoint real:
 | SENTINELA_SERVICE_ROLE_KEY | Supabase service role |
 | OPENROUTER_API_KEY | Tradução notícias (modelo nvidia/nemotron free) |
 | GNEWS_API_KEY | GNews API — notícias BR sobre El Niño |
+| CHECKWX_API_KEY | CheckWX — complemento METAR/TAF em awc-metar-corredor quando AWC não retorna leitura para SBPK/SBRG |
 
 ---
 

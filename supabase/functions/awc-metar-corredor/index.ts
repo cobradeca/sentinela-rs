@@ -103,6 +103,72 @@ function buildTafSummary(taf: any) {
   return pieces.length ? pieces.join(" • ") : "TAF disponivel";
 }
 
+function getCheckwxKey() {
+  return Deno.env.get("CHECKWX_API_KEY") || "";
+}
+
+async function fetchCheckwx(path: string, key: string) {
+  const response = await fetch(`https://api.checkwx.com/v2/${path}`, {
+    headers: { "X-API-Key": key, Accept: "application/json" },
+  });
+  if (!response.ok) return null;
+  const json = await response.json().catch(() => null);
+  if (!json || !Array.isArray(json.data) || !json.data.length) return null;
+  return json.data[0];
+}
+
+// CheckWX retorna METAR decodificado em JSON (results.data[0]), com
+// shape: { raw_text, wind: {degrees, speed_kts, gust_kts}, visibility: {meters},
+// ceiling: {feet}, flight_category, observed }
+function normalizeCheckwxMetar(row: any, airport: { icao: string; cidade: string }) {
+  if (!row) return null;
+  const visMeters = row?.visibility?.meters ?? row?.visibility?.meters_float ?? null;
+  const visKm = typeof visMeters === "number" ? Math.round((visMeters / 1000) * 10) / 10 : null;
+  const tetoFt = typeof row?.ceiling?.feet === "number" ? row.ceiling.feet : null;
+
+  return {
+    ok: true,
+    icao: airport.icao,
+    cidade: airport.cidade,
+    ventoDir: typeof row?.wind?.degrees === "number" ? row.wind.degrees : null,
+    ventoKt: typeof row?.wind?.speed_kts === "number" ? row.wind.speed_kts : null,
+    rajadaKt: typeof row?.wind?.gust_kts === "number" && row.wind.gust_kts > 0 ? row.wind.gust_kts : null,
+    visKm,
+    tetoFt,
+    class: row?.flight_category || classifyFromWeather(visKm, tetoFt),
+    obs: Array.isArray(row?.conditions) && row.conditions.length
+      ? row.conditions.map((c: any) => c?.text).filter(Boolean).join(", ")
+      : "METAR",
+    raw: row?.raw_text || null,
+    reportTime: row?.observed || null,
+    receiptTime: null,
+  };
+}
+
+function normalizeCheckwxTaf(row: any) {
+  if (!row) return null;
+  const forecast = Array.isArray(row?.forecast) && row.forecast.length ? row.forecast[0] : null;
+  const visMeters = forecast?.visibility?.meters ?? null;
+  const visKm = typeof visMeters === "number" ? Math.round((visMeters / 1000) * 10) / 10 : null;
+  const tetoFt = typeof forecast?.ceiling?.feet === "number" ? forecast.ceiling.feet : null;
+
+  return {
+    timeFrom: row?.timestamp?.from || null,
+    timeTo: row?.timestamp?.to || null,
+    change: forecast?.change?.indicator?.code || null,
+    probability: forecast?.change?.probability || null,
+    ventoDir: typeof forecast?.wind?.degrees === "number" ? forecast.wind.degrees : null,
+    ventoKt: typeof forecast?.wind?.speed_kts === "number" ? forecast.wind.speed_kts : null,
+    rajadaKt: typeof forecast?.wind?.gust_kts === "number" && forecast.wind.gust_kts > 0 ? forecast.wind.gust_kts : null,
+    visKm,
+    tetoFt,
+    class: classifyFromWeather(visKm, tetoFt),
+    obs: null,
+    raw: row?.raw_text || null,
+    issueTime: row?.timestamp?.issued || null,
+  };
+}
+
 async function fetchJson(url: string) {
   const response = await fetch(url, { headers: { Accept: "application/json" } });
   if (!response.ok) return null;
@@ -123,8 +189,35 @@ async function fetchAirport(airport: { icao: string; cidade: string }) {
 
   const metarRow = Array.isArray(metar) ? metar[0] : metar;
   const tafRow = Array.isArray(taf) ? taf[0] : taf;
-  const normalizedMetar = metarRow ? normalizeMetar(metarRow, airport) : null;
-  const normalizedTaf = tafRow ? normalizeTafForecast((tafRow.fcsts || []).find((fcst: any) => !fcst.fcstChange) || tafRow.fcsts?.[0]) : null;
+  let normalizedMetar = metarRow ? normalizeMetar(metarRow, airport) : null;
+  let normalizedTaf = tafRow ? normalizeTafForecast((tafRow.fcsts || []).find((fcst: any) => !fcst.fcstChange) || tafRow.fcsts?.[0]) : null;
+  let tafSummary = buildTafSummary(tafRow);
+  let rawTaf = tafRow?.rawTAF || null;
+  let tafIssueTime = tafRow?.issueTime || null;
+  let metarSource = normalizedMetar ? "Aviation Weather Center / NOAA" : null;
+  let tafSource = normalizedTaf ? "Aviation Weather Center / NOAA" : null;
+
+  // Complemento: CheckWX preenche METAR e/ou TAF quando o AWC não retorna
+  // leitura recente para o aeródromo (comum em SBPK/SBRG).
+  const checkwxKey = getCheckwxKey();
+  if (checkwxKey && (!normalizedMetar || !normalizedTaf)) {
+    const [checkwxMetar, checkwxTaf] = await Promise.all([
+      !normalizedMetar ? fetchCheckwx(`metar/${airport.icao}/decoded`, checkwxKey) : Promise.resolve(null),
+      !normalizedTaf ? fetchCheckwx(`taf/${airport.icao}/decoded`, checkwxKey) : Promise.resolve(null),
+    ]);
+
+    if (!normalizedMetar && checkwxMetar) {
+      normalizedMetar = normalizeCheckwxMetar(checkwxMetar, airport);
+      metarSource = "CheckWX (complementar)";
+    }
+    if (!normalizedTaf && checkwxTaf) {
+      normalizedTaf = normalizeCheckwxTaf(checkwxTaf);
+      tafSummary = tafSummary || buildTafSummary({ fcsts: checkwxTaf?.forecast ? [checkwxTaf.forecast[0]] : [] }) || "TAF disponível (CheckWX)";
+      rawTaf = rawTaf || checkwxTaf?.raw_text || null;
+      tafIssueTime = tafIssueTime || checkwxTaf?.timestamp?.issued || null;
+      tafSource = "CheckWX (complementar)";
+    }
+  }
 
   return {
     ok: Boolean(normalizedMetar || normalizedTaf),
@@ -133,10 +226,12 @@ async function fetchAirport(airport: { icao: string; cidade: string }) {
     ...(normalizedMetar || {}),
     class: normalizedMetar?.class || normalizedTaf?.class || "SEM METAR",
     obs: normalizedMetar?.obs || "Sem METAR recente na AWC",
+    metarSource,
     taf: normalizedTaf,
-    tafSummary: buildTafSummary(tafRow),
-    rawTaf: tafRow?.rawTAF || null,
-    tafIssueTime: tafRow?.issueTime || null,
+    tafSummary,
+    rawTaf,
+    tafIssueTime,
+    tafSource,
   };
 }
 
@@ -161,7 +256,7 @@ Deno.serve(async (req) => {
       source_url: "https://aviationweather.gov/data/api/",
       fetched_at: new Date().toISOString(),
       aerodromos,
-      note: "METAR operacional observado. TAF incluído como contexto de previsão curta.",
+      note: "METAR operacional observado (AWC/NOAA). TAF incluído como contexto de previsão curta. Quando o AWC não tem leitura recente, CheckWX é usado como complemento, sempre rotulado na origem.",
     }), {
       headers: {
         ...corsHeaders,
