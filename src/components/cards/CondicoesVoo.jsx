@@ -92,8 +92,11 @@ export function CondicoesVoo({ className = "", data = null, loading = false, err
 
   return (
     <section className={`sr-mod-card ${className}`}>
-      <header className="sr-mod-header">
-        <div className="sr-mod-title"><span>✈</span> CONDICOES DE VOO <span>• Corredor POA-RIO GRANDE</span></div>
+      <header className="sr-mod-header sr-mod-header-voo">
+        <div className="sr-mod-title">
+          <span>✈</span> CONDIÇÕES DE VOO
+          <span className="sr-mod-subtitle">Corredor POA–Rio Grande</span>
+        </div>
         <div className="sr-mod-badge">{state.source || "AWC/NOAA"}{state.fetchedAt ? ` • ${new Date(state.fetchedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : ""}</div>
       </header>
       <div className="sr-voo-table">

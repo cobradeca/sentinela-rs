@@ -19,9 +19,15 @@ function phaseFromOni(oni) {
 
 // Converte ONI (-2 a +2) para ângulo da agulha (-90° a +90° a partir do centro do semicírculo)
 // O SVG original tem agulha apontando para cima = 0°, girando -90 (esq) a +90 (dir)
+// Converte ONI (-2 a +2) para ângulo da agulha do SVG.
+// A agulha (polígono) tem orientação base apontando ~38° para o lado El Niño
+// (em relação ao topo do mostrador). Subtraímos esse offset para que oni=0
+// (Neutro) deixe a agulha apontando para o topo (label NEUTRO).
+const NEEDLE_BASE_OFFSET_DEG = 38;
+
 function oniToAngle(oni) {
   const clamped = Math.max(-2, Math.min(2, oni));
-  return (clamped / 2) * 90; // -90 a +90 graus
+  return (clamped / 2) * 90 - NEEDLE_BASE_OFFSET_DEG; // -90 a +90 graus, ajustado pelo offset da agulha
 }
 
 export function ENSOCard({ className = "", data = MOCK_ENSO, loading = false, error = null, onRetry, onNavigate }) {

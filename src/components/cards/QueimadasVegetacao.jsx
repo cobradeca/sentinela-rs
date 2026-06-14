@@ -53,14 +53,17 @@ export function QueimadasVegetacao({ className = "", data = MOCK_QUEIMADAS, load
   const normalized = normalizeQueimadasData(data);
   const color = ndviColor(normalized.ndviMedio);
   const ndviLabel = Number.isFinite(normalized.ndviMedio) ? normalized.ndviMedio.toFixed(2) : "—";
-  const statusText = normalized.status || (Number.isFinite(normalized.ndviMedio) ? "ativo" : "sem leitura");
   const focoLabel = Number.isFinite(normalized.focos24h) && normalized.focos24h > 0 ? normalized.focos24h : "Sem foco";
+  const periodLabel = normalized.period?.to
+    ? new Date(normalized.period.to).toLocaleDateString("pt-BR")
+    : null;
+  const badgeLabel = normalized.focos24h > 0 ? `${normalized.focos24h} foco(s) ativo(s)` : "Sem foco ativo";
 
   return (
     <section className={`sr-mod-card ${className}`}>
       <header className="sr-mod-header">
         <div className="sr-mod-title"><span>🔥</span> QUEIMADAS E VEGETAÇÃO</div>
-        <div className="sr-mod-badge">{statusText}</div>
+        <div className="sr-mod-badge">{badgeLabel}</div>
       </header>
 
       <div className="sr-veg-grid">
@@ -77,6 +80,12 @@ export function QueimadasVegetacao({ className = "", data = MOCK_QUEIMADAS, load
             <i style={{ width: `${Math.max(0, Math.min(100, (normalized.ndviMedio ?? 0) * 100))}%`, background: color }} />
           </div>
           <small>{normalized.vegetationPercent != null ? `${normalized.vegetationPercent}% vegetação saudável` : normalized.method || "Contexto Copernicus"}</small>
+        </div>
+
+        <div>
+          <span>Cobertura analisada</span>
+          <strong>{normalized.validCoveragePercent != null ? `${normalized.validCoveragePercent}%` : "—"}</strong>
+          <small>{periodLabel ? `Imagem de ${periodLabel}` : "Fonte: Copernicus / Sentinel-2"}</small>
         </div>
       </div>
 

@@ -241,6 +241,19 @@ a:focus-visible {
   font-weight: 500;
 }
 
+.sr-mod-header-voo {
+  flex-wrap: wrap;
+}
+
+.sr-mod-subtitle {
+  display: block;
+  flex-basis: 100%;
+  color: var(--sr-text-muted);
+  font-weight: 500;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
 .sr-mod-badge,
 .sr-mod-footer {
   color: var(--sr-text-muted);
