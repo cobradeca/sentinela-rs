@@ -731,12 +731,8 @@ body[data-theme="dark"] .sr-panorama-roads {
 
 .sr-enso-gauge {
   width: min(100%, 330px);
-}
-
-.sr-enso-gauge path {
-  fill: none;
-  stroke-width: 18;
-  stroke-linecap: round;
+  height: auto;
+  display: block;
 }
 
 .sr-enso-needle {
