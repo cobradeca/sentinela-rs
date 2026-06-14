@@ -476,6 +476,8 @@ const wmoEmoji = (c) => WMO_WEATHER[Number(c)]?.[0] || "🌦️";
 export default function SentinelaRS() {
   const [stationData, setStationData] = useState({});
   const [loading, setLoading] = useState(true);
+  const [splashDone, setSplashDone] = useState(false);
+  const splashTimerRef = useRef(null);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [lagoaHistory, setLagoaHistory] = useState({});
   const [lagoaHistoryMeta, setLagoaHistoryMeta] = useState({ source: "sessão atual", persistent: false });
@@ -845,6 +847,9 @@ export default function SentinelaRS() {
       setSourceHealth({ ...nextHealth });
     } finally {
     setLoading(false);
+    if (!splashTimerRef.current) {
+      splashTimerRef.current = setTimeout(() => setSplashDone(true), 1500);
+    }
     }
   }, []);
 
@@ -1266,6 +1271,18 @@ export default function SentinelaRS() {
       </div>
     </div>
   ) : null;
+
+  if (!splashDone) {
+    return (
+      <div className="sr-splash">
+        <div className="sr-splash-inner">
+          <img src="/sentinela-rs/brand/sentinela-rs-logo.png" alt="Sentinela RS" className="sr-splash-logo" />
+          <div className="sr-splash-title">SENTINELA RS</div>
+          <div className="sr-splash-dots"><span /><span /><span /></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
