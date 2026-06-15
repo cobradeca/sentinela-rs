@@ -27,7 +27,7 @@ export function AnomaliaSSTCard({ className = "" }) {
 
   const selectedDate = useMemo(() => addUtcDays(baseDate, -offsetDays), [baseDate, offsetDays]);
   const selectedDateIso = toUtcDateString(selectedDate);
-  const imageUrl = `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/GHRSST_L4_MUR_SST_Anomalies/default/${selectedDateIso}/GoogleMapsCompatible_Level7/2/1/1.png`;
+  const imageUrl = `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/GHRSST_L4_MUR_Sea_Surface_Temperature_Anomalies/default/${selectedDateIso}/GoogleMapsCompatible_Level7/2/1/1.png`;
 
   const handleError = () => {
     if (fallbacks < MAX_FALLBACKS && offsetDays < MAX_SLIDER_DAYS) {
@@ -89,8 +89,8 @@ export function AnomaliaSSTCard({ className = "" }) {
 
         <div className="sr-sst-legend">
           {[
-            { label: "Frio", color: "#1d4ed8" },
-            { label: "Levemente frio", color: "#60a5fa" },
+            { label: "Frio intenso", color: "#1e3a8a" },
+            { label: "Frio", color: "#60a5fa" },
             { label: "Neutro", color: "#94a3b8" },
             { label: "Quente", color: "#f59e0b" },
             { label: "Muito quente", color: "#dc2626" },
