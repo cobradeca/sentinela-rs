@@ -1,4 +1,5 @@
 import { NavIcon } from "../components/layout/NavIcons";
+import { AnomaliaSSTCard } from "../components/cards/AnomaliaSSTCard";
 
 const phaseColors = {
   superLaNina: "#1e3a8a",
@@ -259,6 +260,8 @@ export function EnsoTab({ ctx }) {
         </div>
       </div>
 
+      <AnomaliaSSTCard />
+
       <div className="sr-info-banner">
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <NavIcon name="info" size={20} />
@@ -268,4 +271,3 @@ export function EnsoTab({ ctx }) {
     </div>
   );
 }
-

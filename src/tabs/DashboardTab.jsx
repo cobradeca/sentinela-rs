@@ -9,6 +9,7 @@ import {
   PrevisaoRioGrande,
   QueimadasVegetacao,
 } from "../components/cards";
+import { classifyENSO } from "../utils/enso";
 
 function toLagoaRows(STATIONS_LAGOA, stationData, getLagoaPointData, lagoaHistory = {}) {
   const rows = STATIONS_LAGOA.map((point) => {
@@ -133,7 +134,7 @@ export function DashboardTab({ ctx }) {
           onNavigate={setActiveTab}
           data={{
             oni: typeof activeENSO.nino34 === "number" ? activeENSO.nino34 : 0,
-            condicao: activeENSO.phase === "EL_NINO" ? "El Nino" : activeENSO.phase === "LA_NINA" ? "La Nina" : "Neutro",
+            condicao: typeof activeENSO.nino34 === "number" ? classifyENSO(activeENSO.nino34).label : "Indisponivel",
             probIRI: Number.parseInt(formatProbability(firstForecast.en ?? activeENSO.prob?.elNino), 10) || 0,
             probCCSR: Number.parseInt(formatProbability(firstForecast.nu ?? activeENSO.prob?.neutral), 10) || 0,
             atualizadoEm: activeENSO.probabilityReferenceDate || "Atual",
