@@ -51,30 +51,28 @@ export function AnomaliaSSTCard({ className = "" }) {
   };
 
   return (
-    <section className={`sr-mod-card ${className}`}>
+    <section className={`sr-mod-card sr-sst-card ${className}`}>
       <header className="sr-mod-header">
         <div className="sr-mod-title"><span>🌊</span> Anomalia de TSM <span>• El Niño</span></div>
         <div className="sr-mod-badge">NASA GIBS • {selectedDateIso}</div>
       </header>
 
-      <div style={{ display: "grid", gap: 14 }}>
-        <div style={{ borderRadius: 12, overflow: "hidden", border: "1px solid var(--sr-border)", background: "#0f172a" }}>
+      <div className="sr-sst-body">
+        <div className="sr-sst-frame">
           {!failed ? (
             <img
+              className="sr-sst-image"
               src={imageUrl}
               alt={`Anomalias de temperatura da superficie do mar em ${selectedDateIso}`}
-              style={{ width: "100%", display: "block", aspectRatio: "16 / 9", objectFit: "cover" }}
               onLoad={handleLoad}
               onError={handleError}
             />
           ) : (
-            <div style={{ aspectRatio: "16 / 9", display: "grid", placeItems: "center", color: "#bfdbfe", padding: 16, textAlign: "center" }}>
-              Imagem indisponível para o período selecionado.
-            </div>
+            <div className="sr-sst-error">Imagem indisponível para o período selecionado.</div>
           )}
         </div>
 
-        <label style={{ display: "grid", gap: 8, fontSize: 13, color: "var(--sr-text-muted)" }}>
+        <label className="sr-sst-slider">
           <span>Voltar até 14 dias</span>
           <input
             type="range"
@@ -82,15 +80,14 @@ export function AnomaliaSSTCard({ className = "" }) {
             max={MAX_SLIDER_DAYS}
             value={offsetDays}
             onChange={handleSlider}
-            style={{ width: "100%" }}
           />
         </label>
 
-        <div style={{ color: "var(--sr-text-muted)", fontSize: 13, lineHeight: 1.5 }}>
+        <div className="sr-sst-copy">
           A faixa quente (laranja/vermelho) ao longo do Pacífico equatorial indica águas mais quentes que a média, características de El Niño. Faixas frias (azul) indicam La Niña.
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 8 }}>
+        <div className="sr-sst-legend">
           {[
             { label: "Frio", color: "#1d4ed8" },
             { label: "Levemente frio", color: "#60a5fa" },
@@ -98,13 +95,13 @@ export function AnomaliaSSTCard({ className = "" }) {
             { label: "Quente", color: "#f59e0b" },
             { label: "Muito quente", color: "#dc2626" },
           ].map((item) => (
-            <div key={item.label} style={{ borderRadius: 10, background: `${item.color}14`, border: `1px solid ${item.color}33`, padding: "10px 12px", color: item.color, fontWeight: 700, fontSize: 12 }}>
+            <div key={item.label} className="sr-sst-legend-item" style={{ "--sst-color": item.color }}>
               {item.label}
             </div>
           ))}
         </div>
 
-        <div style={{ fontSize: 12, color: "var(--sr-text-muted)", lineHeight: 1.5 }}>
+        <div className="sr-sst-credit">
           Imagem: NASA Global Imagery Browse Services (GIBS) — Sea Surface Temperature Anomalies (GHRSST L4 MUR).
         </div>
       </div>
