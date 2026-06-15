@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 function toUtcDateString(date) {
   return date.toISOString().slice(0, 10);
@@ -10,81 +10,58 @@ function addUtcDays(base, days) {
   return next;
 }
 
-function initialDate() {
+function initialDates() {
   const now = new Date();
   const base = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-  return addUtcDays(base, -2);
+  const recent = addUtcDays(base, -2);
+  const priorYear = addUtcDays(recent, -365);
+  return { recent, priorYear };
 }
 
-const MAX_SLIDER_DAYS = 14;
-const MAX_FALLBACKS = 5;
+function buildWorldviewUrl({ recent, priorYear }) {
+  const current = toUtcDateString(recent);
+  const previous = toUtcDateString(priorYear);
+  const layer = "GHRSST_L4_MUR_Sea_Surface_Temperature_Anomalies";
+  return [
+    "https://worldview.earthdata.nasa.gov/",
+    "?p=geographic",
+    `l=${encodeURIComponent(layer)}`,
+    `t=${encodeURIComponent(previous)}`,
+    `l1=${encodeURIComponent(layer)}`,
+    `t1=${encodeURIComponent(current)}`,
+    "ca=true",
+    "cm=swipe",
+    "cv=50",
+    "a=true",
+    "b=true",
+  ].join("&");
+}
 
 export function AnomaliaSSTCard({ className = "" }) {
-  const baseDate = useMemo(() => initialDate(), []);
-  const [offsetDays, setOffsetDays] = useState(0);
-  const [fallbacks, setFallbacks] = useState(0);
-  const [failed, setFailed] = useState(false);
-
-  const selectedDate = useMemo(() => addUtcDays(baseDate, -offsetDays), [baseDate, offsetDays]);
-  const selectedDateIso = toUtcDateString(selectedDate);
-  const imageUrl = `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/GHRSST_L4_MUR_Sea_Surface_Temperature_Anomalies/default/${selectedDateIso}/GoogleMapsCompatible_Level7/2/1/1.png`;
-
-  const handleError = () => {
-    if (fallbacks < MAX_FALLBACKS && offsetDays < MAX_SLIDER_DAYS) {
-      setFallbacks((prev) => prev + 1);
-      setOffsetDays((prev) => Math.min(MAX_SLIDER_DAYS, prev + 1));
-      setFailed(false);
-      return;
-    }
-    setFailed(true);
-  };
-
-  const handleLoad = () => {
-    setFailed(false);
-    setFallbacks(0);
-  };
-
-  const handleSlider = (event) => {
-    setOffsetDays(Number(event.target.value));
-    setFallbacks(0);
-    setFailed(false);
-  };
+  const dates = useMemo(() => initialDates(), []);
+  const worldviewUrl = useMemo(() => buildWorldviewUrl(dates), [dates]);
 
   return (
     <section className={`sr-mod-card sr-sst-card ${className}`}>
       <header className="sr-mod-header">
         <div className="sr-mod-title"><span>🌊</span> Anomalia de TSM <span>• El Niño</span></div>
-        <div className="sr-mod-badge">NASA GIBS • {selectedDateIso}</div>
+        <div className="sr-mod-badge">NASA Worldview • B = {toUtcDateString(dates.recent)}</div>
       </header>
 
       <div className="sr-sst-body">
         <div className="sr-sst-frame">
-          {!failed ? (
-            <img
-              className="sr-sst-image"
-              src={imageUrl}
-              alt={`Anomalias de temperatura da superficie do mar em ${selectedDateIso}`}
-              onLoad={handleLoad}
-              onError={handleError}
-            />
-          ) : (
-            <div className="sr-sst-error">Imagem indisponível para o período selecionado.</div>
-          )}
+          <iframe
+            className="sr-sst-iframe"
+            title="NASA Worldview - anomalia de temperatura da superfície do mar"
+            src={worldviewUrl}
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            sandbox="allow-modals allow-scripts allow-same-origin allow-forms allow-popups"
+          />
         </div>
 
-        <label className="sr-sst-slider">
-          <span>Voltar até 14 dias</span>
-          <input
-            type="range"
-            min="0"
-            max={MAX_SLIDER_DAYS}
-            value={offsetDays}
-            onChange={handleSlider}
-          />
-        </label>
-
         <div className="sr-sst-copy">
-          A faixa quente (laranja/vermelho) ao longo do Pacífico equatorial indica águas mais quentes que a média, características de El Niño. Faixas frias (azul) indicam La Niña.
+          O painel compara o período mais recente disponível com o mesmo período do ano anterior. A faixa quente ao longo do Pacífico equatorial indica águas mais quentes que a média, características de El Niño. Faixas frias indicam La Niña.
         </div>
 
         <div className="sr-sst-legend">

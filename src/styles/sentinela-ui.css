@@ -1825,6 +1825,7 @@ body[data-theme="dark"] .sr-weather-temp {
   overflow: hidden;
   border: 1px solid var(--sr-border);
   background: #0f172a;
+  min-height: 520px;
 }
 
 .sr-sst-image {
@@ -1832,6 +1833,14 @@ body[data-theme="dark"] .sr-weather-temp {
   display: block;
   aspect-ratio: 16 / 9;
   object-fit: cover;
+}
+
+.sr-sst-iframe {
+  width: 100%;
+  height: 520px;
+  border: 0;
+  display: block;
+  background: #0f172a;
 }
 
 .sr-sst-error {
