@@ -1809,62 +1809,6 @@ body[data-theme="dark"] .sr-weather-temp {
   letter-spacing: 0.05em;
 }
 
-/* SST card */
-.sr-sst-img-wrap {
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid var(--sr-border);
-  background: #091522;
-  width: 100%;
-  aspect-ratio: 3 / 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.sr-sst-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.sr-sst-slider-wrap {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 10px;
-  font-size: 11px;
-  color: var(--sr-text-muted);
-  font-weight: 700;
-}
-
-.sr-sst-slider {
-  flex: 1;
-  accent-color: #38bdf8;
-  cursor: pointer;
-  height: 4px;
-}
-
-.sr-sst-date-label {
-  text-align: center;
-  font-size: 10px;
-  color: var(--sr-text-muted);
-  margin-top: 2px;
-  margin-bottom: 10px;
-}
-
-.sr-sst-explain {
-  margin-top: 12px;
-  font-size: 11px;
-  line-height: 1.5;
-  color: var(--sr-text-muted);
-}
-
-/* remove old iframe frame */
-.sr-sst-frame { display: none; }
-.sr-sst-frame iframe { display: none; }
-
 @keyframes sr-splash-pop {
   from { transform: scale(0.6); opacity: 0; }
   to   { transform: scale(1);   opacity: 1; }
@@ -1873,4 +1817,57 @@ body[data-theme="dark"] .sr-weather-temp {
 @keyframes sr-splash-fade {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+.sr-sst-map {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--sr-border);
+  background: #0b1220;
+}
+
+.sr-sst-img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.sr-sst-slider {
+  margin-top: 10px;
+}
+
+.sr-sst-slider input[type="range"] {
+  width: 100%;
+}
+
+.sr-sst-slider-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: var(--sr-text-muted);
+  margin-top: 2px;
+}
+
+.sr-sst-legend {
+  margin-top: 12px;
+}
+
+.sr-sst-legend-bar {
+  height: 10px;
+  border-radius: 6px;
+}
+
+.sr-sst-legend-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: var(--sr-text-muted);
+  margin-top: 4px;
+}
+
+.sr-sst-explain {
+  margin-top: 12px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--sr-text-muted);
 }
