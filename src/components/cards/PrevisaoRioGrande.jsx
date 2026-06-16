@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { NavIcon } from "../layout/NavIcons";
 import { WeatherIcon } from "../layout/WeatherIcon";
 
-const API_URL = "https://api.open-meteo.com/v1/forecast?latitude=-32.035&longitude=-52.099&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,weather_code&hourly=temperature_2m,precipitation,precipitation_probability,relative_humidity_2m,wind_speed_10m,weather_code&daily=weathercode,precipitation_sum,windspeed_10m_max,temperature_2m_min,temperature_2m_max&timezone=America/Sao_Paulo&forecast_days=8";
+// A URL da API do Open-Meteo agora é gerada dinamicamente com base nas coordenadas do usuário.
 
 const WMO_DESC_PT = {
   0: "Ensolarado",
@@ -89,10 +89,14 @@ export function PrevisaoRioGrande({ className = "", onNavigate, userCity }) {
   const [hoveredHourIndex, setHoveredHourIndex] = useState(null);
   const [hoveredDayIndex, setHoveredDayIndex] = useState(null);
 
+  const lat = userCity?.lat ?? -32.035;
+  const lon = userCity?.lon ?? -52.099;
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,weather_code&hourly=temperature_2m,precipitation,precipitation_probability,relative_humidity_2m,wind_speed_10m,weather_code&daily=weathercode,precipitation_sum,windspeed_10m_max,temperature_2m_min,temperature_2m_max&timezone=America/Sao_Paulo&forecast_days=8`;
+
   const load = async () => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
-      const response = await fetch(API_URL);
+      const response = await fetch(url);
       if (!response.ok) throw new Error(`Open-Meteo HTTP ${response.status}`);
       const data = await response.json();
       setState({
@@ -117,7 +121,7 @@ export function PrevisaoRioGrande({ className = "", onNavigate, userCity }) {
 
   useEffect(() => {
     load();
-  }, []);
+  }, [userCity]);
 
   if (state.loading) {
     return (
@@ -286,7 +290,7 @@ export function PrevisaoRioGrande({ className = "", onNavigate, userCity }) {
 
         <div style={{ textAlign: "right", minWidth: 120 }}>
           <div style={{ fontSize: 20, fontWeight: 600, color: "#202124" }}>
-            {userCity || "Rio Grande"}
+            {typeof userCity === "string" ? userCity : (userCity?.name || "Rio Grande")}
           </div>
           <div style={{ fontSize: 13, color: "#70757a", marginTop: 2 }}>
             {headerTimeLabel}

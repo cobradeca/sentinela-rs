@@ -403,7 +403,11 @@ export async function fetchUserCity() {
     const res = await fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(5000) });
     if (!res.ok) return null;
     const data = await res.json();
-    return data?.city || data?.region || null;
+    return {
+      name: data?.city || data?.region || null,
+      lat: data?.latitude || null,
+      lon: data?.longitude || null,
+    };
   } catch {
     return null;
   }
