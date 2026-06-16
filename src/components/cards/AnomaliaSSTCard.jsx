@@ -131,13 +131,24 @@ function SSTMap({ currentIso, compareIso, dividerPos, onDividerChange, mapRef })
     if (compareLayerRef.current) compareLayerRef.current.setParams({ TIME: compareIso });
   }, [compareIso]);
 
-  // ── Clip-path: clipar o PANE inteiro da comparação ──────────────────────
+  // ── Clip: cortar o pane da comparação em pixels (funciona com pan/zoom) ──
   useEffect(() => {
-    if (!leafletRef.current) return;
-    const pane = leafletRef.current.getPane("comparePane");
-    if (pane) {
-      pane.style.clipPath = `inset(0 ${100 - dividerPos}% 0 0)`;
-    }
+    const map = leafletRef.current;
+    if (!map) return;
+    const pane = map.getPane("comparePane");
+    if (!pane) return;
+
+    const updateClip = () => {
+      const size = map.getSize();
+      const nw = map.containerPointToLayerPoint([0, 0]);
+      const se = map.containerPointToLayerPoint(size);
+      const clipX = nw.x + (dividerPos / 100) * (se.x - nw.x);
+      pane.style.clip = `rect(${nw.y}px, ${clipX}px, ${se.y}px, ${nw.x}px)`;
+    };
+
+    updateClip();
+    map.on("move zoom resize", updateClip);
+    return () => map.off("move zoom resize", updateClip);
   }, [dividerPos]);
 
   // ── Drag handlers (refs para evitar closures stale) ─────────────────────
