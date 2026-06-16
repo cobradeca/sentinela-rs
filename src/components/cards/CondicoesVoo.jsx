@@ -113,7 +113,6 @@ export function CondicoesVoo({ className = "", data = null, loading = false, err
       <header className="sr-mod-header sr-mod-header-voo">
         <div className="sr-mod-title">
           <span>✈</span> CONDIÇÕES DE VOO
-          <span className="sr-mod-subtitle">Corredor POA, Pelotas, Canoas e Santa Maria</span>
         </div>
         <div className="sr-mod-badge">{state.source || "AWC/NOAA"}{updatedAt ? ` • ${updatedAt}` : ""}</div>
       </header>
@@ -170,13 +169,16 @@ export function CondicoesVoo({ className = "", data = null, loading = false, err
         })}
       </div>
 
-      <footer className="sr-mod-footer">
-        Fonte: AWC/NOAA, com complemento CheckWX quando o aeródromo não tem METAR/TAF recente na AWC. Apoio tático — confirme em operações críticas.
-        {onNavigate && (
-          <button type="button" className="sr-btn-link" onClick={() => onNavigate("voo")} style={{ float: "right" }}>
-            Ver detalhes <NavIcon name="chevron" size={13} />
-          </button>
-        )}
+      <footer className="sr-mod-footer" style={{ display: "grid", gap: 8 }}>
+        <div style={{ fontSize: 13, color: "var(--sr-text-muted)" }}>Aeroportos: POA • Pelotas • Canoas • Santa Maria</div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, color: "var(--sr-text-muted)", borderTop: "1px solid var(--sr-border)", paddingTop: 8 }}>
+          <span>Fonte: AWC/NOAA</span>
+          {onNavigate && (
+            <button type="button" className="sr-btn-link" onClick={() => onNavigate("voo")} style={{ textDecoration: "none" }}>
+              Ver Detalhes <NavIcon name="chevron" size={13} />
+            </button>
+          )}
+        </div>
       </footer>
     </section>
   );
