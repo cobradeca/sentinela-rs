@@ -1819,17 +1819,32 @@ body[data-theme="dark"] .sr-weather-temp {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.sr-sst-map {
+.sr-sst-mosaic {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: 1fr 1fr;
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid var(--sr-border);
   background: #0b1220;
+  aspect-ratio: 4 / 1.8;
 }
 
-.sr-sst-img {
+.sr-sst-mosaic img {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sr-sst-error {
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sr-text-muted);
+  font-size: 12px;
 }
 
 .sr-sst-slider {
