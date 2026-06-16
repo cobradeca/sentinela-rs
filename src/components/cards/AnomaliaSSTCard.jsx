@@ -28,7 +28,7 @@ function getDateOffset(offset = 0) {
 // Renderiza duas camadas WMS sobrepostas com um divisor vertical arrastável.
 // Camada de BAIXO = data atual (direita do divisor)
 // Camada de CIMA  = data antiga  (esquerda do divisor) — cortada por clip-path
-function SSTMap({ currentIso, compareIso, dividerPos, onDividerChange }) {
+function SSTMap({ currentIso, compareIso, dividerPos, onDividerChange, mapRef }) {
   const leafletRef = useRef(null);
   const currentLayerRef = useRef(null);   // camada "hoje"
   const compareLayerRef = useRef(null);   // camada "15 dias atrás"
@@ -65,6 +65,10 @@ function SSTMap({ currentIso, compareIso, dividerPos, onDividerChange }) {
         opacity: 0.85,
       }).addTo(map);
 
+      // Pane isolado para a camada de comparação (permite clip independente)
+      map.createPane("comparePane");
+      map.getPane("comparePane").style.zIndex = 250;
+
       // Camada COMPARAÇÃO (fica por cima — visível à ESQUERDA do divisor)
       const compareLayer = L.tileLayer.wms(GIBS_WMS, {
         layers: LAYER,
@@ -73,6 +77,7 @@ function SSTMap({ currentIso, compareIso, dividerPos, onDividerChange }) {
         version: "1.1.1",
         TIME: compareIso,
         opacity: 0.85,
+        pane: "comparePane",
       }).addTo(map);
 
       // Labels por cima de tudo
@@ -92,6 +97,7 @@ function SSTMap({ currentIso, compareIso, dividerPos, onDividerChange }) {
       map.fitBounds(INITIAL_BOUNDS);
 
       leafletRef.current = map;
+      if (mapRef) mapRef.current = map;
       currentLayerRef.current = currentLayer;
       compareLayerRef.current = compareLayer;
     }
@@ -125,13 +131,12 @@ function SSTMap({ currentIso, compareIso, dividerPos, onDividerChange }) {
     if (compareLayerRef.current) compareLayerRef.current.setParams({ TIME: compareIso });
   }, [compareIso]);
 
-  // ── Clip-path: a camada de COMPARAÇÃO é cortada à DIREITA do divisor ────
-  // Ou seja: mostra a comparação apenas na metade ESQUERDA.
+  // ── Clip-path: clipar o PANE inteiro da comparação ──────────────────────
   useEffect(() => {
-    if (!compareLayerRef.current) return;
-    const el = compareLayerRef.current.getContainer?.();
-    if (el) {
-      el.style.clipPath = `inset(0 ${100 - dividerPos}% 0 0)`;
+    if (!leafletRef.current) return;
+    const pane = leafletRef.current.getPane("comparePane");
+    if (pane) {
+      pane.style.clipPath = `inset(0 ${100 - dividerPos}% 0 0)`;
     }
   }, [dividerPos]);
 
@@ -235,6 +240,11 @@ function SSTMap({ currentIso, compareIso, dividerPos, onDividerChange }) {
 // ─── AnomaliaSSTCard ───────────────────────────────────────────────────────────
 export function AnomaliaSSTCard({ className = "" }) {
   const [dividerPos, setDividerPos] = useState(50);
+  const mapRef = useRef(null);
+
+  const resetView = useCallback(() => {
+    if (mapRef.current) mapRef.current.fitBounds(INITIAL_BOUNDS);
+  }, []);
 
   // Datas calculadas automaticamente: hoje e 15 dias atrás (atualiza todo dia)
   const currentIso = getDateOffset(2);       // -2 para margem de disponibilidade GIBS
@@ -265,6 +275,7 @@ export function AnomaliaSSTCard({ className = "" }) {
           compareIso={compareIso}
           dividerPos={dividerPos}
           onDividerChange={setDividerPos}
+          mapRef={mapRef}
         />
 
         {/* Legenda de cores — canto superior esquerdo */}
@@ -293,6 +304,22 @@ export function AnomaliaSSTCard({ className = "" }) {
         </div>
 
         {/* Niño 3.4 badge */}
+        {/* Botão reset view */}
+        <button
+          type="button"
+          onClick={resetView}
+          title="Voltar à visualização inicial"
+          style={{
+            position: "absolute", bottom: 10, left: "50%", transform: "translateX(-50%)",
+            zIndex: 999, background: "rgba(0,0,0,0.75)", border: "1px solid rgba(251,191,36,0.3)",
+            borderRadius: 6, padding: "5px 10px", backdropFilter: "blur(4px)",
+            fontSize: 10, color: "#fbbf24", fontWeight: 600, cursor: "pointer",
+            display: "flex", alignItems: "center", gap: 4,
+          }}
+        >
+          ⌂ Reset
+        </button>
+
         <div style={{
           position: "absolute", top: 10, right: 10, zIndex: 999,
           background: "rgba(0,0,0,0.75)", borderRadius: 6,
