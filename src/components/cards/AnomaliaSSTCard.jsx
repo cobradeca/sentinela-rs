@@ -29,20 +29,13 @@ function worldviewUrl(iso) {
   return `https://worldview.earthdata.nasa.gov/?v=-170,-35,-40,20&l=${LAYER}&t=${iso}-T00:00:00Z`;
 }
 
-// Pré-busca tiles WMS para uma data específica usando canvas oculto
-function prefetchDate(iso) {
-  const center = { lat: -7, lng: -110 };
-  // Busca um tile representativo da região central
-  const url = `${GIBS_WMS}?SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=${LAYER}&SRS=EPSG:4326&BBOX=-170,-35,-40,20&WIDTH=256&HEIGHT=120&FORMAT=image/png&TRANSPARENT=true&TIME=${iso}`;
-  const img = new Image();
-  img.src = url;
-}
-
-function SSTMap({ dateIso, onLoadStart, onLoadEnd }) {
+function SSTMap({ dateIso, compareIso, dividerPos, onLoadStart, onLoadEnd, onCompareLoadEnd }) {
   const leafletRef = useRef(null);
-  const wmsLayerRef = useRef(null);
+  const wmsMainRef = useRef(null);
+  const wmsCompareRef = useRef(null);
   const containerId = "sr-sst-leaflet-map";
 
+  // Inicialização do mapa
   useEffect(() => {
     function initMap() {
       const L = window.L;
@@ -61,7 +54,8 @@ function SSTMap({ dateIso, onLoadStart, onLoadEnd }) {
         maxZoom: 8,
       }).addTo(map);
 
-      const wmsLayer = L.tileLayer.wms(GIBS_WMS, {
+      // Camada principal (lado esquerdo ou full)
+      const wmsMain = L.tileLayer.wms(GIBS_WMS, {
         layers: LAYER,
         format: "image/png",
         transparent: true,
@@ -70,11 +64,27 @@ function SSTMap({ dateIso, onLoadStart, onLoadEnd }) {
         opacity: 0.85,
       });
 
-      // Loading events
-      wmsLayer.on("loading", () => onLoadStart?.());
-      wmsLayer.on("load", () => onLoadEnd?.());
+      wmsMain.on("loading", () => onLoadStart?.());
+      wmsMain.on("load", () => onLoadEnd?.());
+      wmsMain.addTo(map);
 
-      wmsLayer.addTo(map);
+      // Camada de comparação (lado direito, inicialmente hidden)
+      const wmsCompare = L.tileLayer.wms(GIBS_WMS, {
+        layers: LAYER,
+        format: "image/png",
+        transparent: true,
+        version: "1.1.1",
+        TIME: compareIso,
+        opacity: 0.85,
+      });
+
+      wmsCompare.on("load", () => {
+        onCompareLoadEnd?.();
+      });
+      
+      if (compareIso) {
+        wmsCompare.addTo(map);
+      }
 
       L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png", {
         subdomains: "abcd",
@@ -91,7 +101,8 @@ function SSTMap({ dateIso, onLoadStart, onLoadEnd }) {
 
       map.fitBounds(INITIAL_BOUNDS);
       leafletRef.current = map;
-      wmsLayerRef.current = wmsLayer;
+      wmsMainRef.current = wmsMain;
+      wmsCompareRef.current = wmsCompare;
     }
 
     if (window.L) {
@@ -114,42 +125,143 @@ function SSTMap({ dateIso, onLoadStart, onLoadEnd }) {
     }
   }, []);
 
-  // Atualiza WMS com debounce nativo: usa ref para não recriar efeito
-  const debounceRef = useRef(null);
+  // Atualiza camada principal quando dateIso muda
   useEffect(() => {
-    if (!wmsLayerRef.current) return;
-    onLoadStart?.();
-    clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      wmsLayerRef.current.setParams({ TIME: dateIso });
-      // Preload dias vizinhos
-      const idx = dates.indexOf(dateIso);
-      if (idx > 0) prefetchDate(dates[idx - 1]);
-      if (idx < dates.length - 1) prefetchDate(dates[idx + 1]);
-    }, 200);
-    return () => clearTimeout(debounceRef.current);
+    if (!wmsMainRef.current) return;
+    wmsMainRef.current.setParams({ TIME: dateIso });
   }, [dateIso]);
 
-  return <div id={containerId} style={{ width: "100%", height: 420, borderRadius: 12, overflow: "hidden", background: "#091522" }} />;
+  // Atualiza camada de comparação quando compareIso muda
+  useEffect(() => {
+    if (!wmsCompareRef.current) return;
+    if (compareIso) {
+      wmsCompareRef.current.setParams({ TIME: compareIso });
+      if (!wmsCompareRef.current._map) {
+        leafletRef.current?.addLayer(wmsCompareRef.current);
+      }
+    } else {
+      if (wmsCompareRef.current._map) {
+        leafletRef.current?.removeLayer(wmsCompareRef.current);
+      }
+    }
+  }, [compareIso]);
+
+  // Aplica máscara CSS para split-view
+  useEffect(() => {
+    if (!wmsCompareRef.current || !wmsMainRef.current) return;
+    const map = leafletRef.current;
+    if (!map) return;
+
+    const dividerPercent = dividerPos;
+
+    // Aplica clip-path à camada de comparação para mostrar apenas lado direito do divisor
+    const comparePane = wmsCompareRef.current.getPane();
+    if (comparePane) {
+      comparePane.style.clipPath = `inset(0 0 0 ${dividerPercent}%)`;
+    }
+
+    // Renderiza linha vertical do divisor
+    const existingDivider = document.querySelector(".sr-sst-divider");
+    if (existingDivider) {
+      existingDivider.style.left = `${dividerPercent}%`;
+    }
+  }, [dividerPos]);
+
+  return (
+    <div style={{ position: "relative", width: "100%", height: 420 }}>
+      <div
+        id={containerId}
+        style={{
+          width: "100%",
+          height: "100%",
+          borderRadius: 12,
+          overflow: "hidden",
+          background: "#091522",
+        }}
+      />
+      {/* Divisor visual para split-view */}
+      <div
+        className="sr-sst-divider"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: `${dividerPos}%`,
+          width: 2,
+          height: "100%",
+          background: "#fbbf24",
+          zIndex: 998,
+          pointerEvents: "none",
+          transition: "left 0.05s linear",
+        }}
+      />
+    </div>
+  );
 }
 
 export function AnomaliaSSTCard({ className = "" }) {
   const [offset, setOffset] = useState(DAYS_BACK);
   const [playing, setPlaying] = useState(false);
-  const [tileLoading, setTileLoading] = useState(false);
+  const [mainLoading, setMainLoading] = useState(false);
+  const [compareLoading, setCompareLoading] = useState(false);
+  const [dividerPos, setDividerPos] = useState(50); // Posição do divisor em %
+  const [isDraggingDivider, setIsDraggingDivider] = useState(false);
   const intervalRef = useRef(null);
+  const containerRef = useRef(null);
 
   const currentIso = dates[offset] || dates[dates.length - 1];
+  
+  // Modo split-view: mostra a data anterior como comparação
+  const compareIso = offset > 0 ? dates[offset - 1] : null;
 
-  const handleSlider = useCallback((e) => setOffset(Number(e.target.value)), []);
+  const handleSlider = useCallback((e) => {
+    setOffset(Number(e.target.value));
+  }, []);
 
-  const togglePlay = useCallback(() => setPlaying((p) => !p), []);
+  const togglePlay = useCallback(() => {
+    setPlaying((p) => !p);
+  }, []);
 
+  const handleDividerMouseDown = useCallback(() => {
+    setIsDraggingDivider(true);
+  }, []);
+
+  const handleDividerMouseUp = useCallback(() => {
+    setIsDraggingDivider(false);
+  }, []);
+
+  const handleDividerMouseMove = useCallback((e) => {
+    if (!isDraggingDivider || !containerRef.current) return;
+
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const newPos = (x / rect.width) * 100;
+    
+    // Clamp entre 20% e 80%
+    const clampedPos = Math.max(20, Math.min(80, newPos));
+    setDividerPos(clampedPos);
+  }, [isDraggingDivider]);
+
+  // Attach/detach divider mouse events
+  useEffect(() => {
+    if (isDraggingDivider) {
+      document.addEventListener("mousemove", handleDividerMouseMove);
+      document.addEventListener("mouseup", handleDividerMouseUp);
+      return () => {
+        document.removeEventListener("mousemove", handleDividerMouseMove);
+        document.removeEventListener("mouseup", handleDividerMouseUp);
+      };
+    }
+  }, [isDraggingDivider, handleDividerMouseMove, handleDividerMouseUp]);
+
+  // Reprodução de timeline
   useEffect(() => {
     if (playing) {
       intervalRef.current = setInterval(() => {
         setOffset((prev) => {
-          if (prev >= DAYS_BACK) { setPlaying(false); return prev; }
+          if (prev >= DAYS_BACK) {
+            setPlaying(false);
+            return prev;
+          }
           return prev + 1;
         });
       }, 800);
@@ -169,31 +281,79 @@ export function AnomaliaSSTCard({ className = "" }) {
         </div>
       </div>
 
-      <div style={{ position: "relative" }}>
+      <div
+        ref={containerRef}
+        style={{
+          position: "relative",
+          userSelect: isDraggingDivider ? "none" : "auto",
+          cursor: isDraggingDivider ? "col-resize" : "default",
+        }}
+      >
         <SSTMap
           dateIso={currentIso}
-          onLoadStart={() => setTileLoading(true)}
-          onLoadEnd={() => setTileLoading(false)}
+          compareIso={compareIso}
+          dividerPos={dividerPos}
+          onLoadStart={() => setMainLoading(true)}
+          onLoadEnd={() => setMainLoading(false)}
+          onCompareLoadEnd={() => setCompareLoading(false)}
         />
 
-        {/* Spinner de carregamento */}
-        {tileLoading && (
+        {/* Indicador de carregamento sutil (apenas em canto, não cobre tudo) */}
+        {mainLoading && (
           <div style={{
-            position: "absolute", inset: 0, zIndex: 1000,
-            display: "grid", placeItems: "center",
-            background: "rgba(9,21,34,0.45)", backdropFilter: "blur(2px)",
-            borderRadius: 12, pointerEvents: "none",
+            position: "absolute",
+            bottom: 12,
+            right: 12,
+            zIndex: 1001,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            background: "rgba(0,0,0,0.72)",
+            borderRadius: 8,
+            padding: "6px 10px",
+            backdropFilter: "blur(4px)",
           }}>
             <div style={{
-              width: 36, height: 36, border: "3px solid rgba(56,189,248,0.25)",
-              borderTop: "3px solid #38bdf8", borderRadius: "50%",
+              width: 16,
+              height: 16,
+              border: "2px solid rgba(56,189,248,0.25)",
+              borderTop: "2px solid #38bdf8",
+              borderRadius: "50%",
               animation: "sr-spin 0.7s linear infinite",
             }} />
+            <span style={{ fontSize: 11, color: "#38bdf8", fontWeight: 700 }}>Carregando...</span>
           </div>
         )}
 
+        {compareLoading && compareIso && (
+          <div style={{
+            position: "absolute",
+            bottom: 12,
+            left: 12,
+            zIndex: 1001,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            background: "rgba(0,0,0,0.72)",
+            borderRadius: 8,
+            padding: "6px 10px",
+            backdropFilter: "blur(4px)",
+          }}>
+            <div style={{
+              width: 16,
+              height: 16,
+              border: "2px solid rgba(56,189,248,0.25)",
+              borderTop: "2px solid #38bdf8",
+              borderRadius: "50%",
+              animation: "sr-spin 0.7s linear infinite",
+            }} />
+            <span style={{ fontSize: 11, color: "#38bdf8", fontWeight: 700 }}>Comparando...</span>
+          </div>
+        )}
+
+        {/* Legenda de cores */}
         <div style={{
-          position: "absolute", bottom: 12, left: 12, zIndex: 999,
+          position: "absolute", top: 12, left: 12, zIndex: 999,
           background: "rgba(0,0,0,0.72)", borderRadius: 8, padding: "8px 12px",
           backdropFilter: "blur(4px)",
         }}>
@@ -208,6 +368,7 @@ export function AnomaliaSSTCard({ className = "" }) {
           </div>
         </div>
 
+        {/* Etiqueta Niño 3.4 */}
         <div style={{
           position: "absolute", top: 12, right: 12, zIndex: 999,
           background: "rgba(0,0,0,0.72)", borderRadius: 8, padding: "6px 10px",
@@ -215,20 +376,127 @@ export function AnomaliaSSTCard({ className = "" }) {
         }}>
           ⬛ Niño 3.4
         </div>
+
+        {/* Etiqueta de data comparada (quando em split-view) */}
+        {compareIso && (
+          <div style={{
+            position: "absolute", top: 12, left: "50%", transform: "translateX(-50%)", zIndex: 999,
+            background: "rgba(0,0,0,0.72)", borderRadius: 8, padding: "4px 8px",
+            backdropFilter: "blur(4px)", fontSize: 10, color: "#fbbf24", fontWeight: 700,
+          }}>
+            Comparando: {formatBR(compareIso)}
+          </div>
+        )}
+
+        {/* Handle arrastável do divisor */}
+        <div
+          onMouseDown={handleDividerMouseDown}
+          style={{
+            position: "absolute",
+            top: 0,
+            left: `calc(${dividerPos}% - 8px)`,
+            width: 16,
+            height: "100%",
+            zIndex: 997,
+            cursor: "col-resize",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            pointerEvents: isDraggingDivider ? "auto" : "auto",
+          }}
+        >
+          <div style={{
+            width: 4,
+            height: "100%",
+            background: "#fbbf24",
+            borderRadius: 2,
+            opacity: isDraggingDivider ? 1 : 0.5,
+            transition: "opacity 0.2s",
+          }} />
+        </div>
       </div>
 
+      {/* Controles de reprodução e slider */}
       <div style={{ padding: "10px 18px 4px", background: "var(--sr-card-bg)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <button type="button" onClick={() => setOffset(0)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--sr-text-muted)", fontSize: 14, padding: "4px 6px" }} title="Início">⏮</button>
+          <button
+            type="button"
+            onClick={() => setOffset(0)}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "var(--sr-text-muted)",
+              fontSize: 14,
+              padding: "4px 6px",
+              transition: "color 0.2s",
+            }}
+            onMouseEnter={(e) => (e.target.style.color = "var(--sr-text)")}
+            onMouseLeave={(e) => (e.target.style.color = "var(--sr-text-muted)")}
+            title="Voltar ao início"
+          >
+            ⏮
+          </button>
           <button
             type="button"
             onClick={togglePlay}
-            style={{ background: playing ? "#38bdf8" : "var(--sr-border)", border: "none", borderRadius: "50%", width: 32, height: 32, cursor: "pointer", color: playing ? "#000" : "var(--sr-text)", fontSize: 14, display: "grid", placeItems: "center" }}
-          >{playing ? "⏸" : "▶"}</button>
-          <button type="button" onClick={() => setOffset(DAYS_BACK)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--sr-text-muted)", fontSize: 14, padding: "4px 6px" }} title="Mais recente">⏭</button>
-          <input type="range" min={0} max={DAYS_BACK} step={1} value={offset} onChange={handleSlider} style={{ flex: 1, accentColor: "#38bdf8", cursor: "pointer" }} />
-          <span style={{ fontSize: 12, fontWeight: 700, color: tileLoading ? "#38bdf8" : "var(--sr-text-muted)", whiteSpace: "nowrap", minWidth: 52, transition: "color 0.2s" }}>
-            {tileLoading ? "..." : formatBR(currentIso)}
+            style={{
+              background: playing ? "#38bdf8" : "var(--sr-border)",
+              border: "none",
+              borderRadius: "50%",
+              width: 32,
+              height: 32,
+              cursor: "pointer",
+              color: playing ? "#000" : "var(--sr-text)",
+              fontSize: 14,
+              display: "grid",
+              placeItems: "center",
+              transition: "all 0.2s",
+              fontWeight: 700,
+            }}
+            title={playing ? "Pausar" : "Reproduzir"}
+          >
+            {playing ? "⏸" : "▶"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setOffset(DAYS_BACK)}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "var(--sr-text-muted)",
+              fontSize: 14,
+              padding: "4px 6px",
+              transition: "color 0.2s",
+            }}
+            onMouseEnter={(e) => (e.target.style.color = "var(--sr-text)")}
+            onMouseLeave={(e) => (e.target.style.color = "var(--sr-text-muted)")}
+            title="Ir para a data mais recente"
+          >
+            ⏭
+          </button>
+          <input
+            type="range"
+            min={0}
+            max={DAYS_BACK}
+            step={1}
+            value={offset}
+            onChange={handleSlider}
+            style={{ flex: 1, accentColor: "#38bdf8", cursor: "pointer" }}
+            title="Deslizar pela timeline"
+          />
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              color: mainLoading ? "#38bdf8" : "var(--sr-text-muted)",
+              whiteSpace: "nowrap",
+              minWidth: 52,
+              transition: "color 0.2s",
+            }}
+          >
+            {mainLoading ? "..." : formatBR(currentIso)}
           </span>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--sr-text-muted)", padding: "2px 48px 0" }}>
@@ -237,11 +505,14 @@ export function AnomaliaSSTCard({ className = "" }) {
         </div>
       </div>
 
-      <div style={{ padding: "8px 18px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <p style={{ margin: 0, fontSize: 11, color: "var(--sr-text-muted)", lineHeight: 1.5, maxWidth: "70%" }}>
-          Laranja/vermelho = água mais quente que a média (El Niño). Azul = mais fria (La Niña). Retângulo amarelo = região Niño 3.4.
+      {/* Rodapé com descrição e link */}
+      <div style={{ padding: "8px 18px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        <p style={{ margin: 0, fontSize: 11, color: "var(--sr-text-muted)", lineHeight: 1.5, flex: "1 1 auto", minWidth: 200 }}>
+          <strong style={{ color: "var(--sr-text)" }}>Laranja/Vermelho</strong> = água mais quente (El Niño) • <strong style={{ color: "var(--sr-text)" }}>Azul</strong> = mais fria (La Niña) • <strong style={{ color: "#fbbf24" }}>Amarelo</strong> = Niño 3.4
         </p>
-        <a href={worldviewUrl(currentIso)} target="_blank" rel="noreferrer" className="sr-btn-link">NASA Worldview ↗</a>
+        <a href={worldviewUrl(currentIso)} target="_blank" rel="noreferrer" className="sr-btn-link" style={{ whiteSpace: "nowrap" }}>
+          NASA Worldview ↗
+        </a>
       </div>
     </section>
   );
