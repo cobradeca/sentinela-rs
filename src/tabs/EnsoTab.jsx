@@ -116,102 +116,115 @@ export function EnsoTab({ ctx }) {
               <NavIcon name="waves" size={34} />
             </div>
             <div>
-              <h1 style={{ margin: 0, fontSize: 34, color: "var(--sr-text)" }}>ENSO</h1>
-              <div style={{ color: "var(--sr-text-muted)", fontSize: 16 }}>El Niño-Oscilação Sul</div>
+              <h1 style={{ margin: 0, fontSize: 38, fontWeight: 900, color: "var(--sr-text)", letterSpacing: "-0.5px" }}>ENSO</h1>
+              <div style={{ color: "var(--sr-text-muted)", fontSize: 15, fontWeight: 500 }}>El Niño-Oscilação Sul</div>
             </div>
           </div>
           <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-            <div style={{ display: "flex", gap: 8, alignItems: "center", color: "var(--sr-text-muted)", fontSize: 13 }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", color: "var(--sr-text-muted)", fontSize: 13, fontWeight: 500 }}>
               <NavIcon name="clock" size={16} />
               <span>Última atualização:<br />{fetchedAt ? formatDateTimeBR(fetchedAt) : "--"}</span>
             </div>
-            <div className="sr-btn-outline">Fonte: NOAA / CPC <NavIcon name="info" size={16} /></div>
+            <div className="sr-btn-outline" style={{ fontSize: 13, fontWeight: 600, borderRadius: 20, padding: "8px 14px", border: "1px solid #cbd5e1", background: "#f1f5f9" }}>Fonte: NOAA / CPC <NavIcon name="info" size={14} /></div>
           </div>
         </div>
 
-        <div className="sr-kpi-row" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
+        <div className="sr-kpi-row" style={{ gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
           {[
-            ["Índice Niño 3.4 (°C)", celsius(activeENSO.nino34), observedReady ? "NOAA/CPC observado" : "Sem leitura validada", phase.key],
-            ["Tendência (3 meses)", trendText(forecast), probReady ? "IRI/CCSR probabilístico" : "Sem curva validada", null],
-            ["Atualização", fetchedAt ? formatDateTimeBR(fetchedAt).split(",")[0] : "--", "dados oficiais", null],
-          ].map(([label, value, sub, colorKey]) => (
-            <div key={label} className="sr-card-v2" style={{ margin: 0, padding: 18, borderRadius: 8 }}>
-              <div className="sr-kpi-label">{label}</div>
-              <div style={{ fontSize: 26, fontWeight: 900, color: colorKey ? phaseColors[colorKey] : "var(--sr-text)", marginTop: 8 }}>{value}</div>
-              <div className="sr-kpi-sublabel">{sub}</div>
+            ["Índice Niño 3.4 (°C)", celsius(activeENSO.nino34), observedReady ? "NOAA/CPC observado" : "Sem leitura validada", phase.key, phaseColors[phase.key]],
+            ["Tendência (3 meses)", trendText(forecast), probReady ? "IRI/CCSR probabilístico" : "Sem curva validada", "elNino", phaseColors.elNino],
+            ["Atualização", fetchedAt ? formatDateTimeBR(fetchedAt).split(",")[0] : "--", "dados oficiais", "neutral", phaseColors.neutral],
+          ].map(([label, value, sub, colorKey, borderColor]) => (
+            <div key={label} className="sr-card-v2" style={{ margin: 0, padding: 18, borderRadius: 8, borderLeft: `4px solid ${borderColor}`, background: borderColor === phaseColors.elNino ? "#fef2f2" : borderColor === phaseColors.laNina ? "#f0f9ff" : "var(--sr-card-bg)" }}>
+              <div className="sr-kpi-label" style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px", color: "var(--sr-text-muted)" }}>{label}</div>
+              <div style={{ fontSize: 28, fontWeight: 900, color: borderColor, marginTop: 10, marginBottom: 8 }}>{value}</div>
+              <div className="sr-kpi-sublabel" style={{ fontSize: 12, color: "var(--sr-text-muted)", fontWeight: 600 }}>{sub}</div>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="sr-card-v2">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-          <div>
-            <h3 className="sr-card-title">Previsão 12 meses</h3>
-            <div style={{ color: "var(--sr-text-muted)", fontSize: 13 }}>Probabilidade IRI/CCSR para próximos trimestres</div>
-          </div>
+      <div className="sr-card-v2" style={{ background: "linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%)", borderTop: `3px solid ${phaseColors.elNino}` }}>
+        <div style={{ marginBottom: 16 }}>
+          <h3 className="sr-card-title" style={{ fontSize: 18, fontWeight: 800, color: "#0c2d4a", margin: "0 0 4px" }}>Previsão 12 meses</h3>
+          <div style={{ color: "var(--sr-text-muted)", fontSize: 13, fontWeight: 500 }}>Probabilidade IRI/CCSR para próximos trimestres</div>
         </div>
         {probReady ? (
           <>
             <MiniLine forecast={forecast} field="en" color={phaseColors.elNino} />
-            <div style={{ marginTop: 12, padding: "12px 14px", background: "#f0f9ff", borderRadius: 8, borderLeft: "3px solid #1d4ed8" }}>
-              <div style={{ fontSize: 12, color: "#0c2d4a", fontWeight: 700 }}>Próximo trimestre: <span style={{ color: phaseColors[forecast[0]?.en > 0.5 ? "elNino" : forecast[0]?.en < -0.5 ? "laNina" : "neutral"] }}>
-                {forecast[0]?.en > 0.5 ? "El Niño" : forecast[0]?.en < -0.5 ? "La Niña" : "Neutro"} ({pct(Math.max(forecast[0]?.en, forecast[0]?.nu, forecast[0]?.ln))})
-              </span></div>
+            <div style={{ marginTop: 16, padding: "14px 16px", background: "rgba(220, 38, 38, 0.08)", borderLeft: `3px solid ${phaseColors.elNino}`, borderRadius: 8 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#7f1d1d", textTransform: "uppercase", letterSpacing: "0.3px", marginBottom: 4 }}>Próximo trimestre</div>
+              <div style={{ fontSize: 20, fontWeight: 900, color: phaseColors[forecast[0]?.en > 0.5 ? "elNino" : forecast[0]?.en < -0.5 ? "laNina" : "neutral"] }}>
+                {forecast[0]?.en > 0.5 ? "El Niño" : forecast[0]?.en < -0.5 ? "La Niña" : "Neutro"} <span style={{ fontSize: 16 }}>({pct(Math.max(forecast[0]?.en, forecast[0]?.nu, forecast[0]?.ln))})</span>
+              </div>
             </div>
           </>
         ) : (
-          <div style={{ padding: "20px", textAlign: "center", color: "var(--sr-text-muted)" }}>Sem previsão probabilística validada no momento.</div>
+          <div style={{ padding: "24px", textAlign: "center", color: "var(--sr-text-muted)", fontSize: 14 }}>Sem previsão probabilística validada no momento.</div>
         )}
-        <div style={{ fontSize: 12, color: "var(--sr-text-muted)", marginTop: 12 }}>Fonte: IRI/CCSR ENSO Forecast.</div>
+        <div style={{ fontSize: 11, color: "var(--sr-text-muted)", marginTop: 14, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.3px" }}>Fonte: IRI/CCSR ENSO Forecast</div>
       </div>
 
       
 
 <div className="sr-grid-3">
-        <div className="sr-card-v2">
-          <h3 className="sr-card-title">Região Niño 3.4 — Monitoramento real</h3>
-          <div style={{ borderRadius: 12, overflow: "hidden", background: "#0c2d4a" }}>
+        <div className="sr-card-v2" style={{ borderTop: `3px solid #60a5fa` }}>
+          <h3 className="sr-card-title" style={{ fontSize: 18, fontWeight: 800, color: "#0c2d4a", marginBottom: 14 }}>Região Niño 3.4 — Monitoramento real</h3>
+          <div style={{ borderRadius: 12, overflow: "hidden", background: "#f8fafc", border: "1px solid #e2e8f0", marginBottom: 14 }}>
             <img
               src="https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/lanina/sstanim.gif"
               alt="Anomalia de TSM no Pacífico Equatorial (NOAA CPC)"
-              style={{ width: "100%", display: "block" }}
+              style={{ width: "100%", display: "block", minHeight: 200 }}
               onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.nextSibling.style.display = "flex"; }}
             />
-            <div style={{ display: "none", height: 180, alignItems: "center", justifyContent: "center", color: "#bfdbfe", fontSize: 13, textAlign: "center", padding: 16 }}>
-              Imagem indisponível no momento — ver fonte oficial abaixo.
+            <div style={{ display: "none", minHeight: 200, alignItems: "center", justifyContent: "center", color: "#64748b", fontSize: 14, textAlign: "center", padding: 20, background: "linear-gradient(135deg, #f0f9ff, #f8fafc)" }}>
+              <div>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>Imagem indisponível no momento</div>
+                <div style={{ fontSize: 12 }}>Consulte a fonte oficial para dados atualizados</div>
+              </div>
             </div>
           </div>
-          <p style={{ color: "var(--sr-text-muted)", fontSize: 13 }}>
-            Área monitorada no Pacífico Equatorial: 5°N-5°S, 170°W-120°W. Fonte: NOAA CPC (atualização periódica).
-          </p>
-          <a href="https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/lanina/enso_evolution-status-fcsts-web.pdf" target="_blank" rel="noreferrer" className="sr-btn-outline" style={{ display: "inline-flex", textDecoration: "none" }}>
+          <div style={{ padding: "12px 14px", background: "#f0f9ff", borderRadius: 8, borderLeft: "3px solid #60a5fa", marginBottom: 14 }}>
+            <div style={{ color: "#0c2d4a", fontSize: 12, fontWeight: 600, lineHeight: 1.6 }}>
+              Área monitorada no Pacífico Equatorial: <strong>5°N-5°S, 170°W-120°W</strong><br/>
+              <span style={{ fontSize: 11, color: "#64748b" }}>Fonte: NOAA CPC (atualização periódica)</span>
+            </div>
+          </div>
+          <a href="https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/lanina/enso_evolution-status-fcsts-web.pdf" target="_blank" rel="noreferrer" style={{ display: "inline-flex", textDecoration: "none", background: "#1d4ed8", color: "white", padding: "10px 14px", borderRadius: 8, fontWeight: 700, fontSize: 13, gap: 8, alignItems: "center" }}>
             Ver boletim oficial NOAA <NavIcon name="arrow" size={14} />
           </a>
         </div>
 
-        <div className="sr-card-v2">
-          <h3 className="sr-card-title">Impactos históricos no RS</h3>
+        <div className="sr-card-v2" style={{ borderTop: `3px solid #94a3b8` }}>
+          <h3 className="sr-card-title" style={{ fontSize: 18, fontWeight: 800, color: "#0c2d4a", marginBottom: 14 }}>Impactos históricos no RS</h3>
           {[
             ["La Niña", "Maior chance de chuvas abaixo da média no RS", phaseColors.laNina],
             ["Neutro", "Comportamento mais próximo da normalidade", "#64748b"],
             ["El Niño", "Maior chance de chuvas acima da média no RS", phaseColors.elNino],
           ].map(([label, text, color]) => (
-            <div key={label} style={{ display: "flex", gap: 12, padding: "10px 0", borderBottom: "1px solid var(--sr-border)" }}>
-              <span className="sr-status-dot" style={{ background: color, marginTop: 6 }} />
-              <div><strong style={{ color }}>{label}</strong><div style={{ color: "var(--sr-text-muted)", fontSize: 13 }}>{text}</div></div>
+            <div key={label} style={{ display: "flex", gap: 12, padding: "12px 14px", marginBottom: 8, borderRadius: 8, background: `${color}08`, borderLeft: `3px solid ${color}` }}>
+              <div style={{ minWidth: 16, height: 16, borderRadius: "50%", background: color, marginTop: 3 }} />
+              <div>
+                <div style={{ fontWeight: 800, color, marginBottom: 2 }}>{label}</div>
+                <div style={{ color: "var(--sr-text-muted)", fontSize: 13, fontWeight: 500 }}>{text}</div>
+              </div>
             </div>
           ))}
         </div>
 
-        <div className="sr-card-v2">
-          <h3 className="sr-card-title">Últimos eventos</h3>
-          {historicalEvents.map((item) => (
-            <div key={`${item.event}-${item.period}`} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: "1px solid var(--sr-border)" }}>
-              <span><span className="sr-status-dot" style={{ background: item.color }} /> {item.event}</span>
-              <strong>{item.period}</strong>
-            </div>
-          ))}
+        <div className="sr-card-v2" style={{ borderTop: `3px solid #dc2626` }}>
+          <h3 className="sr-card-title" style={{ fontSize: 18, fontWeight: 800, color: "#0c2d4a", marginBottom: 14 }}>Últimos eventos</h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {historicalEvents.map((item, idx) => (
+              <div key={`${item.event}-${item.period}`} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", background: `${item.color}08`, borderRadius: 8, borderLeft: `3px solid ${item.color}` }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ width: 12, height: 12, borderRadius: "50%", background: item.color }} />
+                  <span style={{ fontWeight: 700, color: item.color }}>{item.event}</span>
+                </div>
+                <span style={{ fontWeight: 600, color: "var(--sr-text-muted)", fontSize: 13 }}>{item.period}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
