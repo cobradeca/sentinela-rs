@@ -1,27 +1,14 @@
-import { useMemo, useRef, useState } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 
-// Nome correto da camada (confirmado via gitc.earthdata.nasa.gov)
-const LAYER = "GHRSST_L4_MUR_Sea_Surface_Temperature_Anomalies_v4.1_STD";
-const ZOOM = 2;
-const MAX_LOOKBACK_DAYS = 14;
+const LAYER = "GHRSST_L4_MUR_Sea_Surface_Temperature_Anomalies";
+const GIBS_WMS = "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi";
+const DAYS_BACK = 30;
 
-// Grade 4×2 cruzando o antimeridiano: lon ~145°E→33°W, lat ~67°S→67°N
-// Ordem de colunas: x=2(0→90E), x=3(90→180E), x=0(-180→-90), x=1(-90→0)
-const TILES = [
-  { x: 2, y: 1, col: 1, row: 1 },
-  { x: 3, y: 1, col: 2, row: 1 },
-  { x: 0, y: 1, col: 3, row: 1 },
-  { x: 1, y: 1, col: 4, row: 1 },
-  { x: 2, y: 2, col: 1, row: 2 },
-  { x: 3, y: 2, col: 2, row: 2 },
-  { x: 0, y: 2, col: 3, row: 2 },
-  { x: 1, y: 2, col: 4, row: 2 },
-];
+// View inicial: Pacífico equatorial + América do Sul
+const INITIAL_BOUNDS = [[-35, -170], [20, -40]];
 
-const GRADIENT = "linear-gradient(to right,#6b00db,#7400d6,#7f00d3,#8900cf,#9600ca,#9109cc,#7f1ad1,#6031dc,#414be6,#2264f1,#087cfb,#0094ff,#00aeff,#00caff,#00e3ff,#03f8fa,#18fce5,#2fffce,#47ffb6,#60ff9e,#76ff8c,#88ff84,#97ff8b,#a4ff91,#b1ff98,#bdfe9e,#bff4a3,#bfe8a9,#bfdbb0,#bfd0b6,#c2cab8,#cacab7,#d5d5ac,#e2e2a2,#eded98,#f9f88d,#fff679,#ffea5e,#ffde43,#ffd025,#ffc209,#ffb601,#ffaa00,#ff9d00,#ff9100,#ff8200,#ff7100,#ff5900,#ff3d00,#ff2100,#fe0900,#f90113,#f3002d,#ec004a,#e60067,#de007d,#d30085,#bf0068,#ab0048,#9a002c,#88000f,#800000)";
-
-function isoDate(date) {
-  return date.toISOString().slice(0, 10);
+function isoDate(d) {
+  return d.toISOString().slice(0, 10);
 }
 
 function dateMinusDays(days) {
@@ -31,107 +18,241 @@ function dateMinusDays(days) {
   return d;
 }
 
+const dates = Array.from({ length: DAYS_BACK + 1 }, (_, i) =>
+  isoDate(dateMinusDays(DAYS_BACK - i + 2))
+);
+
 function formatBR(iso) {
-  return new Intl.DateTimeFormat("pt-BR", {
-    day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC",
-  }).format(new Date(`${iso}T00:00:00Z`));
+  const d = new Date(`${iso}T00:00:00Z`);
+  return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", timeZone: "UTC" }).format(d);
 }
 
-function tileUrl(iso, x, y) {
-  return `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${LAYER}/default/${iso}/GoogleMapsCompatible_Level${ZOOM}/${y}/${x}.png`;
+function worldviewUrl(iso) {
+  return `https://worldview.earthdata.nasa.gov/?v=-170,-35,-40,20&l=${LAYER}&t=${iso}-T00:00:00Z`;
+}
+
+// Componente de mapa Leaflet carregado dinamicamente
+function SSTMap({ dateIso }) {
+  const mapRef = useRef(null);
+  const leafletRef = useRef(null);
+  const wmsLayerRef = useRef(null);
+  const containerId = "sr-sst-leaflet-map";
+
+  useEffect(() => {
+    // Carrega Leaflet do CDN se ainda não carregou
+    function initMap() {
+      const L = window.L;
+      if (!L) return;
+      if (leafletRef.current) {
+        // Já existe — só atualiza a camada
+        if (wmsLayerRef.current) {
+          wmsLayerRef.current.setParams({ TIME: dateIso });
+        }
+        return;
+      }
+
+      const map = L.map(containerId, {
+        center: [-7, -110],
+        zoom: 3,
+        zoomControl: true,
+        attributionControl: false,
+      });
+
+      // Base layer escura (CartoDB Dark)
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png", {
+        subdomains: "abcd",
+        maxZoom: 8,
+      }).addTo(map);
+
+      // Camada SST Anomaly do GIBS via WMS
+      const wmsLayer = L.tileLayer.wms(GIBS_WMS, {
+        layers: LAYER,
+        format: "image/png",
+        transparent: true,
+        version: "1.1.1",
+        TIME: dateIso,
+        opacity: 0.85,
+        attribution: "NASA GIBS",
+      });
+      wmsLayer.addTo(map);
+
+      // Labels/bordas dos países
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png", {
+        subdomains: "abcd",
+        maxZoom: 8,
+        pane: "shadowPane",
+      }).addTo(map);
+
+      // Retângulo da região Niño 3.4
+      L.rectangle([[-5, -170], [5, -120]], {
+        color: "#facc15",
+        weight: 2,
+        fill: false,
+        dashArray: "6 4",
+      }).addTo(map).bindTooltip("Região Niño 3.4", { permanent: false, direction: "top" });
+
+      map.fitBounds(INITIAL_BOUNDS);
+
+      leafletRef.current = map;
+      wmsLayerRef.current = wmsLayer;
+    }
+
+    if (window.L) {
+      initMap();
+    } else {
+      // Inject Leaflet CSS
+      if (!document.getElementById("leaflet-css")) {
+        const link = document.createElement("link");
+        link.id = "leaflet-css";
+        link.rel = "stylesheet";
+        link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+        document.head.appendChild(link);
+      }
+      // Inject Leaflet JS
+      if (!document.getElementById("leaflet-js")) {
+        const script = document.createElement("script");
+        script.id = "leaflet-js";
+        script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+        script.onload = initMap;
+        document.head.appendChild(script);
+      }
+    }
+  }, []);
+
+  // Atualiza a camada WMS quando a data muda
+  useEffect(() => {
+    if (wmsLayerRef.current) {
+      wmsLayerRef.current.setParams({ TIME: dateIso });
+    }
+  }, [dateIso]);
+
+  return <div id={containerId} ref={mapRef} style={{ width: "100%", height: 420, borderRadius: 12, overflow: "hidden", background: "#091522" }} />;
 }
 
 export function AnomaliaSSTCard({ className = "" }) {
-  const [offset, setOffset] = useState(0);
-  const [failed, setFailed] = useState(false);
-  // Controle de fallback por data — não por tile individual
-  const fallbackRef = useRef({ offset: 0, attempts: 0 });
+  const [offset, setOffset] = useState(DAYS_BACK);
+  const [playing, setPlaying] = useState(false);
+  const intervalRef = useRef(null);
 
-  const selectedDate = useMemo(() => isoDate(dateMinusDays(2 + offset)), [offset]);
+  const currentIso = dates[offset] || dates[dates.length - 1];
 
-  const handleSliderChange = (e) => {
-    const val = Number(e.target.value);
-    setOffset(val);
-    setFailed(false);
-    fallbackRef.current = { offset: val, attempts: 0 };
-  };
+  const handleSlider = useCallback((e) => setOffset(Number(e.target.value)), []);
 
-  // Um tile falhando dispara tentativa na próxima data —
-  // mas só uma vez por "rodada" de datas, usando ref como guard.
-  const handleImgError = () => {
-    const ref = fallbackRef.current;
-    if (ref.attempts >= 1) return; // já agendou fallback para essa data
-    ref.attempts += 1;
+  const togglePlay = useCallback(() => {
+    setPlaying((p) => !p);
+  }, []);
 
-    const nextOffset = ref.offset + 1;
-    if (nextOffset <= MAX_LOOKBACK_DAYS) {
-      fallbackRef.current = { offset: nextOffset, attempts: 0 };
-      setOffset(nextOffset);
-      setFailed(false);
+  useEffect(() => {
+    if (playing) {
+      intervalRef.current = setInterval(() => {
+        setOffset((prev) => {
+          if (prev >= DAYS_BACK) { setPlaying(false); return prev; }
+          return prev + 1;
+        });
+      }, 600);
     } else {
-      setFailed(true);
+      clearInterval(intervalRef.current);
     }
-  };
+    return () => clearInterval(intervalRef.current);
+  }, [playing]);
 
   return (
-    <section className={`sr-mod-card ${className}`}>
-      <header className="sr-mod-header">
-        <div className="sr-mod-title"><span>🌡</span> ANOMALIA DE TSM (EL NIÑO)</div>
-        <div className="sr-mod-badge">{formatBR(selectedDate)}</div>
-      </header>
+    <section className={`sr-mod-card ${className}`} style={{ padding: 0, overflow: "hidden" }}>
+      <div style={{ padding: "14px 18px 10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div className="sr-mod-title"><span>🌡</span> Anomalia de TSM <span>• Pacífico + América do Sul</span></div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <span className="sr-mod-badge">NASA GIBS</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: "var(--sr-text-muted)" }}>{currentIso}</span>
+        </div>
+      </div>
 
-      <div className="sr-sst-mosaic">
-        {failed ? (
-          <div className="sr-sst-error">
-            <span>Imagem indisponível para o período selecionado.</span>
+      {/* Mapa interativo */}
+      <div style={{ position: "relative" }}>
+        <SSTMap dateIso={currentIso} />
+
+        {/* Legenda sobreposta estilo Windy */}
+        <div style={{
+          position: "absolute", bottom: 12, left: 12, zIndex: 999,
+          background: "rgba(0,0,0,0.72)", borderRadius: 8, padding: "8px 12px",
+          backdropFilter: "blur(4px)",
+        }}>
+          <div style={{ fontSize: 10, color: "#94a3b8", marginBottom: 4, fontWeight: 700, letterSpacing: "0.05em" }}>
+            ANOMALIA TSM (°C)
           </div>
-        ) : (
-          TILES.map(({ x, y, col, row }) => (
-            <img
-              key={`${selectedDate}-${x}-${y}`}
-              src={tileUrl(selectedDate, x, y)}
-              alt=""
-              onError={handleImgError}
-              style={{ gridColumn: col, gridRow: row }}
-            />
-          ))
-        )}
-      </div>
+          <div style={{ display: "flex", gap: 2, alignItems: "center" }}>
+            {[["#3b0764","< -3"], ["#1d4ed8","-2"], ["#60a5fa","-1"], ["#e5e7eb","0"], ["#f97316","+1"], ["#dc2626","+2"], ["#7f1d1d","> +3"]].map(([bg, label]) => (
+              <div key={label} style={{ textAlign: "center" }}>
+                <div style={{ width: 24, height: 12, background: bg, borderRadius: 2 }} />
+                <div style={{ fontSize: 9, color: "#94a3b8", marginTop: 2 }}>{label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
 
-      <div className="sr-sst-slider">
-        <input
-          type="range"
-          min={0}
-          max={MAX_LOOKBACK_DAYS}
-          step={1}
-          value={offset}
-          onChange={handleSliderChange}
-          aria-label="Selecionar data"
-        />
-        <div className="sr-sst-slider-labels">
-          <span>Hoje - {2 + offset} dia(s)</span>
-          <span>Hoje - {2 + MAX_LOOKBACK_DAYS} dias</span>
+        {/* Niño 3.4 label sobreposto */}
+        <div style={{
+          position: "absolute", top: 12, right: 12, zIndex: 999,
+          background: "rgba(0,0,0,0.72)", borderRadius: 8, padding: "6px 10px",
+          backdropFilter: "blur(4px)", fontSize: 11, color: "#facc15", fontWeight: 700,
+        }}>
+          ⬛ Niño 3.4 (retângulo)
         </div>
       </div>
 
-      <div className="sr-sst-legend">
-        <div className="sr-sst-legend-bar" style={{ background: GRADIENT }} />
-        <div className="sr-sst-legend-labels">
-          <span>-3 °C</span><span>0 °C</span><span>+3 °C</span>
+      {/* Controles temporais estilo Windy */}
+      <div style={{ padding: "10px 18px 4px", background: "var(--sr-card-bg)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <button
+            type="button"
+            onClick={() => setOffset(0)}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--sr-text-muted)", fontSize: 14, padding: "4px 6px" }}
+            title="Início"
+          >⏮</button>
+          <button
+            type="button"
+            onClick={togglePlay}
+            style={{
+              background: playing ? "#38bdf8" : "var(--sr-border)",
+              border: "none", borderRadius: "50%", width: 32, height: 32,
+              cursor: "pointer", color: playing ? "#000" : "var(--sr-text)",
+              fontSize: 14, display: "grid", placeItems: "center",
+            }}
+            title={playing ? "Pausar" : "Reproduzir"}
+          >{playing ? "⏸" : "▶"}</button>
+          <button
+            type="button"
+            onClick={() => setOffset(DAYS_BACK)}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--sr-text-muted)", fontSize: 14, padding: "4px 6px" }}
+            title="Mais recente"
+          >⏭</button>
+          <input
+            type="range"
+            min={0}
+            max={DAYS_BACK}
+            step={1}
+            value={offset}
+            onChange={handleSlider}
+            className="sr-sst-slider"
+            style={{ flex: 1, accentColor: "#38bdf8" }}
+          />
+          <span style={{ fontSize: 12, fontWeight: 700, color: "var(--sr-text-muted)", whiteSpace: "nowrap", minWidth: 52 }}>
+            {formatBR(currentIso)}
+          </span>
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--sr-text-muted)", padding: "2px 48px 0" }}>
+          <span>{formatBR(dates[0])}</span>
+          <span>{formatBR(dates[DAYS_BACK])}</span>
         </div>
       </div>
 
-      <p className="sr-sst-explain">
-        A faixa quente (laranja/vermelho) ao longo do Pacífico equatorial indica
-        águas mais quentes que a média — característica de El Niño. Faixas frias
-        (azul/roxo) indicam La Niña. Cobertura: ~145°E até ~33°W, incluindo
-        todo o Pacífico tropical. Contexto global do ENSO, não dado local do RS.
-      </p>
-
-      <footer className="sr-mod-footer">
-        Imagem: NASA Global Imagery Browse Services (GIBS) — Sea Surface
-        Temperature Anomalies (GHRSST L4 MUR v4.1 STD).
-      </footer>
+      <div style={{ padding: "8px 18px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <p style={{ margin: 0, fontSize: 11, color: "var(--sr-text-muted)", lineHeight: 1.5, maxWidth: "70%" }}>
+          Laranja/vermelho = água mais quente que a média (El Niño). Azul = mais fria (La Niña). Retângulo amarelo = região Niño 3.4.
+        </p>
+        <a href={worldviewUrl(currentIso)} target="_blank" rel="noreferrer" className="sr-btn-link">
+          NASA Worldview ↗
+        </a>
+      </div>
     </section>
   );
 }
