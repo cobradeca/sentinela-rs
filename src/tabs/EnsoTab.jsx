@@ -85,26 +85,6 @@ function MiniLine({ forecast, field, color }) {
   );
 }
 
-function Gauge({ value, phase }) {
-  const clamped = typeof value === "number" ? Math.max(-2, Math.min(2, value)) : 0;
-  const angle = -90 + ((clamped + 2) / 4) * 180;
-  return (
-    <div style={{ display: "grid", placeItems: "center", gap: 8 }}>
-      <div style={{ width: 280, height: 150, position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", inset: "0 0 auto", height: 280, borderRadius: "280px 280px 0 0", background: "linear-gradient(90deg,#1e3a8a,#1d4ed8,#dbeafe,#fef2f2,#dc2626,#7f1d1d)" }} />
-        <div style={{ position: "absolute", left: 38, right: 38, top: 38, height: 204, borderRadius: "204px 204px 0 0", background: "var(--sr-card-bg, #fff)" }} />
-        <div style={{ position: "absolute", left: "50%", bottom: 8, width: 4, height: 98, background: "#0c2d4a", transformOrigin: "bottom center", transform: `translateX(-50%) rotate(${angle}deg)` }} />
-        <div style={{ position: "absolute", left: "50%", bottom: 0, width: 22, height: 22, borderRadius: "50%", background: "#dbeafe", transform: "translateX(-50%)", border: "4px solid var(--sr-card-bg, #fff)" }} />
-        <div style={{ position: "absolute", left: 0, bottom: 6, fontSize: 10, color: phaseColors.superLaNina, fontWeight: 700 }}>Super<br />La Niña</div>
-        <div style={{ position: "absolute", left: "50%", bottom: 6, transform: "translateX(-50%)", fontSize: 10, color: "var(--sr-text-muted)", fontWeight: 700 }}>Neutro</div>
-        <div style={{ position: "absolute", right: 0, bottom: 6, textAlign: "right", fontSize: 10, color: phaseColors.superElNino, fontWeight: 700 }}>Super<br />El Niño</div>
-      </div>
-      <div style={{ fontSize: 34, fontWeight: 900, color: phaseColors[phase.key] }}>{celsius(value)}</div>
-      <div style={{ color: "var(--sr-text-muted)", fontWeight: 700 }}>Condicao atual: {phase.label}</div>
-    </div>
-  );
-}
-
 export function EnsoTab({ ctx }) {
   const { activeENSO, formatDateTimeBR, lastUpdate, safeEnsoForecast } = ctx;
 
@@ -137,83 +117,46 @@ export function EnsoTab({ ctx }) {
           </div>
         </div>
 
-        <div className="sr-kpi-row" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+        <div className="sr-kpi-row" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
           {[
-            ["Situação atual", phase.label.toUpperCase(), phase.description],
-            ["Índice Niño 3.4 (°C)", celsius(activeENSO.nino34), observedReady ? "NOAA/CPC observado" : "Sem leitura validada"],
-            ["Tendência (3 meses)", trendText(forecast), probReady ? "IRI/CCSR probabilístico" : "Sem curva validada"],
-            ["Dados da probabilidade", fetchedAt ? formatDateTimeBR(fetchedAt).split(",")[0] : "--", activeENSO.probabilityReferenceDate || "consulta atual"],
-          ].map(([label, value, sub]) => (
+            ["Índice Niño 3.4 (°C)", celsius(activeENSO.nino34), observedReady ? "NOAA/CPC observado" : "Sem leitura validada", phase.key],
+            ["Tendência (3 meses)", trendText(forecast), probReady ? "IRI/CCSR probabilístico" : "Sem curva validada", null],
+            ["Atualização", fetchedAt ? formatDateTimeBR(fetchedAt).split(",")[0] : "--", "dados oficiais", null],
+          ].map(([label, value, sub, colorKey]) => (
             <div key={label} className="sr-card-v2" style={{ margin: 0, padding: 18, borderRadius: 8 }}>
               <div className="sr-kpi-label">{label}</div>
-              <div style={{ fontSize: 26, fontWeight: 900, color: label === "Situação atual" ? phaseColors[phase.key] : "var(--sr-text)", marginTop: 8 }}>{value}</div>
+              <div style={{ fontSize: 26, fontWeight: 900, color: colorKey ? phaseColors[colorKey] : "var(--sr-text)", marginTop: 8 }}>{value}</div>
               <div className="sr-kpi-sublabel">{sub}</div>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="sr-grid-2">
-        <div className="sr-card-v2">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-            <div>
-              <h3 className="sr-card-title">Probabilidade IRI/CCSR</h3>
-              <div style={{ color: "var(--sr-text-muted)", fontSize: 13 }}>Curva derivada do endpoint de previsão trimestral</div>
-            </div>
-          </div>
-          <MiniLine forecast={forecast} field="en" color={phaseColors.elNino} />
-          <div style={{ fontSize: 12, color: "var(--sr-text-muted)" }}>Fonte: IRI/CCSR ENSO Forecast.</div>
-        </div>
-
-        <div className="sr-card-v2">
-          <h3 className="sr-card-title">Índice Niño 3.4 (°C) - Atual</h3>
-          <Gauge value={activeENSO.nino34} phase={phase} />
-          <div style={{ marginTop: 16, borderTop: "1px solid var(--sr-border)", paddingTop: 12 }}>
-            <h4 style={{ margin: "0 0 10px", fontSize: 13, color: "var(--sr-text-muted)", fontWeight: 700, textTransform: "uppercase" }}>Classificação dos índices</h4>
-            {[
-              ["Super El Niño", ">= +1.5 °C", phaseColors.superElNino],
-              ["El Niño", "+0.5 a +1.5 °C", phaseColors.elNino],
-              ["Neutro", "-0.5 °C a +0.5 °C", "#64748b"],
-              ["La Niña", "-1.5 a -0.5 °C", phaseColors.laNina],
-              ["Super La Niña", "<= -1.5 °C", phaseColors.superLaNina],
-            ].map(([label, range, color]) => (
-              <div key={label} style={{ padding: "10px 14px", borderRadius: 10, background: `${color}12`, color, fontWeight: 800, marginBottom: 8, fontSize: 13 }}>
-                {label}<br /><span style={{ color: "var(--sr-text)", fontWeight: 700 }}>{range}</span>
-              </div>
-            ))}
-            <div style={{ fontSize: 12, color: "var(--sr-text-muted)" }}>Anomalia da TSM na região Niño 3.4 (ONI).</div>
-          </div>
-        </div>
-      </div>
-
       <div className="sr-card-v2">
-        <h3 className="sr-card-title">Probabilidade por trimestre</h3>
-        <table className="sr-data-table">
-          <thead>
-            <tr>
-              <th>Trimestre</th>
-              <th>El Niño</th>
-              <th>Neutro</th>
-              <th>La Niña</th>
-            </tr>
-          </thead>
-          <tbody>
-            {forecast.map((item, index) => (
-              <tr key={`${item.p}-${index}`}>
-                <td><strong>{item.p || "--"}</strong></td>
-                <td style={{ color: phaseColors.elNino, fontWeight: 800 }}>{pct(item.en)}</td>
-                <td style={{ color: "#64748b", fontWeight: 800 }}>{pct(item.nu)}</td>
-                <td style={{ color: phaseColors.laNina, fontWeight: 800 }}>{pct(item.ln)}</td>
-              </tr>
-            ))}
-            {!forecast.length && (
-              <tr><td colSpan="4">Sem previsão probabilística validada no momento.</td></tr>
-            )}
-          </tbody>
-        </table>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <div>
+            <h3 className="sr-card-title">Previsão 12 meses</h3>
+            <div style={{ color: "var(--sr-text-muted)", fontSize: 13 }}>Probabilidade IRI/CCSR para próximos trimestres</div>
+          </div>
+        </div>
+        {probReady ? (
+          <>
+            <MiniLine forecast={forecast} field="en" color={phaseColors.elNino} />
+            <div style={{ marginTop: 12, padding: "12px 14px", background: "#f0f9ff", borderRadius: 8, borderLeft: "3px solid #1d4ed8" }}>
+              <div style={{ fontSize: 12, color: "#0c2d4a", fontWeight: 700 }}>Próximo trimestre: <span style={{ color: phaseColors[forecast[0]?.en > 0.5 ? "elNino" : forecast[0]?.en < -0.5 ? "laNina" : "neutral"] }}>
+                {forecast[0]?.en > 0.5 ? "El Niño" : forecast[0]?.en < -0.5 ? "La Niña" : "Neutro"} ({pct(Math.max(forecast[0]?.en, forecast[0]?.nu, forecast[0]?.ln))})
+              </span></div>
+            </div>
+          </>
+        ) : (
+          <div style={{ padding: "20px", textAlign: "center", color: "var(--sr-text-muted)" }}>Sem previsão probabilística validada no momento.</div>
+        )}
+        <div style={{ fontSize: 12, color: "var(--sr-text-muted)", marginTop: 12 }}>Fonte: IRI/CCSR ENSO Forecast.</div>
       </div>
 
-      <div className="sr-grid-3">
+      
+
+<div className="sr-grid-3">
         <div className="sr-card-v2">
           <h3 className="sr-card-title">Região Niño 3.4 — Monitoramento real</h3>
           <div style={{ borderRadius: 12, overflow: "hidden", background: "#0c2d4a" }}>
