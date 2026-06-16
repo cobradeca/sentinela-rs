@@ -158,30 +158,20 @@ export function QueimadasTab({ ctx }) {
     return fireRecords.length;
   }, [queimadas]);
 
-  const focosForaDoCorreador = totalFocosEstado > 0 && monitoredAreas.every(({ status }) =>
-    status.level === "clear" || status.level === "unknown"
-  );
-
   return (
-    <div style={{ display:"grid", gap:12 }}>
+    <div style={{ display:"grid", gap:12, fontSize:14 }}>
       <DefesaCivilNotice t={t} dark={dark} />
 
-      <div style={{ padding:"10px 14px", background: dark?"rgba(249,115,22,0.08)":"rgba(249,115,22,0.05)", border:"1px solid rgba(249,115,22,0.3)", borderRadius:5, fontSize:10, color: dark?"#fdba74":"#c2410c", display:"flex", justifyContent:"space-between", alignItems:"center", gap:12, flexWrap:"wrap" }}>
+      <div className="sr-queimadas-toolbar">
         <span>Monitoramento das principais áreas de preservação ambiental no trajeto pelas rodovias <strong>BR-116</strong>, <strong>BR-101</strong> e <strong>BR-471</strong>.</span>
-        <div className="sr-source-badges" aria-label="Fontes do monitoramento de queimadas" style={{ flex:"1 1 100%" }}>
-          <span className="sr-source-badge is-official">INPE focos</span>
-          <span className="sr-source-badge is-official">INPE Eventos</span>
-          <span className="sr-source-badge is-derived">CENSIPAM</span>
-          <span className="sr-source-badge is-context">Geocerca</span>
-        </div>
         <button onClick={loadQueimadas} disabled={qLoading} style={{ background:"none", border:"1px solid rgba(249,115,22,0.5)", color:"#fdba74", padding:"5px 12px", borderRadius:4, cursor:"pointer", fontFamily:"inherit", fontSize:9, letterSpacing:1 }}>
           {qLoading ? "Consultando..." : "Atualizar"}
         </button>
       </div>
 
       <div style={{ ...s.card }}>
-        <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:4 }}>ÁREAS DE PRESERVAÇÃO MONITORADAS — BR-116, BR-101 E BR-471</div>
-        <div style={{ fontSize:9, color:t.textMuted, marginBottom:12, lineHeight:1.5 }}>
+        <div style={{ fontSize:12, color:t.textMuted, letterSpacing:1.4, marginBottom:6, textTransform:"uppercase" }}>ÁREAS DE PRESERVAÇÃO MONITORADAS — BR-116, BR-101 E BR-471</div>
+        <div style={{ fontSize:11, color:t.textMuted, marginBottom:14, lineHeight:1.55 }}>
           O status considera focos georreferenciados do INPE, Eventos de Fogo do INPE e Eventos de Fogo recentes do CENSIPAM nas áreas monitoradas ou próximos a elas.
         </div>
 
@@ -205,43 +195,44 @@ export function QueimadasTab({ ctx }) {
         </div>
 
         {!sourceAvailable && !qLoading && (
-          <div style={{ marginBottom:10, padding:"8px 10px", background: dark?"rgba(234,179,8,0.07)":"rgba(234,179,8,0.06)", border:"1px solid rgba(234,179,8,0.22)", borderRadius:4, fontSize:9, color:t.textMuted }}>
+          <div style={{ marginBottom:12, padding:"10px 12px", background: dark?"rgba(234,179,8,0.07)":"rgba(234,179,8,0.06)", border:"1px solid rgba(234,179,8,0.22)", borderRadius:6, fontSize:11, color:t.textMuted }}>
             As fontes de focos estão indisponíveis nesta sessão. Atualize para tentar novamente.
           </div>
         )}
 
-        <div style={{ display:"grid", gap:8 }}>
+        <div style={{ display:"grid", gap:10 }}>
           {monitoredAreas.map(({ area, hasFire, hasThermalAlert, nearestDistance, sources, status, latest }) => (
-            <div key={area.id} className="sr-fire-card" style={{ "--sr-fire-accent": status.borderColor, background:dark?"rgba(0,0,0,0.25)":t.bg, border:`1px solid ${hasFire || hasThermalAlert ? status.borderColor : t.border}`, borderRadius:5, padding:"10px 12px 10px 15px" }}>
+            <div key={area.id} className="sr-fire-card" style={{ "--sr-fire-accent": status.borderColor, background:dark?"rgba(0,0,0,0.25)":t.bg, border:`1px solid ${hasFire || hasThermalAlert ? status.borderColor : t.border}`, borderRadius:6, padding:"12px 14px 12px 16px" }}>
               <div style={{ display:"flex", justifyContent:"space-between", gap:8, alignItems:"flex-start" }}>
                 <div>
-                  <div style={{ fontSize:8, color:t.textFaint, letterSpacing:1.3 }}>{area.region}</div>
-                  <div style={{ fontSize:13, fontWeight:900, color:t.text, marginTop:2 }}>{area.name}</div>
+                  <div style={{ fontSize:10, color:t.textFaint, letterSpacing:1.2 }}>{area.region}</div>
+                  <div style={{ fontSize:15, fontWeight:900, color:t.text, marginTop:3, lineHeight:1.15 }}>{area.name}</div>
                 </div>
                 <div className="sr-fire-status-pill" style={{ color:status.color, border:`1px solid ${status.borderColor}` }}>
                   {status.label}
                 </div>
               </div>
 
-              <div style={{ fontSize:9, color:t.textMuted, lineHeight:1.45, marginTop:6 }}>{area.focus}</div>
+              <div style={{ fontSize:11, color:t.textMuted, lineHeight:1.5, marginTop:8 }}>{area.focus}</div>
 
-              <div className="sr-source-badges" aria-label={`Fontes para ${area.name}`}>
+              <div className="sr-queimadas-source-line" aria-label={`Fontes para ${area.name}`}>
                 <span className="sr-source-badge is-official">INPE focos</span>
                 <span className="sr-source-badge is-official">INPE Eventos</span>
                 <span className="sr-source-badge is-derived">CENSIPAM</span>
                 <span className="sr-source-badge is-context">Geocerca</span>
               </div>
 
-              <div style={{ fontSize:8, color:t.textFaint, marginTop:7 }}>
+              <div style={{ fontSize:10, color:t.textFaint, marginTop:10, lineHeight:1.5 }}>
                 {hasFire || hasThermalAlert
                   ? `${status.detailPrefix}: ${sources.join(" + ")} · última detecção: ${formatDateTimeBR(latest)}${distanceLabel(nearestDistance) ? ` · menor distância: ${distanceLabel(nearestDistance)}` : ""}`
                   : sourcesReady ? "Nenhum foco recente identificado na área monitorada." : "Não foi possível confirmar a situação desta área nesta sessão."}
-                {!hasFire && !hasThermalAlert && totalFocosEstado > 0 && (
-                  <span style={{ display:"block", marginTop:3, color:"#f59e0b", opacity:0.85 }}>
-                    ⚠ {totalFocosEstado} foco{totalFocosEstado > 1 ? "s" : ""} detectado{totalFocosEstado > 1 ? "s" : ""} no RS, fora das áreas BRs 101, 116 e 471 monitoradas.
-                  </span>
-                )}
               </div>
+
+              {!hasFire && !hasThermalAlert && totalFocosEstado > 0 && (
+                <div style={{ marginTop:10, padding:"9px 10px", borderRadius:6, background: dark?"rgba(245,158,11,0.08)":"rgba(245,158,11,0.07)", border:"1px solid rgba(245,158,11,0.22)", color:"#f59e0b", fontSize:10, lineHeight:1.45 }}>
+                  ⚠ {totalFocosEstado} foco{totalFocosEstado > 1 ? "s" : ""} detectado{totalFocosEstado > 1 ? "s" : ""} no RS, fora das áreas BRs 101, 116 e 471 monitoradas.
+                </div>
+              )}
             </div>
           ))}
         </div>
