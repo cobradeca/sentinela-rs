@@ -26,8 +26,8 @@ function getDateOffset(offset = 0) {
 
 // ─── SSTMap ────────────────────────────────────────────────────────────────────
 // Renderiza duas camadas WMS sobrepostas com um divisor vertical arrastável.
-// Camada de BAIXO = data atual (direita do divisor)
-// Camada de CIMA  = data antiga  (esquerda do divisor) — cortada por clip-path
+// Camada de BAIXO = data antiga  (direita do divisor)
+// Camada de CIMA  = data atual   (esquerda do divisor) — cortada por clip-path
 function SSTMap({ currentIso, compareIso, dividerPos, onDividerChange, mapRef }) {
   const leafletRef = useRef(null);
   const currentLayerRef = useRef(null);   // camada "hoje"
@@ -55,21 +55,7 @@ function SSTMap({ currentIso, compareIso, dividerPos, onDividerChange, mapRef })
         { subdomains: "abcd", maxZoom: 8 }
       ).addTo(map);
 
-      // Camada ATUAL (fica por baixo — visível à DIREITA do divisor)
-      const currentLayer = L.tileLayer.wms(GIBS_WMS, {
-        layers: LAYER,
-        format: "image/png",
-        transparent: true,
-        version: "1.1.1",
-        TIME: currentIso,
-        opacity: 0.85,
-      }).addTo(map);
-
-      // Pane isolado para a camada de comparação (permite clip independente)
-      map.createPane("comparePane");
-      map.getPane("comparePane").style.zIndex = 250;
-
-      // Camada COMPARAÇÃO (fica por cima — visível à ESQUERDA do divisor)
+      // Camada COMPARAÇÃO (fica por baixo — visível à DIREITA do divisor)
       const compareLayer = L.tileLayer.wms(GIBS_WMS, {
         layers: LAYER,
         format: "image/png",
@@ -77,7 +63,21 @@ function SSTMap({ currentIso, compareIso, dividerPos, onDividerChange, mapRef })
         version: "1.1.1",
         TIME: compareIso,
         opacity: 0.85,
-        pane: "comparePane",
+      }).addTo(map);
+
+      // Pane isolado para a camada atual (permite clip independente)
+      map.createPane("currentPane");
+      map.getPane("currentPane").style.zIndex = 250;
+
+      // Camada ATUAL (fica por cima — visível à ESQUERDA do divisor)
+      const currentLayer = L.tileLayer.wms(GIBS_WMS, {
+        layers: LAYER,
+        format: "image/png",
+        transparent: true,
+        version: "1.1.1",
+        TIME: currentIso,
+        opacity: 0.85,
+        pane: "currentPane",
       }).addTo(map);
 
       // Labels por cima de tudo
@@ -131,11 +131,11 @@ function SSTMap({ currentIso, compareIso, dividerPos, onDividerChange, mapRef })
     if (compareLayerRef.current) compareLayerRef.current.setParams({ TIME: compareIso });
   }, [compareIso]);
 
-  // ── Clip: cortar o pane da comparação em pixels (funciona com pan/zoom) ──
+  // ── Clip: cortar o pane atual em pixels (funciona com pan/zoom) ──
   useEffect(() => {
     const map = leafletRef.current;
     if (!map) return;
-    const pane = map.getPane("comparePane");
+    const pane = map.getPane("currentPane");
     if (!pane) return;
 
     const updateClip = () => {
@@ -340,27 +340,27 @@ export function AnomaliaSSTCard({ className = "" }) {
           ⬛ Niño 3.4
         </div>
 
-        {/* Label esquerda (data antiga — comparação) */}
+        {/* Label esquerda (data atual — leitura válida) */}
         <div style={{
           position: "absolute", bottom: 10, left: 10, zIndex: 999,
-          background: "rgba(0,0,0,0.75)", borderRadius: 6,
-          padding: "5px 9px", backdropFilter: "blur(4px)",
-          fontSize: 11, color: "#38bdf8", fontWeight: 600,
-          display: "flex", alignItems: "center", gap: 4,
-        }}>
-          <span style={{ fontSize: 13 }}>◂</span>
-          <span>{formatBR(compareIso)}</span>
-        </div>
-
-        {/* Label direita (data atual) */}
-        <div style={{
-          position: "absolute", bottom: 10, right: 10, zIndex: 999,
           background: "rgba(0,0,0,0.75)", borderRadius: 6,
           padding: "5px 9px", backdropFilter: "blur(4px)",
           fontSize: 11, color: "#4ade80", fontWeight: 600,
           display: "flex", alignItems: "center", gap: 4,
         }}>
+          <span style={{ fontSize: 13 }}>◂</span>
           <span>{formatBR(currentIso)}</span>
+        </div>
+
+        {/* Label direita (data antiga — 15 dias antes) */}
+        <div style={{
+          position: "absolute", bottom: 10, right: 10, zIndex: 999,
+          background: "rgba(0,0,0,0.75)", borderRadius: 6,
+          padding: "5px 9px", backdropFilter: "blur(4px)",
+          fontSize: 11, color: "#38bdf8", fontWeight: 600,
+          display: "flex", alignItems: "center", gap: 4,
+        }}>
+          <span>{formatBR(compareIso)}</span>
           <span style={{ fontSize: 13 }}>▸</span>
         </div>
       </div>
