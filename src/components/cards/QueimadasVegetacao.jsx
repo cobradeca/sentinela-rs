@@ -36,6 +36,17 @@ function normalizeQueimadasData(data = {}) {
   };
 }
 
+function getLastValidCoverageLabel(period) {
+  if (!period?.to) return null;
+  const end = new Date(period.to);
+  if (Number.isNaN(end.getTime())) return null;
+  const todayIsoUtc = new Date().toISOString().slice(0, 10);
+  if (String(period.to).slice(0, 10) === todayIsoUtc) {
+    end.setUTCDate(end.getUTCDate() - 1);
+  }
+  return end.toLocaleDateString("pt-BR");
+}
+
 export function QueimadasVegetacao({ className = "", data = MOCK_QUEIMADAS, loading = false, error = null, onRetry, onNavigate }) {
   if (loading) return <section className={`sr-mod-card ${className}`}><div className="sr-mod-skeleton h-40 w-full" /></section>;
 
@@ -54,9 +65,7 @@ export function QueimadasVegetacao({ className = "", data = MOCK_QUEIMADAS, load
   const color = ndviColor(normalized.ndviMedio);
   const ndviLabel = Number.isFinite(normalized.ndviMedio) ? normalized.ndviMedio.toFixed(2) : "—";
   const focoLabel = Number.isFinite(normalized.focos24h) && normalized.focos24h > 0 ? normalized.focos24h : "Sem foco";
-  const periodLabel = normalized.period?.to
-    ? new Date(normalized.period.to).toLocaleDateString("pt-BR")
-    : null;
+  const periodLabel = getLastValidCoverageLabel(normalized.period);
   const badgeLabel = normalized.focos24h > 0 ? `${normalized.focos24h} foco(s) ativo(s)` : "Sem foco ativo";
 
   return (
@@ -82,12 +91,12 @@ export function QueimadasVegetacao({ className = "", data = MOCK_QUEIMADAS, load
           <small>{normalized.vegetationPercent != null ? `${normalized.vegetationPercent}% vegetação saudável` : normalized.method || "Contexto Copernicus"}</small>
         </div>
 
-        <div>
-          <span>Cobertura analisada</span>
-          <strong>{normalized.validCoveragePercent != null ? `${normalized.validCoveragePercent}%` : "—"}</strong>
-          <small>{periodLabel ? `Imagem de ${periodLabel}` : "Fonte: Copernicus / Sentinel-2"}</small>
+          <div>
+            <span>Cobertura analisada</span>
+            <strong>{normalized.validCoveragePercent != null ? `${normalized.validCoveragePercent}%` : "—"}</strong>
+            <small>{periodLabel ? `Última válida: ${periodLabel}` : "Fonte: Copernicus / Sentinel-2"}</small>
+          </div>
         </div>
-      </div>
 
       {onNavigate && (
         <footer className="sr-mod-footer" style={{ display: "flex", justifyContent: "flex-end" }}>
