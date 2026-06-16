@@ -242,8 +242,15 @@ export function PrevisaoRioGrande({ className = "", onNavigate, userCity }) {
       fontFamily: "var(--sr-font)",
       minHeight: 480
     }}>
+      <header className="sr-mod-header" style={{ marginBottom: 0, width: "100%" }}>
+        <div className="sr-mod-title"><span>☁</span> PREVISÃO</div>
+        <div className="sr-mod-badge" style={{ color: "#70757a" }}>
+          Fonte: Open-Meteo • Atualizado: {state.updatedAt?.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+        </div>
+      </header>
+
       {/* Header section */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12, marginTop: -4 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ display: "flex", alignItems: "center" }}>
             <WeatherIcon code={codeVal} size={54} />

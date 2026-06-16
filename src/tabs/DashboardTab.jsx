@@ -7,7 +7,6 @@ import {
   MOCK_RODOVIAS,
   PanoramaGeral,
   PrevisaoRioGrande,
-  QueimadasVegetacao,
 } from "../components/cards";
 import { classifyENSO } from "../utils/enso";
 
@@ -120,16 +119,11 @@ export function DashboardTab({ ctx }) {
         rodovias={buildRoadRows(roadBlocks)}
         rios={buildRiverRows(riverLevels)}
         loading={loading && !stationData?.rs_rio_grande}
+        queimadas={queimadasData}
       />
 
-      <LagoadosPatos data={lagoaRows} loading={loading && lagoaRows.length === 0} onNavigate={setActiveTab} />
-
       <div className="sr-dashboard-two-col">
-        <PrevisaoRioGrande onNavigate={setActiveTab} userCity={userCity} />
-        <QueimadasVegetacao data={queimadasData} loading={loading && !queimadas} onNavigate={setActiveTab} />
-      </div>
-
-      <div className="sr-dashboard-two-col">
+        <LagoadosPatos data={lagoaRows} loading={loading && lagoaRows.length === 0} onNavigate={setActiveTab} />
         <ENSOCard
           onNavigate={setActiveTab}
           data={{
@@ -140,6 +134,10 @@ export function DashboardTab({ ctx }) {
             atualizadoEm: activeENSO.probabilityReferenceDate || "Atual",
           }}
         />
+      </div>
+
+      <div className="sr-dashboard-two-col">
+        <PrevisaoRioGrande onNavigate={setActiveTab} userCity={userCity} />
         <CondicoesVoo onNavigate={setActiveTab} />
       </div>
     </div>

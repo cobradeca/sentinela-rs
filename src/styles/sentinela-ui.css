@@ -211,7 +211,7 @@ a:focus-visible {
   padding: 18px;
   box-shadow: var(--sr-shadow);
   font-family: "IBM Plex Sans", Inter, system-ui, sans-serif;
-  font-size: 70%;
+  font-size: 13px;
 }
 
 .sr-mod-header {
@@ -257,13 +257,13 @@ a:focus-visible {
 .sr-mod-badge,
 .sr-mod-footer {
   color: var(--sr-text-muted);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .sr-mod-subtitle {
   margin-top: 4px;
   color: var(--sr-text-muted);
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.35;
 }
 
@@ -295,7 +295,7 @@ a:focus-visible {
 
 .sr-lagoa-feature-kicker {
   color: var(--sr-text-muted);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -303,14 +303,14 @@ a:focus-visible {
 
 .sr-lagoa-feature-main strong {
   color: var(--sr-text);
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 800;
 }
 
 .sr-lagoa-feature-value {
   color: var(--sr-text);
   font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
-  font-size: 30px;
+  font-size: 34px;
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1;
@@ -321,18 +321,18 @@ a:focus-visible {
   flex-wrap: wrap;
   gap: 10px;
   color: var(--sr-text-muted);
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .sr-lagoa-feature-side strong {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 800;
   color: var(--sr-text);
 }
 
 .sr-lagoa-feature-hint {
   color: var(--sr-text-muted);
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .sr-lagoa-mini-grid {
@@ -352,7 +352,7 @@ a:focus-visible {
 .sr-lagoa-mini-card span {
   display: block;
   color: var(--sr-text-muted);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   margin-bottom: 6px;
@@ -361,7 +361,7 @@ a:focus-visible {
 .sr-lagoa-mini-card strong {
   display: block;
   color: var(--sr-text);
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 800;
 }
 
@@ -383,12 +383,12 @@ a:focus-visible {
 
 .sr-lagoa-empty-state strong {
   color: var(--sr-text);
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .sr-lagoa-empty-note {
   color: var(--sr-text-muted);
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .sr-source-pill.is-muted {
@@ -490,7 +490,7 @@ a:focus-visible {
 .sr-voo-row small,
 .sr-panorama-block small {
   color: var(--sr-text-muted);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .sr-panorama-block small {
@@ -531,7 +531,7 @@ a:focus-visible {
   justify-content: center;
   border-radius: 999px;
   padding: 4px 8px;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 800;
   background: rgba(74, 222, 128, 0.15);
   color: #4ade80 !important;
@@ -567,7 +567,7 @@ a:focus-visible {
 }
 
 .sr-forecast-label {
-  font-size: 9px;
+  font-size: 11px;
   text-transform: uppercase;
   color: var(--sr-text-muted);
   font-weight: 700;
@@ -578,7 +578,7 @@ a:focus-visible {
 .sr-forecast-day small {
   display: block;
   color: var(--sr-text-muted);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .sr-weather-svg {
@@ -598,7 +598,7 @@ a:focus-visible {
 .sr-veg-grid strong {
   display: block;
   color: var(--sr-text);
-  font-size: 18px;
+  font-size: 20px;
   font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
 }
 
@@ -617,7 +617,7 @@ a:focus-visible {
 .sr-panorama-roads-title {
   display: block;
   font-weight: 800;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--sr-text-muted);
   margin-bottom: 10px;
 }
@@ -643,14 +643,14 @@ a:focus-visible {
   display: flex;
   gap: 8px;
   align-items: flex-start;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .sr-panorama-roads-item small {
   display: block;
   margin-top: 4px;
   color: var(--sr-text-muted);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.4;
 }
 
@@ -663,7 +663,7 @@ body[data-theme="dark"] .sr-panorama-roads {
   display: block;
   color: var(--sr-text);
   font-weight: 800;
-  font-size: 10px;
+  font-size: 12px;
   margin-bottom: 10px;
 }
 
@@ -671,7 +671,7 @@ body[data-theme="dark"] .sr-panorama-roads {
   display: block;
   margin-top: 8px;
   color: var(--sr-text-muted);
-  font-size: 9px;
+  font-size: 11px;
   font-style: normal;
 }
 
@@ -685,7 +685,7 @@ body[data-theme="dark"] .sr-panorama-roads {
   border: 1px solid #bfdbfe;
   background: #eff6ff;
   border-radius: 12px;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .sr-defesa-logo {
@@ -697,7 +697,7 @@ body[data-theme="dark"] .sr-panorama-roads {
   display: grid;
   place-items: center;
   text-align: center;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 900;
 }
 
@@ -721,7 +721,7 @@ body[data-theme="dark"] .sr-panorama-roads {
 .sr-voo-head {
   color: var(--sr-text-muted);
   font-weight: 800;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .sr-voo-table--compact .sr-voo-head,
