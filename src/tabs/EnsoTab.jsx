@@ -78,7 +78,19 @@ function MiniLine({ forecast, field, color }) {
         <g key={index}>
           <circle cx={x} cy={y} r="4" fill={color} />
           <text x={x} y={y - 10} textAnchor="middle" fontSize="11" fontWeight="700" fill={color}>{pct(value)}</text>
-          <text x={x} y={h - 6} textAnchor="middle" fontSize="10" fill="#64748b">{(forecast[index]?.p || "").replace(" ", "\n")}</text>
+          {index % 2 === 0 && (
+            <text
+              x={x}
+              y={h - 2}
+              textAnchor="end"
+              fontSize="9"
+              fill="#64748b"
+              transform={`rotate(-45 ${x} ${h - 2})`}
+              style={{ transformOrigin: `${x}px ${h - 2}px` }}
+            >
+              {(forecast[index]?.p || "").replace(" ", "-")}
+            </text>
+          )}
         </g>
       ))}
     </svg>
