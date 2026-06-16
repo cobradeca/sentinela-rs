@@ -340,27 +340,27 @@ export function AnomaliaSSTCard({ className = "" }) {
           ⬛ Niño 3.4
         </div>
 
-        {/* Label esquerda (data atual — leitura válida) */}
+        {/* Label esquerda (data antiga — 15 dias antes) */}
         <div style={{
           position: "absolute", bottom: 10, left: 10, zIndex: 999,
-          background: "rgba(0,0,0,0.75)", borderRadius: 6,
-          padding: "5px 9px", backdropFilter: "blur(4px)",
-          fontSize: 11, color: "#4ade80", fontWeight: 600,
-          display: "flex", alignItems: "center", gap: 4,
-        }}>
-          <span style={{ fontSize: 13 }}>◂</span>
-          <span>{formatBR(currentIso)}</span>
-        </div>
-
-        {/* Label direita (data antiga — 15 dias antes) */}
-        <div style={{
-          position: "absolute", bottom: 10, right: 10, zIndex: 999,
           background: "rgba(0,0,0,0.75)", borderRadius: 6,
           padding: "5px 9px", backdropFilter: "blur(4px)",
           fontSize: 11, color: "#38bdf8", fontWeight: 600,
           display: "flex", alignItems: "center", gap: 4,
         }}>
+          <span style={{ fontSize: 13 }}>◂</span>
           <span>{formatBR(compareIso)}</span>
+        </div>
+
+        {/* Label direita (data atual — leitura válida) */}
+        <div style={{
+          position: "absolute", bottom: 10, right: 10, zIndex: 999,
+          background: "rgba(0,0,0,0.75)", borderRadius: 6,
+          padding: "5px 9px", backdropFilter: "blur(4px)",
+          fontSize: 11, color: "#4ade80", fontWeight: 600,
+          display: "flex", alignItems: "center", gap: 4,
+        }}>
+          <span>{formatBR(currentIso)}</span>
           <span style={{ fontSize: 13 }}>▸</span>
         </div>
       </div>
