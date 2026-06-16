@@ -32,17 +32,6 @@ function ndviColor(value) {
   return "#84cc16";
 }
 
-function getLastValidCoverageLabel(period) {
-  if (!period?.to) return null;
-  const end = new Date(period.to);
-  if (Number.isNaN(end.getTime())) return null;
-  const todayIsoUtc = new Date().toISOString().slice(0, 10);
-  if (String(period.to).slice(0, 10) === todayIsoUtc) {
-    end.setUTCDate(end.getUTCDate() - 1);
-  }
-  return end.toLocaleDateString("pt-BR");
-}
-
 export function PanoramaGeral({
   className = "",
   lagoa = MOCK_LAGOA,
@@ -82,7 +71,6 @@ export function PanoramaGeral({
   const focoLabel = Number.isFinite(queimadas?.focos24h) && queimadas.focos24h > 0 ? queimadas.focos24h : "Sem foco";
   const ndviLabel = Number.isFinite(queimadas?.ndviMedio) ? queimadas.ndviMedio.toFixed(2) : "—";
   const colorNDVI = ndviColor(queimadas?.ndviMedio);
-  const periodLabel = getLastValidCoverageLabel(queimadas?.period);
 
   return (
     <section className={`sr-mod-card ${className}`}>
@@ -137,16 +125,6 @@ export function PanoramaGeral({
             </div>
             <small style={{ fontSize: "9px", color: "var(--sr-text-muted)" }}>
               {queimadas?.vegetationPercent != null ? `${queimadas.vegetationPercent}% veg. saudável` : "Copernicus S-2"}
-            </small>
-          </div>
-
-          <div>
-            <span style={{ fontSize: "9px", textTransform: "uppercase", color: "var(--sr-text-muted)", fontWeight: 700 }}>Cobertura analisada</span>
-            <strong style={{ display: "block", fontSize: "16px", margin: "2px 0 0 0" }}>
-              {queimadas?.validCoveragePercent != null ? `${queimadas.validCoveragePercent}%` : "—"}
-            </strong>
-            <small style={{ fontSize: "9px", color: "var(--sr-text-muted)" }}>
-              {periodLabel ? `Última válida: ${periodLabel}` : "Fonte: Copernicus"}
             </small>
           </div>
         </div>
