@@ -11,11 +11,36 @@ const phaseColors = {
 };
 
 const historicalEvents = [
-  { event: "La Nina", period: "2020-2023", color: phaseColors.laNina },
-  { event: "Neutro", period: "2018-2019", color: phaseColors.neutral },
-  { event: "El Nino", period: "2015-2016", color: phaseColors.elNino },
-  { event: "Neutro", period: "2013-2014", color: phaseColors.neutral },
-  { event: "La Nina", period: "2010-2012", color: phaseColors.laNina },
+  { 
+    event: "La Nina", 
+    period: "2020-2023", 
+    color: phaseColors.laNina,
+    specificImpacts: "Redução de precipitação no RS. Período marcado por secas moderadas, com desafios na agricultura e abastecimento de água. Temperaturas próximas ou abaixo da média."
+  },
+  { 
+    event: "Neutro", 
+    period: "2018-2019", 
+    color: phaseColors.neutral,
+    specificImpacts: "Padrão de chuva próximo à normalidade. Variabilidade sazonal típica sem extremos marcantes. Condições favoráveis para agricultura."
+  },
+  { 
+    event: "El Nino", 
+    period: "2015-2016", 
+    color: phaseColors.elNino,
+    specificImpacts: "Intenso: Chuvas acima da média no RS, com eventos de precipitação extrema. Aumento de enchentes e deslizamentos. Temperaturas elevadas registradas."
+  },
+  { 
+    event: "Neutro", 
+    period: "2013-2014", 
+    color: phaseColors.neutral,
+    specificImpacts: "Condições próximas da normalidade. Distribuição de chuvas regular ao longo do período. Sem extremos climáticos significativos."
+  },
+  { 
+    event: "La Nina", 
+    period: "2010-2012", 
+    color: phaseColors.laNina,
+    specificImpacts: "Chuvas abaixo da média. Período de estiagem com impactos na agricultura. Déficit hídrico em diversas regiões do RS."
+  },
 ];
 
 function pct(value) {
@@ -81,27 +106,24 @@ function ForecastTable({ forecast }) {
 }
 
 function EventModal({ event, onClose }) {
-  const eventDetails = {
+  const genericDetails = {
     "La Nina": {
       desc: "Anomalia fria no Pacífico Equatorial",
-      impacts: "Maior chance de chuvas abaixo da média no RS, redução de precipitação esperada.",
       color: phaseColors.laNina
     },
     "El Nino": {
       desc: "Anomalia quente no Pacífico Equatorial",
-      impacts: "Maior chance de chuvas acima da média no RS, maior potencial de eventos extremos.",
       color: phaseColors.elNino
     },
     "Neutro": {
       desc: "Sem anomalia significativa",
-      impacts: "Comportamento mais próximo da normalidade, com variabilidade sazonal típica.",
       color: "#64748b"
     }
   };
-  const details = eventDetails[event.event] || {};
+  const details = genericDetails[event.event] || {};
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "grid", placeItems: "center", zIndex: 1000 }} onClick={onClose}>
-      <div className="sr-card-v2" style={{ maxWidth: 400, padding: 24, borderRadius: 12, borderTop: `4px solid ${details.color}` }} onClick={(e) => e.stopPropagation()}>
+      <div className="sr-card-v2" style={{ maxWidth: 420, padding: 24, borderRadius: 12, borderTop: `4px solid ${details.color}` }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
           <div style={{ width: 16, height: 16, borderRadius: "50%", background: details.color }} />
           <h2 style={{ margin: 0, fontSize: 22, fontWeight: 900, color: details.color }}>{event.event}</h2>
@@ -115,7 +137,9 @@ function EventModal({ event, onClose }) {
           <div style={{ fontSize: 14, color: "var(--sr-text)" }}>{details.desc}</div>
         </div>
         <div style={{ padding: "12px 14px", background: `${details.color}12`, borderRadius: 8, borderLeft: `3px solid ${details.color}`, marginBottom: 16 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--sr-text)" }}>{details.impacts}</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--sr-text)", lineHeight: 1.6 }}>
+            <strong>Impactos observados no RS:</strong><br/>{event.specificImpacts}
+          </div>
         </div>
         <button onClick={onClose} style={{ width: "100%", padding: "10px 14px", background: "var(--sr-border)", border: "none", borderRadius: 8, fontWeight: 700, cursor: "pointer" }}>Fechar</button>
       </div>
