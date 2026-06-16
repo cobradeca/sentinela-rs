@@ -1,24 +1,22 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
-const LAYER = "GHRSST_L4_MUR_Sea_Surface_Temperature_Anomalies";
+// Nome correto da camada (confirmado via gitc.earthdata.nasa.gov)
+const LAYER = "GHRSST_L4_MUR_Sea_Surface_Temperature_Anomalies_v4.1_STD";
 const ZOOM = 2;
-
-// Grade 4×2 cobrindo o Pacífico equatorial completo + Américas.
-// Coordenadas extraídas do print: lon ~145°E → ~33°W, lat ~47°S → ~37°N.
-// Cruza o antimeridiano: ordem de coluna é x=2, x=3, x=0, x=1.
-const TILES = [
-  { x: 2, y: 1, col: 0, row: 0 }, // Pacífico W norte  (0→90E,  0→67N)
-  { x: 3, y: 1, col: 1, row: 0 }, // Pacífico CW norte (90→180E, 0→67N)
-  { x: 0, y: 1, col: 2, row: 0 }, // Pacífico CE norte (-180→-90, 0→67N)
-  { x: 1, y: 1, col: 3, row: 0 }, // Américas norte    (-90→0,  0→67N)
-  { x: 2, y: 2, col: 0, row: 1 }, // Pacífico W sul    (0→90E, -67→0)
-  { x: 3, y: 2, col: 1, row: 1 }, // Pacífico CW sul   (90→180E,-67→0)
-  { x: 0, y: 2, col: 2, row: 1 }, // Pacífico CE sul   (-180→-90,-67→0)
-  { x: 1, y: 2, col: 3, row: 1 }, // Américas sul      (-90→0, -67→0)
-];
-
 const MAX_LOOKBACK_DAYS = 14;
-const MAX_RETRIES = 5;
+
+// Grade 4×2 cruzando o antimeridiano: lon ~145°E→33°W, lat ~67°S→67°N
+// Ordem de colunas: x=2(0→90E), x=3(90→180E), x=0(-180→-90), x=1(-90→0)
+const TILES = [
+  { x: 2, y: 1, col: 1, row: 1 },
+  { x: 3, y: 1, col: 2, row: 1 },
+  { x: 0, y: 1, col: 3, row: 1 },
+  { x: 1, y: 1, col: 4, row: 1 },
+  { x: 2, y: 2, col: 1, row: 2 },
+  { x: 3, y: 2, col: 2, row: 2 },
+  { x: 0, y: 2, col: 3, row: 2 },
+  { x: 1, y: 2, col: 4, row: 2 },
+];
 
 const GRADIENT = "linear-gradient(to right,#6b00db,#7400d6,#7f00d3,#8900cf,#9600ca,#9109cc,#7f1ad1,#6031dc,#414be6,#2264f1,#087cfb,#0094ff,#00aeff,#00caff,#00e3ff,#03f8fa,#18fce5,#2fffce,#47ffb6,#60ff9e,#76ff8c,#88ff84,#97ff8b,#a4ff91,#b1ff98,#bdfe9e,#bff4a3,#bfe8a9,#bfdbb0,#bfd0b6,#c2cab8,#cacab7,#d5d5ac,#e2e2a2,#eded98,#f9f88d,#fff679,#ffea5e,#ffde43,#ffd025,#ffc209,#ffb601,#ffaa00,#ff9d00,#ff9100,#ff8200,#ff7100,#ff5900,#ff3d00,#ff2100,#fe0900,#f90113,#f3002d,#ec004a,#e60067,#de007d,#d30085,#bf0068,#ab0048,#9a002c,#88000f,#800000)";
 
@@ -39,28 +37,37 @@ function formatBR(iso) {
   }).format(new Date(`${iso}T00:00:00Z`));
 }
 
-// GIBS WMTS URL: nível de zoom, depois row (y) depois col (x)
 function tileUrl(iso, x, y) {
   return `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${LAYER}/default/${iso}/GoogleMapsCompatible_Level${ZOOM}/${y}/${x}.png`;
 }
 
 export function AnomaliaSSTCard({ className = "" }) {
   const [offset, setOffset] = useState(0);
-  const [retries, setRetries] = useState(0);
   const [failed, setFailed] = useState(false);
+  // Controle de fallback por data — não por tile individual
+  const fallbackRef = useRef({ offset: 0, attempts: 0 });
 
   const selectedDate = useMemo(() => isoDate(dateMinusDays(2 + offset)), [offset]);
 
   const handleSliderChange = (e) => {
-    setOffset(Number(e.target.value));
-    setRetries(0);
+    const val = Number(e.target.value);
+    setOffset(val);
     setFailed(false);
+    fallbackRef.current = { offset: val, attempts: 0 };
   };
 
+  // Um tile falhando dispara tentativa na próxima data —
+  // mas só uma vez por "rodada" de datas, usando ref como guard.
   const handleImgError = () => {
-    if (retries < MAX_RETRIES && offset + 1 <= MAX_LOOKBACK_DAYS) {
-      setRetries((r) => r + 1);
-      setOffset((o) => o + 1);
+    const ref = fallbackRef.current;
+    if (ref.attempts >= 1) return; // já agendou fallback para essa data
+    ref.attempts += 1;
+
+    const nextOffset = ref.offset + 1;
+    if (nextOffset <= MAX_LOOKBACK_DAYS) {
+      fallbackRef.current = { offset: nextOffset, attempts: 0 };
+      setOffset(nextOffset);
+      setFailed(false);
     } else {
       setFailed(true);
     }
@@ -85,7 +92,7 @@ export function AnomaliaSSTCard({ className = "" }) {
               src={tileUrl(selectedDate, x, y)}
               alt=""
               onError={handleImgError}
-              style={{ gridColumn: col + 1, gridRow: row + 1 }}
+              style={{ gridColumn: col, gridRow: row }}
             />
           ))
         )}
@@ -99,7 +106,7 @@ export function AnomaliaSSTCard({ className = "" }) {
           step={1}
           value={offset}
           onChange={handleSliderChange}
-          aria-label="Selecionar data da imagem de anomalia de TSM"
+          aria-label="Selecionar data"
         />
         <div className="sr-sst-slider-labels">
           <span>Hoje - {2 + offset} dia(s)</span>
@@ -123,7 +130,7 @@ export function AnomaliaSSTCard({ className = "" }) {
 
       <footer className="sr-mod-footer">
         Imagem: NASA Global Imagery Browse Services (GIBS) — Sea Surface
-        Temperature Anomalies (GHRSST L4 MUR).
+        Temperature Anomalies (GHRSST L4 MUR v4.1 STD).
       </footer>
     </section>
   );
