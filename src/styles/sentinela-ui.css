@@ -802,6 +802,10 @@ body[data-theme="dark"] .sr-panorama-roads {
 .sr-enso-current {
   text-align: center;
   margin-top: 4px;
+  border: 1.5px solid transparent;
+  border-radius: 8px;
+  padding: 8px 12px;
+  transition: border-color 0.3s;
 }
 
 .sr-enso-current small,

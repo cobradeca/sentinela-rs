@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { NavIcon } from "../layout/NavIcons";
+import { classifyENSO } from "../../utils/enso";
 
 export const MOCK_ENSO = {
   oni: 0.1,
@@ -34,6 +35,7 @@ export function ENSOCard({ className = "", data = MOCK_ENSO, loading = false, er
   const oni = Number(data?.oni ?? 0);
   const angle = useMemo(() => oniToAngle(oni), [oni]);
   const condicao = data?.condicao || phaseFromOni(oni);
+  const phaseColor = classifyENSO(oni).color;
 
   if (loading) {
     return (
@@ -120,10 +122,10 @@ export function ENSOCard({ className = "", data = MOCK_ENSO, loading = false, er
           </g>
         </svg>
 
-        <div className="sr-enso-current">
-          <small>Condição atual</small>
-          <strong>{condicao}</strong>
-          <span>ONI {oni >= 0 ? "+" : ""}{oni.toFixed(1)} °C</span>
+        <div className="sr-enso-current" style={{ borderColor: phaseColor }}>
+          <small style={{ color: phaseColor, opacity: 0.75 }}>Condição atual</small>
+          <strong style={{ color: phaseColor }}>{condicao}</strong>
+          <span style={{ color: phaseColor, opacity: 0.85 }}>ONI {oni >= 0 ? "+" : ""}{oni.toFixed(1)} °C</span>
         </div>
       </div>
 

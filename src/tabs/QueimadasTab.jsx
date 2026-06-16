@@ -152,6 +152,16 @@ export function QueimadasTab({ ctx }) {
     unknown: monitoredAreas.filter(({ status }) => status.level === "unknown").length,
   };
 
+  // Focos totais no estado (independente de área monitorada)
+  const totalFocosEstado = useMemo(() => {
+    const fireRecords = Array.isArray(queimadas) ? queimadas : (queimadas?.records || []);
+    return fireRecords.length;
+  }, [queimadas]);
+
+  const focosForaDoCorreador = totalFocosEstado > 0 && monitoredAreas.every(({ status }) =>
+    status.level === "clear" || status.level === "unknown"
+  );
+
   return (
     <div style={{ display:"grid", gap:12 }}>
       <DefesaCivilNotice t={t} dark={dark} />
@@ -226,6 +236,11 @@ export function QueimadasTab({ ctx }) {
                 {hasFire || hasThermalAlert
                   ? `${status.detailPrefix}: ${sources.join(" + ")} · última detecção: ${formatDateTimeBR(latest)}${distanceLabel(nearestDistance) ? ` · menor distância: ${distanceLabel(nearestDistance)}` : ""}`
                   : sourcesReady ? "Nenhum foco recente identificado na área monitorada." : "Não foi possível confirmar a situação desta área nesta sessão."}
+                {!hasFire && !hasThermalAlert && totalFocosEstado > 0 && (
+                  <span style={{ display:"block", marginTop:3, color:"#f59e0b", opacity:0.85 }}>
+                    ⚠ {totalFocosEstado} foco{totalFocosEstado > 1 ? "s" : ""} detectado{totalFocosEstado > 1 ? "s" : ""} no RS, fora das áreas BRs 101, 116 e 471 monitoradas.
+                  </span>
+                )}
               </div>
             </div>
           ))}
