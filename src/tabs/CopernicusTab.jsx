@@ -17,6 +17,7 @@ function Badge({ color, children }) {
     green:  { bg: "#dcfce7", text: "#166534", border: "#bbf7d0" },
     gray:   { bg: "#f1f5f9", text: "#475569", border: "#e2e8f0" },
     amber:  { bg: "#fef3c7", text: "#92400e", border: "#fde68a" },
+    blue:   { bg: "#dbeafe", text: "#1e40af", border: "#bfdbfe" },
   };
   const p = palettes[color] || palettes.gray;
   return (
@@ -42,8 +43,8 @@ function LinkBtn({ href, color = "#3b82f6", filled = false, children }) {
   );
 }
 
-function Section({ title, children }) {
-  const [open, setOpen] = useState(false);
+function Section({ title, children, defaultOpen = false }) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <div style={{ borderTop: "1px solid var(--color-border-tertiary)" }}>
       <button onClick={() => setOpen(o => !o)} style={{
@@ -59,152 +60,222 @@ function Section({ title, children }) {
   );
 }
 
+const DOCS = [
+  {
+    fonte: "World Weather Attribution / npj Natural Hazards (2026)",
+    titulo: "Mudança climática e El Niño por trás das enchentes no sul do Brasil",
+    resumo: "Estudo peer-reviewed concluiu que a mudança climática tornou o evento mais de 2× mais provável e 6–9% mais intenso. El Niño agravou as condições, mas o aquecimento global foi o fator dominante.",
+    achados: [
+      "420 mm de chuva em 10 dias (24 abr – 4 mai 2024)",
+      "+90% do estado afetado — área comparável ao Reino Unido",
+      "Probabilidade do evento dobrada pelo aquecimento global",
+      "Intensidade 6–9% maior que num clima sem aquecimento",
+    ],
+    relevancia: "Fundamenta o uso de ENSO como indicador de risco no Sentinela·RS",
+    url: "https://www.worldweatherattribution.org/climate-change-made-the-floods-in-southern-brazil-twice-as-likely/",
+    cor: "#dc2626",
+  },
+  {
+    fonte: "ScienceDirect — Remote Sensing of Environment (2025)",
+    titulo: "Mapeamento da inundação de maio 2024 no RS com Sentinel-1, Sentinel-2 e DEM",
+    resumo: "Integrou SAR (Sentinel-1), imagens ópticas (Sentinel-2) e modelo digital de elevação para superar limitações de cada sensor individualmente, especialmente em áreas urbanas.",
+    achados: [
+      "SAR sozinho subestima inundação urbana (efeito de dupla reflexão)",
+      "Fusão Sentinel-1 + Sentinel-2 + DEM melhora precisão em áreas densas",
+      "Validação com PlanetScope de alta resolução",
+      "Metodologia replicável para monitoramento futuro no RS",
+    ],
+    relevancia: "Justifica monitorar Sentinel-1 E Sentinel-2 juntos — não apenas um deles",
+    url: "https://www.sciencedirect.com/science/article/pii/S2666592125000411",
+    cor: "#7c3aed",
+  },
+  {
+    fonte: "OCHA — ONU (setembro 2024)",
+    titulo: "Relatório de situação: Enchentes no RS — último boletim oficial da ONU",
+    resumo: "Cobertura humanitária de julho a setembro de 2024. Sistematiza impactos, resposta e lacunas de recuperação. Último relatório da série emergencial.",
+    achados: [
+      "469 municípios afetados — quase todo o estado",
+      "Mais de 150.000 pessoas desabrigadas no pico",
+      "R$ 19 bilhões em danos materiais (US$ 3,7 bi)",
+      "181 mortes confirmadas, 61 desaparecidos",
+    ],
+    relevancia: "Baseline humanitário para comparar recuperação atual vs situação de emergência",
+    url: "https://www.unocha.org/publications/report/brazil/brazil-floods-rio-grande-do-sul-united-nations-situation-report-20-september-2024",
+    cor: "#0369a1",
+  },
+  {
+    fonte: "Copernicus Global Flood Awareness (2024)",
+    titulo: "Cronologia da resposta via satélite: EMSR720 + EMSN194",
+    resumo: "Documentação oficial do acionamento do Copernicus EMS — da ativação em 3 mai (barragem de Cotiporã) até os 17+ mapas de danos produzidos para a Defesa Civil.",
+    achados: [
+      "Acionamento em 3 mai — ruptura de barragem em Cotiporã/Bento Gonçalves",
+      "17 mapas produzidos em 2 semanas pelo EMSR720",
+      "EMSN194: 4 análises — delimitação de cheias, danos, exposição populacional",
+      "Produtos P04/P06/P08/P14 cobrem 1.083 km² de área analisada",
+    ],
+    relevancia: "Origem dos dados desta aba — contextualiza o que cada produto significa",
+    url: "https://global-flood.emergency.copernicus.eu/news/170-Rio%20Grande%20do%20Sul%20Flooding,%20Brazil%20-%20April%20to%20June%202024/",
+    cor: "#059669",
+  },
+];
+
 export function CopernicusTab({ ctx }) {
   const { copernicusEms } = ctx;
+  const [mapLoaded, setMapLoaded] = useState(false);
 
-  if (!copernicusEms?.ok) {
-    return (
-      <div style={{ padding: 24, textAlign: "center", color: "var(--color-text-secondary)", fontSize: 14 }}>
-        ⏳ Aguardando dados do Copernicus EMS…
-      </div>
-    );
-  }
-
-  const emsr = copernicusEms.rapid_mapping?.rs_2024;
-  const emsn = copernicusEms.risk_recovery?.rs_2024;
-  const nacionais = copernicusEms.rapid_mapping?.recent_brazil_floods || [];
+  const emsr = copernicusEms?.rapid_mapping?.rs_2024;
+  const emsn = copernicusEms?.rapid_mapping?.rs_2024
+    ? copernicusEms.risk_recovery?.rs_2024
+    : null;
+  const nacionais = copernicusEms?.rapid_mapping?.recent_brazil_floods || [];
 
   return (
     <div style={{ display: "grid", gap: 14 }}>
 
-      {/* CONTEXTO GERAL */}
+      {/* MAPA INTERATIVO PRINCIPAL */}
       <div style={{
-        padding: "16px 18px", borderRadius: 10,
-        background: "linear-gradient(135deg, #eff6ff 0%, #fff 100%)",
+        borderRadius: 10, overflow: "hidden",
         border: "1.5px solid #bfdbfe",
+        background: "var(--color-background-secondary)",
       }}>
-        <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "#3b82f6", marginBottom: 6 }}>
-          Copernicus EMS — Serviço Europeu de Emergência por Satélite
+        <div style={{
+          padding: "12px 16px",
+          background: "linear-gradient(135deg, #eff6ff 0%, #fff 100%)",
+          borderBottom: "1px solid #bfdbfe",
+          display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap",
+        }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#1e40af" }}>
+              🛰 Mapa Oficial — Áreas Inundadas (EMSN194)
+            </div>
+            <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginTop: 2 }}>
+              Mancha azul = inundação mapeada por satélite · Contorno verde = área de análise
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <LinkBtn href="https://riskandrecovery.emergency.copernicus.eu/EMSN194/viewer/" color="#1e40af" filled>
+              ↗ Abrir em tela cheia
+            </LinkBtn>
+          </div>
         </div>
-        <div style={{ fontSize: 13, color: "var(--color-text-secondary)", lineHeight: 1.6 }}>
-          Quando ocorre um desastre, satélites europeus fotografam a região afetada e especialistas produzem mapas oficiais de danos, inundação e risco. Esses mapas são usados por governos e defesa civil para priorizar resgates e planejar a reconstrução. O Rio Grande do Sul recebeu <strong>dois tipos de ativação</strong> após as enchentes de 2024:
+
+        {/* iframe do viewer oficial */}
+        <div style={{ position: "relative", paddingBottom: "56.25%", height: 0 }}>
+          {!mapLoaded && (
+            <div style={{
+              position: "absolute", inset: 0,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              background: "#f0f9ff", color: "#3b82f6", fontSize: 13, flexDirection: "column", gap: 8,
+            }}>
+              <div style={{ fontSize: 24 }}>🛰</div>
+              <div>Carregando mapa de satélite…</div>
+            </div>
+          )}
+          <iframe
+            src="https://riskandrecovery.emergency.copernicus.eu/EMSN194/viewer/"
+            title="Mapa EMSN194 — Enchentes RS 2024"
+            style={{
+              position: "absolute", top: 0, left: 0,
+              width: "100%", height: "100%",
+              border: "none",
+              opacity: mapLoaded ? 1 : 0,
+              transition: "opacity 0.4s",
+            }}
+            onLoad={() => setMapLoaded(true)}
+            allow="fullscreen"
+          />
+        </div>
+
+        <div style={{
+          padding: "10px 16px", fontSize: 11,
+          color: "var(--color-text-secondary)", lineHeight: 1.5,
+          borderTop: "1px solid var(--color-border-tertiary)",
+          background: "var(--color-background-primary)",
+        }}>
+          <strong>Como ler o mapa:</strong> arraste para navegar · scroll para zoom · camadas no canto superior direito (satélite / topográfico / OSM) · contorno verde delimita a AOI mapeada pelo Copernicus.
         </div>
       </div>
 
-      {/* CARD EMSR720 */}
+      {/* CARDS EMSR + EMSN */}
       {emsr && (
         <div style={{
-          padding: "16px 18px", borderRadius: 10,
+          padding: "14px 16px", borderRadius: 10,
           border: "1.5px solid #fca5a5",
           background: "linear-gradient(135deg, #fff1f2 0%, #fff 100%)",
-          display: "grid", gap: 12,
+          display: "grid", gap: 10,
         }}>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 18 }}>🚨</span>
-              <span style={{ fontSize: 15, fontWeight: 700, color: "#991b1b" }}>Mapeamento de Emergência</span>
-              <Badge color={emsr.closed ? "gray" : "red"}>{emsr.closed ? "Encerrado" : "Ativo"}</Badge>
-            </div>
-            <div style={{ fontSize: 12, color: "var(--color-text-secondary)" }}>
-              Código {emsr.code} · Ativado {formatDaysSince(emsr.activationTime)}
-            </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 16 }}>🚨</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: "#991b1b" }}>Mapeamento de Emergência — {emsr.code}</span>
+            <Badge color={emsr.closed ? "gray" : "red"}>{emsr.closed ? "Encerrado" : "Ativo"}</Badge>
           </div>
-
-          <div style={{ fontSize: 13, color: "var(--color-text-secondary)", lineHeight: 1.6 }}>
-            <strong>O que é:</strong> nas primeiras horas da catástrofe, satélites fotografaram o RS e especialistas identificaram quais áreas estavam alagadas, quais estradas foram cortadas e onde havia destruição. Esses mapas foram entregues à Defesa Civil para guiar os resgates.
+          <div style={{ fontSize: 12, color: "var(--color-text-secondary)", lineHeight: 1.6 }}>
+            Ativado em 3 mai 2024 após ruptura de barragem em Cotiporã. Satélites mapearam extensão da inundação e danos para guiar resgates da Defesa Civil. {emsr.n_products} mapas produzidos em {emsr.n_aois} regiões.
           </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 8 }}>
-            <div style={{ background: "rgba(239,68,68,0.07)", padding: "10px 12px", borderRadius: 6 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "#dc2626", textTransform: "uppercase", marginBottom: 3 }}>Regiões mapeadas</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "#dc2626" }}>{emsr.n_aois ?? "--"}</div>
-              <div style={{ fontSize: 11, color: "var(--color-text-secondary)" }}>áreas de interesse</div>
-            </div>
-            <div style={{ background: "rgba(239,68,68,0.07)", padding: "10px 12px", borderRadius: 6 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "#dc2626", textTransform: "uppercase", marginBottom: 3 }}>Mapas produzidos</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "#dc2626" }}>{emsr.n_products ?? "--"}</div>
-              <div style={{ fontSize: 11, color: "var(--color-text-secondary)" }}>produtos oficiais</div>
-            </div>
-          </div>
-
           {emsr.aois?.length > 0 && (
-            <Section title={`Ver regiões mapeadas (${emsr.aois.length})`}>
-              <div style={{ display: "grid", gap: 8 }}>
+            <Section title={`Regiões mapeadas (${emsr.aois.length})`}>
+              <div style={{ display: "grid", gap: 6 }}>
                 {emsr.aois.map((aoi, i) => (
                   <div key={i} style={{
-                    background: "var(--color-background-secondary)",
-                    border: "1px solid var(--color-border-tertiary)",
-                    borderRadius: 6, padding: "10px 12px",
-                    display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10,
+                    background: "var(--color-background-secondary)", borderRadius: 6,
+                    padding: "8px 12px", display: "flex", justifyContent: "space-between", alignItems: "center",
                   }}>
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 600 }}>{aoi.name}</div>
-                      <div style={{ fontSize: 11, color: "var(--color-text-secondary)" }}>{aoi.products?.length || 0} mapas disponíveis</div>
+                      <div style={{ fontSize: 11, color: "var(--color-text-secondary)" }}>{aoi.products?.length || 0} mapas</div>
                     </div>
                     {aoi.products?.[0]?.downloadPath && (
-                      <LinkBtn href={aoi.products[0].downloadPath} color="#dc2626">⬇ Baixar mapa</LinkBtn>
+                      <LinkBtn href={aoi.products[0].downloadPath} color="#dc2626">⬇ Baixar</LinkBtn>
                     )}
                   </div>
                 ))}
               </div>
             </Section>
           )}
-
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {emsr.viewerUrl && <LinkBtn href={emsr.viewerUrl} color="#dc2626" filled>🗺 Ver mapas no Copernicus</LinkBtn>}
+            {emsr.viewerUrl && <LinkBtn href={emsr.viewerUrl} color="#dc2626" filled>🗺 Ver mapas de emergência</LinkBtn>}
             {emsr.reportLink && <LinkBtn href={emsr.reportLink} color="#dc2626">📄 Relatório PDF</LinkBtn>}
           </div>
         </div>
       )}
 
-      {/* CARD EMSN194 */}
       {emsn && (
         <div style={{
-          padding: "16px 18px", borderRadius: 10,
+          padding: "14px 16px", borderRadius: 10,
           border: "1.5px solid #d8b4fe",
           background: "linear-gradient(135deg, #faf5ff 0%, #fff 100%)",
-          display: "grid", gap: 12,
+          display: "grid", gap: 10,
         }}>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 18 }}>📊</span>
-              <span style={{ fontSize: 15, fontWeight: 700, color: "#6b21a8" }}>Análise de Risco e Reconstrução</span>
-              <Badge color="purple">Em andamento</Badge>
-            </div>
-            <div style={{ fontSize: 12, color: "var(--color-text-secondary)" }}>
-              Código {emsn.code} · Iniciado {formatDaysSince(emsn.activationTime)}
-            </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 16 }}>📊</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: "#6b21a8" }}>Análise de Risco e Reconstrução — {emsn.code}</span>
+            <Badge color="purple">Análises concluídas</Badge>
           </div>
-
-          <div style={{ fontSize: 13, color: "var(--color-text-secondary)", lineHeight: 1.6 }}>
-            <strong>O que é:</strong> meses após a enchente, uma segunda equipe analisa a extensão dos danos — quais cidades ainda estão em risco, quais infraestruturas foram destruídas, quais áreas precisam de obras de prevenção. O resultado são relatórios técnicos usados para planejar a reconstrução e reduzir riscos futuros.
+          <div style={{ fontSize: 12, color: "var(--color-text-secondary)", lineHeight: 1.6 }}>
+            Fase pós-emergência: análise detalhada de danos, exposição populacional e risco residual. 4 produtos técnicos cobrindo 1.083 km² ao redor de Porto Alegre / Canoas / São Leopoldo.
           </div>
-
           {emsn.products?.length > 0 && (
             <Section title={`Análises produzidas (${emsn.products.length})`}>
-              <div style={{ display: "grid", gap: 8 }}>
+              <div style={{ display: "grid", gap: 6 }}>
                 {emsn.products.map((prod, i) => {
-                  const statusColor = prod.statusCode === "AVAILABLE" ? "green" : "amber";
-                  const statusLabel = prod.statusCode === "AVAILABLE" ? "Disponível" : (prod.statusCode || "Em preparo");
                   const totalArea = prod.aois?.reduce((sum, a) => sum + (parseFloat(a.sqkm) || 0), 0) || 0;
+                  const finished = prod.statusCode === "AVAILABLE" || prod.statusCode === "PRODUCTION FINISHED";
                   return (
                     <div key={i} style={{
                       background: "var(--color-background-secondary)",
-                      border: "1px solid var(--color-border-tertiary)",
-                      borderLeft: "3px solid #a855f7",
-                      borderRadius: 6, padding: "12px 14px",
+                      borderLeft: "3px solid #a855f7", borderRadius: 6, padding: "10px 12px",
                     }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, marginBottom: 6 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
                         <div>
-                          <div style={{ fontSize: 13, fontWeight: 700 }}>{prod.productName || prod.productAcronym}</div>
+                          <div style={{ fontSize: 13, fontWeight: 700 }}>{prod.productAcronym || prod.productName}</div>
                           {prod.analysisName && <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginTop: 2 }}>{prod.analysisName}</div>}
                         </div>
-                        <Badge color={statusColor}>{statusLabel}</Badge>
+                        <Badge color={finished ? "green" : "amber"}>{finished ? "Concluído" : "Em preparo"}</Badge>
                       </div>
-                      <div style={{ display: "flex", gap: 16, fontSize: 12, color: "var(--color-text-secondary)" }}>
-                        <span>{prod.mapsCount || 0} mapa{prod.mapsCount !== 1 ? "s" : ""}</span>
+                      <div style={{ display: "flex", gap: 12, fontSize: 11, color: "var(--color-text-secondary)", marginTop: 6 }}>
+                        {prod.mapsCount > 0 && <span>{prod.mapsCount} mapa{prod.mapsCount !== 1 ? "s" : ""}</span>}
                         {prod.aois?.length > 0 && <span>{prod.aois.length} região{prod.aois.length !== 1 ? "s" : ""}</span>}
-                        {totalArea > 0 && <span>{totalArea.toFixed(0)} km² analisados</span>}
+                        {totalArea > 0 && <span>{totalArea.toFixed(0)} km²</span>}
                       </div>
                     </div>
                   );
@@ -212,7 +283,6 @@ export function CopernicusTab({ ctx }) {
               </div>
             </Section>
           )}
-
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {emsn.viewerUrl && <LinkBtn href={emsn.viewerUrl} color="#7c3aed" filled>📊 Ver análises no Copernicus</LinkBtn>}
             {emsn.storyMapUrl && <LinkBtn href={emsn.storyMapUrl} color="#7c3aed">📍 StoryMap narrativo</LinkBtn>}
@@ -220,25 +290,63 @@ export function CopernicusTab({ ctx }) {
         </div>
       )}
 
+      {/* DOCUMENTOS E PUBLICAÇÕES CIENTÍFICAS */}
+      <div style={{
+        padding: "14px 16px", borderRadius: 10,
+        border: "1px solid var(--color-border-tertiary)",
+        background: "var(--color-background-primary)",
+      }}>
+        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>📚 Publicações e Documentos Oficiais</div>
+        <div style={{ fontSize: 12, color: "var(--color-text-secondary)", marginBottom: 12, lineHeight: 1.5 }}>
+          O evento de maio 2024 foi extensamente documentado por organizações internacionais. Os achados têm implicações diretas para o monitoramento atual.
+        </div>
+        <div style={{ display: "grid", gap: 10 }}>
+          {DOCS.map((doc, i) => (
+            <div key={i} style={{
+              background: "var(--color-background-secondary)",
+              border: "1px solid var(--color-border-tertiary)",
+              borderLeft: `3px solid ${doc.cor}`,
+              borderRadius: 8, padding: "12px 14px",
+            }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: doc.cor, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>
+                {doc.fonte}
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>{doc.titulo}</div>
+              <div style={{ fontSize: 12, color: "var(--color-text-secondary)", lineHeight: 1.5, marginBottom: 8 }}>{doc.resumo}</div>
+              <div style={{ display: "grid", gap: 3, marginBottom: 8 }}>
+                {doc.achados.map((a, j) => (
+                  <div key={j} style={{ fontSize: 11, color: "var(--color-text-secondary)", display: "flex", gap: 6 }}>
+                    <span style={{ color: doc.cor, flexShrink: 0 }}>▸</span>
+                    <span>{a}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{
+                fontSize: 11, padding: "6px 10px", borderRadius: 4,
+                background: `${doc.cor}10`, color: doc.cor, fontWeight: 600,
+                marginBottom: 8,
+              }}>
+                💡 {doc.relevancia}
+              </div>
+              <LinkBtn href={doc.url} color={doc.cor}>Ver documento →</LinkBtn>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* EVENTOS NACIONAIS */}
       {nacionais.length > 0 && (
-        <div style={{
-          padding: "14px 16px", borderRadius: 10,
-          border: "1px solid var(--color-border-tertiary)",
-          background: "var(--color-background-primary)",
-        }}>
-          <Section title={`Outras ativações recentes no Brasil (${nacionais.length})`}>
+        <div style={{ padding: "12px 14px", borderRadius: 10, border: "1px solid var(--color-border-tertiary)" }}>
+          <Section title={`Outras ativações Copernicus no Brasil (${nacionais.length})`}>
             <div style={{ display: "grid", gap: 8 }}>
               {nacionais.map((evt, i) => (
                 <div key={i} style={{
-                  background: "var(--color-background-secondary)",
-                  border: "1px solid var(--color-border-tertiary)",
-                  borderRadius: 6, padding: "10px 12px",
-                  display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10,
+                  background: "var(--color-background-secondary)", borderRadius: 6,
+                  padding: "10px 12px", display: "flex", justifyContent: "space-between", gap: 10,
                 }}>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600 }}>{evt.name}</div>
-                    <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginTop: 2 }}>
+                    <div style={{ fontSize: 11, color: "var(--color-text-secondary)" }}>
                       {evt.code} · {evt.category} · {formatDaysSince(evt.activationTime)}
                     </div>
                     {(evt.n_aois || evt.n_products) && (
@@ -251,9 +359,7 @@ export function CopernicusTab({ ctx }) {
                     <Badge color={evt.closed ? "gray" : "red"}>{evt.closed ? "Encerrado" : "Ativo"}</Badge>
                     {evt.viewerUrl && (
                       <a href={evt.viewerUrl} target="_blank" rel="noreferrer"
-                        style={{ fontSize: 11, color: "#3b82f6", textDecoration: "none", fontWeight: 600 }}>
-                        Ver →
-                      </a>
+                        style={{ fontSize: 11, color: "#3b82f6", textDecoration: "none", fontWeight: 600 }}>Ver →</a>
                     )}
                   </div>
                 </div>
@@ -263,13 +369,13 @@ export function CopernicusTab({ ctx }) {
         </div>
       )}
 
-      {/* AVISO OPERACIONAL */}
+      {/* AVISO */}
       <div style={{
         padding: "12px 14px", borderRadius: 8, fontSize: 12, lineHeight: 1.6,
         background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.25)",
         color: "var(--color-text-secondary)",
       }}>
-        <strong>ℹ️ Como usar estas informações:</strong> os mapas Copernicus são referência oficial para planejamento — não substituem alertas em tempo real. Para situações de emergência imediata, consulte a Defesa Civil RS (199), o RADAR Lagoa dos Patos e os dados Open-Meteo desta plataforma.
+        <strong>ℹ️ Uso operacional:</strong> Copernicus EMS é referência pós-evento. Para alertas em tempo real, use Defesa Civil RS (199), RADAR Lagoa dos Patos e Open-Meteo desta plataforma.
       </div>
 
     </div>
