@@ -63,12 +63,12 @@ const LANDSAT_BOUNDS = { latN: -30.05, latS: -32.20, lonW: -52.50, lonE: -50.50 
 
 // Coordenadas calibradas contra imagem Landsat de referência (pontos vermelhos)
 const STATION_COORDS = {
-  lagoa_patos_itapua:         { lat: -30.3000, lon: -51.2124 },
-  lagoa_patos_arambare:       { lat: -30.8779, lon: -51.5650 },
-  lagoa_patos_sao_lourenco:   { lat: -31.4034, lon: -51.9539 },
-  lagoa_patos_pelotas:        { lat: -31.8686, lon: -52.0974 },
-  lagoa_patos_sao_jose_norte: { lat: -32.0262, lon: -51.8256 },
-  lagoa_patos_rio_grande:     { lat: -32.0297, lon: -51.8922 },
+  lagoa_patos_itapua:         { lat: -30.3856, lon: -51.0596 },
+  lagoa_patos_arambare:       { lat: -30.9067, lon: -51.4917 },
+  lagoa_patos_sao_lourenco:   { lat: -31.3781, lon: -51.9654 },
+  lagoa_patos_pelotas:        { lat: -31.7715, lon: -52.2215 },
+  lagoa_patos_sao_jose_norte: { lat: -32.0151, lon: -52.0448 },
+  lagoa_patos_rio_grande:     { lat: -32.0257, lon: -52.1057 },
 };
 
 function getStationPct(point, coords = STATION_COORDS) {
