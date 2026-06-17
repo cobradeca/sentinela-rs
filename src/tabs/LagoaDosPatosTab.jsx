@@ -58,58 +58,137 @@ function pickHighlight(points) {
 }
 
 
-// viewBox 0 0 260 520 — lagoa completa de norte (Guaíba) a sul (barra Rio Grande)
-// Bounds reais: lat -30.05 (N) a -32.20 (S), lon -52.40 (W) a -50.65 (E)
-const LAT_N = -30.05, LAT_S = -32.20, LON_W = -52.40, LON_E = -50.65;
-const VW = 220, VH = 460, PAD_X = 20, PAD_Y = 30;
+// Bounding box da imagem Landsat 8 (24 mai 2018)
+const LANDSAT_BOUNDS = { latN: -30.05, latS: -32.20, lonW: -52.50, lonE: -50.50 };
 
-function toX(lon) { return ((lon - LON_W) / (LON_E - LON_W)) * VW + PAD_X; }
-function toY(lat) { return ((lat - LAT_N) / (LAT_S - LAT_N)) * VH + PAD_Y; }
-
-// Polígono real da Lagoa dos Patos traçado sobre Landsat/Maps
-// Norte: Guaíba ~-30.1 / Sul: barra ~-32.1
-const LAGOA_POLY_PTS = [
-  // margem leste (barreira/restinga) — de norte para sul
-  [-51.10, -30.08], [-50.90, -30.18], [-50.75, -30.38], [-50.72, -30.58],
-  [-50.80, -30.78], [-50.93, -31.00], [-51.03, -31.18], [-51.08, -31.38],
-  [-51.12, -31.55], [-51.18, -31.72], [-51.22, -31.90], [-51.28, -32.05],
-  [-51.32, -32.12],
-  // barra sul (estreitamento para Rio Grande)
-  [-52.00, -32.10], [-52.08, -32.00],
-  // margem oeste — de sul para norte
-  [-52.10, -31.85], [-52.05, -31.65], [-51.95, -31.45], [-51.85, -31.25],
-  [-51.75, -31.05], [-51.65, -30.88], [-51.55, -30.70], [-51.48, -30.50],
-  [-51.42, -30.30], [-51.35, -30.12], [-51.20, -30.06], [-51.10, -30.08],
-];
-
-// Coordenadas reais extraídas do Google Maps / Landsat
+// Coordenadas reais das estações (extraídas do Google Maps)
 const STATION_COORDS = {
-  // Farol de Itapuã — NE da lagoa, margem leste
-  lagoa_patos_itapua:        { lon: -50.90, lat: -30.22 },
-  // Arambaré — margem oeste, altura ~-30.9
-  lagoa_patos_arambare:      { lon: -51.50, lat: -30.92 },
-  // São Lourenço do Sul — margem oeste -31.37
-  lagoa_patos_sao_lourenco:  { lon: -51.97, lat: -31.37 },
-  // Pelotas / Laranjal — Av. Dr. Antônio Augusto, margem oeste -31.78
-  lagoa_patos_pelotas:       { lon: -52.08, lat: -31.78 },
-  // São José do Norte — barra sul, margem leste -32.02
-  lagoa_patos_sao_jose_norte:{ lon: -51.98, lat: -32.02 },
-  // Rio Grande / Barra — saída para o mar -32.08
-  lagoa_patos_rio_grande:    { lon: -52.08, lat: -32.08 },
-  // Fallbacks por nome genérico
-  lagoa_patos_porto_alegre:  { lon: -51.23, lat: -30.10 },
-  lagoa_patos_guaiba:        { lon: -51.35, lat: -30.15 },
+  lagoa_patos_itapua:         { lat: -30.22, lon: -50.90 },
+  lagoa_patos_arambare:       { lat: -30.91, lon: -51.49 },
+  lagoa_patos_sao_lourenco:   { lat: -31.38, lon: -51.96 },
+  lagoa_patos_pelotas:        { lat: -31.78, lon: -52.08 },
+  lagoa_patos_sao_jose_norte: { lat: -32.01, lon: -52.09 },
+  lagoa_patos_rio_grande:     { lat: -32.08, lon: -52.10 },
+  // fallbacks
+  lagoa_patos_porto_alegre:   { lat: -30.10, lon: -51.20 },
+  lagoa_patos_guaiba:         { lat: -30.15, lon: -51.30 },
 };
 
-function getStationXY(point) {
+function getStationPct(point) {
   const known = STATION_COORDS[point.id];
-  const lon = known?.lon ?? point.lon;
   const lat = known?.lat ?? point.lat;
-  if (!lon || !lat) return null;
-  return { x: toX(lon), y: toY(lat) };
+  const lon = known?.lon ?? point.lon;
+  if (!lat || !lon) return null;
+  const { latN, latS, lonW, lonE } = LANDSAT_BOUNDS;
+  return {
+    left: ((lon - lonW) / (lonE - lonW)) * 100,
+    top:  ((lat - latN) / (latS - latN)) * 100,
+  };
 }
 
 function LagoaSVGMap({ points, selectedStationId, setSelectedStationId, lagoaStatusColor }) {
+  // Salve o arquivo Landsat em: public/landsat_lagoa.webp (ou .jpg)
+  const LANDSAT_URL = "/sentinela-rs/landsat_lagoa.webp";
+
+  return (
+    <div style={{ position: "relative", width: "100%", borderRadius: 8, overflow: "hidden", background: "#0a1628" }}>
+      <style>{`
+        @keyframes lp-pulse {
+          0%   { transform: translate(-50%,-50%) scale(1);   opacity: 0.8; }
+          50%  { transform: translate(-50%,-50%) scale(2.2); opacity: 0.15; }
+          100% { transform: translate(-50%,-50%) scale(1);   opacity: 0.8; }
+        }
+        .lp-ring { animation: lp-pulse 2.4s ease-in-out infinite; }
+        .lp-marker:hover .lp-tooltip { display: block; }
+        .lp-tooltip { display: none; }
+      `}</style>
+
+      {/* Imagem Landsat de fundo */}
+      <img
+        src={LANDSAT_URL}
+        alt="Lagoa dos Patos — Landsat 8, 24 mai 2018"
+        style={{ width: "100%", display: "block", opacity: 0.92 }}
+        onError={(e) => { e.target.style.display = "none"; }}
+      />
+
+      {/* Crédito */}
+      <div style={{
+        position: "absolute", bottom: 6, right: 8,
+        fontSize: 9, color: "rgba(255,255,255,0.55)", pointerEvents: "none",
+      }}>
+        Landsat 8 / NASA · 24 mai 2018
+      </div>
+
+      {/* Pontos pulsantes */}
+      {points.map(({ point, lagoa }, idx) => {
+        const pct = getStationPct(point);
+        if (!pct) return null;
+        const color = lagoa?.isReal ? lagoaStatusColor(lagoa?.levelStatus) : "#94a3b8";
+        const sel = point.id === selectedStationId;
+        const name = (point.displayName || point.name || "").replace(/^Lagoa dos Patos\s*[-—]\s*/, "");
+        const nivel = lagoa?.isReal && typeof lagoa?.atual === "number"
+          ? `${lagoa.atual.toFixed(2)} m` : "—";
+
+        return (
+          <div
+            key={point.id}
+            className="lp-marker"
+            onClick={() => setSelectedStationId(point.id)}
+            style={{
+              position: "absolute",
+              left: `${pct.left}%`,
+              top: `${pct.top}%`,
+              cursor: "pointer",
+              zIndex: sel ? 10 : 5,
+            }}
+          >
+            {/* Anel pulsante */}
+            <div className="lp-ring" style={{
+              position: "absolute",
+              width: 20, height: 20,
+              borderRadius: "50%",
+              background: color,
+              transform: "translate(-50%,-50%)",
+              animationDelay: `${idx * 0.4}s`,
+            }} />
+            {/* Ponto central */}
+            <div style={{
+              position: "absolute",
+              width: sel ? 14 : 10,
+              height: sel ? 14 : 10,
+              borderRadius: "50%",
+              background: color,
+              border: `${sel ? 2.5 : 1.5}px solid ${sel ? "#1e293b" : "white"}`,
+              transform: "translate(-50%,-50%)",
+              transition: "all 0.2s",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.5)",
+            }} />
+            {/* Tooltip sempre visível quando selecionado */}
+            {sel && (
+              <div style={{
+                position: "absolute",
+                left: 10, top: -36,
+                background: "rgba(15,23,42,0.92)",
+                color: "white",
+                padding: "4px 8px",
+                borderRadius: 5,
+                fontSize: 11,
+                fontWeight: 600,
+                whiteSpace: "nowrap",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
+                borderLeft: `3px solid ${color}`,
+                pointerEvents: "none",
+              }}>
+                {name}
+                <span style={{ color, marginLeft: 6 }}>{nivel}</span>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}) {
   const poly = LAGOA_POLY_PTS.map(([lon, lat]) => `${toX(lon)},${toY(lat)}`).join(" ");
 
   return (
