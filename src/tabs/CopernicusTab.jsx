@@ -121,8 +121,6 @@ const DOCS = [
 
 export function CopernicusTab({ ctx }) {
   const { copernicusEms } = ctx;
-  const [mapLoaded, setMapLoaded] = useState(false);
-
   const emsr = copernicusEms?.rapid_mapping?.rs_2024;
   const emsn = copernicusEms?.rapid_mapping?.rs_2024
     ? copernicusEms.risk_recovery?.rs_2024
@@ -132,12 +130,8 @@ export function CopernicusTab({ ctx }) {
   return (
     <div style={{ display: "grid", gap: 14 }}>
 
-      {/* MAPA INTERATIVO PRINCIPAL */}
-      <div style={{
-        borderRadius: 10, overflow: "hidden",
-        border: "1.5px solid #bfdbfe",
-        background: "var(--color-background-secondary)",
-      }}>
+      {/* MAPA — preview estático + link externo (iframe bloqueado por CSP do Copernicus) */}
+      <div style={{ borderRadius: 10, overflow: "hidden", border: "1.5px solid #bfdbfe" }}>
         <div style={{
           padding: "12px 16px",
           background: "linear-gradient(135deg, #eff6ff 0%, #fff 100%)",
@@ -149,50 +143,59 @@ export function CopernicusTab({ ctx }) {
               🛰 Mapa Oficial — Áreas Inundadas (EMSN194)
             </div>
             <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginTop: 2 }}>
-              Mancha azul = inundação mapeada por satélite · Contorno verde = área de análise
+              Porto Alegre · Canoas · São Leopoldo — maio 2024
             </div>
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <LinkBtn href="https://riskandrecovery.emergency.copernicus.eu/EMSN194/viewer/" color="#1e40af" filled>
-              ↗ Abrir em tela cheia
-            </LinkBtn>
-          </div>
+          <LinkBtn href="https://riskandrecovery.emergency.copernicus.eu/EMSN194/viewer/" color="#1e40af" filled>
+            ↗ Abrir mapa interativo
+          </LinkBtn>
         </div>
 
-        {/* iframe do viewer oficial */}
-        <div style={{ position: "relative", paddingBottom: "56.25%", height: 0 }}>
-          {!mapLoaded && (
-            <div style={{
-              position: "absolute", inset: 0,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              background: "#f0f9ff", color: "#3b82f6", fontSize: 13, flexDirection: "column", gap: 8,
-            }}>
-              <div style={{ fontSize: 24 }}>🛰</div>
-              <div>Carregando mapa de satélite…</div>
-            </div>
-          )}
-          <iframe
-            src="https://riskandrecovery.emergency.copernicus.eu/EMSN194/viewer/"
-            title="Mapa EMSN194 — Enchentes RS 2024"
-            style={{
-              position: "absolute", top: 0, left: 0,
-              width: "100%", height: "100%",
-              border: "none",
-              opacity: mapLoaded ? 1 : 0,
-              transition: "opacity 0.4s",
-            }}
-            onLoad={() => setMapLoaded(true)}
-            allow="fullscreen"
+        <div style={{ position: "relative", background: "#0f172a" }}>
+          <img
+            src="/sentinela-rs/copernicus_emsn194_preview.png"
+            alt="Mapa EMSN194 — Enchentes RS 2024"
+            style={{ width: "100%", display: "block", maxHeight: 360, objectFit: "cover", objectPosition: "top" }}
+            onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.nextSibling.style.display = "flex"; }}
           />
+          {/* Fallback */}
+          <div style={{
+            display: "none", flexDirection: "column", alignItems: "center", justifyContent: "center",
+            gap: 12, padding: "48px 20px", background: "#0f172a", color: "#94a3b8", textAlign: "center",
+          }}>
+            <div style={{ fontSize: 36 }}>🛰</div>
+            <div style={{ fontSize: 13 }}>
+              Salve uma captura do viewer em <code>public/copernicus_emsn194_preview.png</code>
+            </div>
+            <LinkBtn href="https://riskandrecovery.emergency.copernicus.eu/EMSN194/viewer/" color="#3b82f6" filled>
+              Abrir mapa no Copernicus →
+            </LinkBtn>
+          </div>
+          {/* Overlay */}
+          <div style={{
+            position: "absolute", bottom: 0, left: 0, right: 0,
+            background: "linear-gradient(to top, rgba(15,23,42,0.75) 0%, transparent 60%)",
+            padding: "20px 16px 14px",
+            display: "flex", justifyContent: "center",
+          }}>
+            <a href="https://riskandrecovery.emergency.copernicus.eu/EMSN194/viewer/"
+              target="_blank" rel="noreferrer"
+              style={{
+                padding: "9px 18px", background: "rgba(59,130,246,0.9)", color: "white",
+                textDecoration: "none", borderRadius: 7, fontWeight: 700, fontSize: 12,
+                boxShadow: "0 2px 10px rgba(0,0,0,0.4)",
+              }}>
+              🗺 Abrir mapa completo — navegar, zoom, camadas
+            </a>
+          </div>
         </div>
 
         <div style={{
-          padding: "10px 16px", fontSize: 11,
-          color: "var(--color-text-secondary)", lineHeight: 1.5,
-          borderTop: "1px solid var(--color-border-tertiary)",
+          padding: "9px 14px", fontSize: 11, lineHeight: 1.5,
+          color: "var(--color-text-secondary)", borderTop: "1px solid var(--color-border-tertiary)",
           background: "var(--color-background-primary)",
         }}>
-          <strong>Como ler o mapa:</strong> arraste para navegar · scroll para zoom · camadas no canto superior direito (satélite / topográfico / OSM) · contorno verde delimita a AOI mapeada pelo Copernicus.
+          O viewer oficial permite navegar, aplicar camadas (satélite/topográfico/OSM) e baixar produtos.
         </div>
       </div>
 
