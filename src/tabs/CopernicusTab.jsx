@@ -83,7 +83,7 @@ function ExpandableSection({ title, children, defaultOpen = false }) {
   );
 }
 
-export function CopernicusTabFull({ ctx }) {
+export function CopernicusTab({ ctx }) {
   const [activeTab, setActiveTab] = useState("rapid");
   const { copernicusEms, formatDateTimeBR, dark, t = {} } = ctx;
 
@@ -567,4 +567,4 @@ export function CopernicusTabFull({ ctx }) {
   );
 }
 
-export default CopernicusTabFull;
+export default CopernicusTab;
