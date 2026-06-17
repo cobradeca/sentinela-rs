@@ -63,12 +63,18 @@ const LANDSAT_BOUNDS = { latN: -30.05, latS: -32.20, lonW: -52.50, lonE: -50.50 
 
 // Coordenadas reais das estações (extraídas do Google Maps)
 const STATION_COORDS = {
-  lagoa_patos_itapua:         { lat: -30.22, lon: -50.90 },
-  lagoa_patos_arambare:       { lat: -30.91, lon: -51.49 },
-  lagoa_patos_sao_lourenco:   { lat: -31.38, lon: -51.96 },
-  lagoa_patos_pelotas:        { lat: -31.78, lon: -52.08 },
-  lagoa_patos_sao_jose_norte: { lat: -32.01, lon: -52.09 },
-  lagoa_patos_rio_grande:     { lat: -32.08, lon: -52.10 },
+  // Itapuã: margem NE da lagoa, dentro da água (não na restinga)
+  lagoa_patos_itapua:         { lat: -30.38, lon: -51.02 },
+  // Arambaré: beira da lagoa, margem oeste
+  lagoa_patos_arambare:       { lat: -30.91, lon: -51.51 },
+  // São Lourenço do Sul: margem oeste, beira da água
+  lagoa_patos_sao_lourenco:   { lat: -31.37, lon: -51.98 },
+  // Pelotas/Laranjal: canal do Arroio Pelotas entrando na lagoa
+  lagoa_patos_pelotas:        { lat: -31.82, lon: -52.12 },
+  // São José do Norte: canal da barra, margem leste
+  lagoa_patos_sao_jose_norte: { lat: -32.00, lon: -52.05 },
+  // Rio Grande/Barra: canal de saída para o mar
+  lagoa_patos_rio_grande:     { lat: -32.06, lon: -52.09 },
   // fallbacks
   lagoa_patos_porto_alegre:   { lat: -30.10, lon: -51.20 },
   lagoa_patos_guaiba:         { lat: -30.15, lon: -51.30 },
