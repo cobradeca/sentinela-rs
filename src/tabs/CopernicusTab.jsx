@@ -119,6 +119,89 @@ const DOCS = [
   },
 ];
 
+
+const EMSN194_AOIS = [
+  { label: "Porto Alegre", cx: 157.1, cy: 122.1, color: "#3b82f6", fill: "rgba(59,130,246,0.2)", pts: "22.78,159.35 26.80,153.23 40.17,148.04 52.81,140.08 59.38,136.49 28.15,115.20 36.97,85.34 84.48,77.92 89.31,69.47 72.74,60.50 83.87,52.12 106.60,49.10 128.01,42.82 134.68,34.91 154.64,22.40 180.22,19.01 200.22,19.67 207.29,26.47 218.39,24.06 234.39,24.40 237.70,28.53 258.91,28.52 274.77,22.68 281.68,26.10 276.72,28.17 284.80,35.53 297.20,40.19 324.62,51.68 294.62,58.18 281.47,57.99 261.97,64.58 250.66,75.61 231.95,95.31 220.69,110.64 251.95,114.81 251.61,151.65 221.59,164.49 267.12,221.11 262.47,232.77 249.03,257.82 159.87,292.75 109.19,266.31 111.10,262.12 109.91,252.14 107.66,242.55 104.90,234.18 103.15,227.85 97.02,220.39 83.92,217.05 70.10,211.32 72.56,199.92 64.68,189.85 46.26,184.04 44.01,176.97 46.55,173.00 22.78,159.35" },
+  { label: "Canoas", cx: 156.1, cy: 167.5, color: "#ef4444", fill: "rgba(239,68,68,0.2)", pts: "64.68,189.85 46.26,184.04 58.70,178.84 95.33,163.10 108.21,151.89 111.25,149.64 128.98,151.08 133.94,152.01 141.53,152.41 146.49,152.18 148.42,152.27 152.34,152.58 157.01,152.80 159.74,152.80 198.82,153.42 221.66,152.89 230.63,153.76 241.66,155.90 221.59,164.49 234.79,180.88 237.54,184.31 244.76,193.29 245.52,194.23 191.74,196.35 72.56,199.92 64.68,189.85" },
+  { label: "Porto Alegre North", cx: 145.6, cy: 129.5, color: "#8b5cf6", fill: "rgba(139,92,246,0.2)", pts: "220.69,110.64 251.95,114.81 251.61,151.65 241.66,155.90 230.63,153.76 221.66,152.89 198.82,153.42 159.74,152.80 157.01,152.80 152.34,152.58 148.42,152.27 146.49,152.18 141.53,152.41 133.94,152.01 128.98,151.08 111.25,149.64 120.44,142.81 118.51,139.93 113.39,133.03 107.35,130.64 97.02,128.00 84.94,125.87 83.51,121.53 88.91,118.22 89.50,117.47 95.01,117.66 102.94,117.49 108.01,117.37 113.26,117.59 116.70,117.85 122.25,119.25 123.99,119.53 126.07,119.58 128.90,119.48 129.78,119.34 132.37,117.75 136.32,115.32 138.18,114.81 145.46,113.30 148.78,112.65 150.97,112.72 156.72,113.79 159.25,114.11 169.94,114.12 171.60,114.02 220.69,110.64" },
+  { label: "Porto Alegre South", cx: 127.9, cy: 105.9, color: "#f59e0b", fill: "rgba(245,158,11,0.2)", pts: "220.69,110.64 171.60,114.02 169.94,114.12 159.25,114.11 156.72,113.79 150.97,112.72 148.78,112.65 145.46,113.30 138.18,114.81 136.32,115.32 132.37,117.75 129.78,119.34 128.90,119.48 126.07,119.58 123.99,119.53 122.25,119.25 116.70,117.85 113.26,117.59 108.01,117.37 102.94,117.49 95.01,117.66 89.50,117.47 91.70,114.68 84.43,109.35 80.24,106.22 76.66,103.67 77.95,101.45 75.45,98.94 71.12,98.11 60.58,97.03 58.02,93.21 59.87,88.79 64.06,84.10 84.87,79.84 95.88,77.05 98.97,73.69 250.03,76.27 238.12,88.81 236.59,90.41 231.95,95.31 220.69,110.64" }
+];
+
+function EmsAoiMap() {
+  return (
+    <div style={{ borderRadius: 10, overflow: "hidden", border: "1.5px solid #bfdbfe" }}>
+      <div style={{
+        padding: "12px 16px",
+        background: "linear-gradient(135deg, #eff6ff 0%, #fff 100%)",
+        borderBottom: "1px solid #bfdbfe",
+        display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap",
+      }}>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#1e40af" }}>
+            🛰 Áreas Analisadas pelo Copernicus — EMSN194
+          </div>
+          <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginTop: 2 }}>
+            Polígonos reais (KML oficial) · Porto Alegre e região metropolitana · mai/2024
+          </div>
+        </div>
+        <LinkBtn href="https://riskandrecovery.emergency.copernicus.eu/EMSN194/viewer/" color="#1e40af" filled>
+          ↗ Viewer interativo
+        </LinkBtn>
+      </div>
+
+      <svg viewBox="0 0 352 312" width="100%" style={{ display: "block", background: "#e8f4fd" }}>
+        <defs>
+          <pattern id="copgrid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(59,130,246,0.07)" strokeWidth="1"/>
+          </pattern>
+        </defs>
+        <rect width="352" height="312" fill="url(#copgrid)" />
+
+        {EMSN194_AOIS.map((aoi, i) => (
+          <g key={i}>
+            <polygon
+              points={aoi.pts}
+              fill={aoi.fill}
+              stroke={aoi.color}
+              strokeWidth="1.8"
+              strokeLinejoin="round"
+            />
+            <circle cx={aoi.cx} cy={aoi.cy} r="3.5" fill={aoi.color} />
+            <text x={aoi.cx} y={aoi.cy - 7} textAnchor="middle"
+              fontSize="9" fontWeight="700" fill={aoi.color}
+              paintOrder="stroke" stroke="white" strokeWidth="3">
+              {aoi.label}
+            </text>
+          </g>
+        ))}
+
+        <g transform="translate(330,28)">
+          <circle r="14" fill="white" stroke="#cbd5e1" strokeWidth="1" opacity="0.9"/>
+          <text x="0" y="-4" textAnchor="middle" fontSize="8" fontWeight="700" fill="#475569">N</text>
+          <line x1="0" y1="-2" x2="0" y2="-10" stroke="#475569" strokeWidth="1.2"/>
+        </g>
+
+        <text x="8" y="308" fontSize="8" fill="rgba(30,64,175,0.45)">
+          Copernicus EMS · EMSN194 · geometrias reais do KML oficial
+        </text>
+      </svg>
+
+      <div style={{
+        padding: "10px 14px", display: "flex", gap: 16, flexWrap: "wrap",
+        borderTop: "1px solid var(--color-border-tertiary)",
+        background: "var(--color-background-primary)", fontSize: 11,
+      }}>
+        {EMSN194_AOIS.map((aoi, i) => (
+          <span key={i} style={{ display: "flex", alignItems: "center", gap: 5, color: "var(--color-text-secondary)" }}>
+            <span style={{ width: 10, height: 10, borderRadius: 2, background: aoi.color, display: "inline-block" }}/>
+            {aoi.label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function CopernicusTab({ ctx }) {
   const { copernicusEms } = ctx;
   const emsr = copernicusEms?.rapid_mapping?.rs_2024;
@@ -130,76 +213,9 @@ export function CopernicusTab({ ctx }) {
   return (
     <div style={{ display: "grid", gap: 14 }}>
 
-      {/* MAPA — preview estático + link externo (iframe bloqueado por CSP do Copernicus) */}
-      <div style={{ borderRadius: 10, overflow: "hidden", border: "1.5px solid #bfdbfe" }}>
-        <div style={{
-          padding: "12px 16px",
-          background: "linear-gradient(135deg, #eff6ff 0%, #fff 100%)",
-          borderBottom: "1px solid #bfdbfe",
-          display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap",
-        }}>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#1e40af" }}>
-              🛰 Mapa Oficial — Áreas Inundadas (EMSN194)
-            </div>
-            <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginTop: 2 }}>
-              Porto Alegre · Canoas · São Leopoldo — maio 2024
-            </div>
-          </div>
-          <LinkBtn href="https://riskandrecovery.emergency.copernicus.eu/EMSN194/viewer/" color="#1e40af" filled>
-            ↗ Abrir mapa interativo
-          </LinkBtn>
-        </div>
+      <EmsAoiMap />
 
-        <div style={{ position: "relative", background: "#0f172a" }}>
-          <img
-            src="/sentinela-rs/copernicus_emsn194_preview.png"
-            alt="Mapa EMSN194 — Enchentes RS 2024"
-            style={{ width: "100%", display: "block", maxHeight: 360, objectFit: "cover", objectPosition: "top" }}
-            onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.nextSibling.style.display = "flex"; }}
-          />
-          {/* Fallback */}
-          <div style={{
-            display: "none", flexDirection: "column", alignItems: "center", justifyContent: "center",
-            gap: 12, padding: "48px 20px", background: "#0f172a", color: "#94a3b8", textAlign: "center",
-          }}>
-            <div style={{ fontSize: 36 }}>🛰</div>
-            <div style={{ fontSize: 13 }}>
-              Salve uma captura do viewer em <code>public/copernicus_emsn194_preview.png</code>
-            </div>
-            <LinkBtn href="https://riskandrecovery.emergency.copernicus.eu/EMSN194/viewer/" color="#3b82f6" filled>
-              Abrir mapa no Copernicus →
-            </LinkBtn>
-          </div>
-          {/* Overlay */}
-          <div style={{
-            position: "absolute", bottom: 0, left: 0, right: 0,
-            background: "linear-gradient(to top, rgba(15,23,42,0.75) 0%, transparent 60%)",
-            padding: "20px 16px 14px",
-            display: "flex", justifyContent: "center",
-          }}>
-            <a href="https://riskandrecovery.emergency.copernicus.eu/EMSN194/viewer/"
-              target="_blank" rel="noreferrer"
-              style={{
-                padding: "9px 18px", background: "rgba(59,130,246,0.9)", color: "white",
-                textDecoration: "none", borderRadius: 7, fontWeight: 700, fontSize: 12,
-                boxShadow: "0 2px 10px rgba(0,0,0,0.4)",
-              }}>
-              🗺 Abrir mapa completo — navegar, zoom, camadas
-            </a>
-          </div>
-        </div>
-
-        <div style={{
-          padding: "9px 14px", fontSize: 11, lineHeight: 1.5,
-          color: "var(--color-text-secondary)", borderTop: "1px solid var(--color-border-tertiary)",
-          background: "var(--color-background-primary)",
-        }}>
-          O viewer oficial permite navegar, aplicar camadas (satélite/topográfico/OSM) e baixar produtos.
-        </div>
-      </div>
-
-      {/* CARDS EMSR + EMSN */}
+            {/* CARDS EMSR + EMSN */}
       {emsr && (
         <div style={{
           padding: "14px 16px", borderRadius: 10,
