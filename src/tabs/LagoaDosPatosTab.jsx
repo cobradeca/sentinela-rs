@@ -57,6 +57,113 @@ function pickHighlight(points) {
   );
 }
 
+
+// Coordenadas reais das estações mapeadas para o SVG (viewBox 0 0 260 520)
+const LAT_N = -30.05, LAT_S = -32.25, LON_W = -51.35, LON_E = -50.60;
+
+function latToY(lat) {
+  return ((lat - LAT_N) / (LAT_S - LAT_N)) * 460 + 30;
+}
+function lonToX(lon) {
+  return ((lon - LON_W) / (LON_E - LON_W)) * 200 + 30;
+}
+
+const LAGOA_POLY_PTS = [
+  [-50.90, -30.10], [-50.75, -30.18], [-50.72, -30.45], [-50.78, -30.80],
+  [-50.93, -31.10], [-51.05, -31.30], [-51.10, -31.52], [-51.14, -31.72],
+  [-51.20, -31.92], [-51.24, -32.10], [-51.15, -32.20], [-51.00, -32.15],
+  [-50.95, -31.95], [-50.90, -31.70], [-50.85, -31.42], [-50.82, -31.12],
+  [-50.84, -30.82], [-50.87, -30.50], [-50.88, -30.22], [-50.90, -30.10],
+];
+
+const STATION_COORDS = {
+  lagoa_patos_porto_alegre: { lon: -51.23, lat: -30.03 },
+  lagoa_patos_guaiba:       { lon: -51.32, lat: -30.25 },
+  lagoa_patos_arambare:     { lon: -51.50, lat: -30.90 },
+  lagoa_patos_sao_lourenco: { lon: -51.50, lat: -31.37 },
+  lagoa_patos_pelotas:      { lon: -51.20, lat: -31.77 },
+  lagoa_patos_rio_grande:   { lon: -51.10, lat: -32.03 },
+};
+
+function getStationXY(point) {
+  const known = STATION_COORDS[point.id];
+  const lon = known?.lon ?? point.lon;
+  const lat = known?.lat ?? point.lat;
+  if (!lon || !lat) return null;
+  return { x: ((lon - LON_W) / (LON_E - LON_W)) * 200 + 30, y: ((lat - LAT_N) / (LAT_S - LAT_N)) * 460 + 30 };
+}
+
+function LagoaSVGMap({ points, selectedStationId, setSelectedStationId, lagoaStatusColor }) {
+  const poly = LAGOA_POLY_PTS.map(([lon, lat]) => {
+    const x = ((lon - LON_W) / (LON_E - LON_W)) * 200 + 30;
+    const y = ((lat - LAT_N) / (LAT_S - LAT_N)) * 460 + 30;
+    return `${x},${y}`;
+  }).join(" ");
+
+  return (
+    <div style={{ position: "relative", width: "100%", maxWidth: 280, margin: "0 auto" }}>
+      <style>{`
+        @keyframes lagoa-pulse {
+          0%   { r: 7; opacity: 0.8; }
+          50%  { r: 13; opacity: 0.2; }
+          100% { r: 7; opacity: 0.8; }
+        }
+        .lagoa-pulse { animation: lagoa-pulse 2.2s ease-in-out infinite; }
+        .lagoa-marker { cursor: pointer; }
+        .lagoa-lbl { pointer-events: none; }
+      `}</style>
+      <svg
+        viewBox="0 0 260 520"
+        width="100%"
+        style={{ display: "block" }}
+        aria-label="Mapa da Lagoa dos Patos"
+      >
+        <rect width="260" height="520" fill="var(--color-background-secondary,#f0f9ff)" rx="8" />
+        <polygon points={poly} fill="#bfdbfe" stroke="#3b82f6" strokeWidth="1.5" opacity="0.75" />
+        <text x="110" y="270" textAnchor="middle" fontSize="10" fontWeight="600"
+          fill="#1e40af" opacity="0.55" fontStyle="italic">Lagoa dos Patos</text>
+        <g transform="translate(238,36)">
+          <circle r="13" fill="white" stroke="#cbd5e1" strokeWidth="1" opacity="0.85" />
+          <text x="0" y="-3" textAnchor="middle" fontSize="8" fontWeight="700" fill="#475569">N</text>
+          <line x1="0" y1="-1" x2="0" y2="-9" stroke="#475569" strokeWidth="1.2" />
+        </g>
+        {points.map(({ point, lagoa }, idx) => {
+          const xy = getStationXY(point);
+          if (!xy) return null;
+          const { x, y } = xy;
+          const color = lagoa?.isReal ? lagoaStatusColor(lagoa?.levelStatus) : "#94a3b8";
+          const sel = point.id === selectedStationId;
+          const name = (point.displayName || point.name || "").replace(/^Lagoa dos Patos\s*[-—]\s*/, "");
+          const nivel = lagoa?.isReal && typeof lagoa?.atual === "number" ? `${lagoa.atual.toFixed(2)} m` : "—";
+          const delay = `${idx * 0.38}s`;
+          return (
+            <g key={point.id} className="lagoa-marker"
+              transform={`translate(${x},${y})`}
+              onClick={() => setSelectedStationId(point.id)}
+              role="button" tabIndex={0}
+              aria-label={`${name}: ${nivel}`}
+            >
+              <circle className="lagoa-pulse" cx="0" cy="0" r="7"
+                fill={color} opacity="0.3" style={{ animationDelay: delay }} />
+              <circle cx="0" cy="0" r={sel ? 8 : 6}
+                fill={color} stroke={sel ? "#1e293b" : "white"} strokeWidth={sel ? 2.5 : 1.5} />
+              {sel && (
+                <g className="lagoa-lbl">
+                  <rect x="11" y="-20" width={Math.max(name.length * 6.0 + 16, 60)} height="34"
+                    rx="4" fill="white" stroke="#e2e8f0" strokeWidth="1"
+                    style={{ filter: "drop-shadow(0 1px 4px rgba(0,0,0,0.13))" }} />
+                  <text x="19" y="-6" fontSize="9" fontWeight="700" fill="#1e293b">{name}</text>
+                  <text x="19" y="7" fontSize="9" fontWeight="600" fill={color}>{nivel}</text>
+                </g>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
 export function LagoaDosPatosTab({ ctx }) {
   const {
     STATIONS_LAGOA,
@@ -177,40 +284,17 @@ export function LagoaDosPatosTab({ ctx }) {
       <div className="sr-grid-2-1">
         <div className="sr-card-v2">
           <h3 className="sr-card-title">Mapa da Lagoa dos Patos</h3>
-          <div className="sr-lagoa-map-panel" aria-label="Mapa esquematico da Lagoa dos Patos">
-            <div className="sr-lagoa-map-water">Lagoa dos Patos</div>
-            {points.map(({ point, lagoa }) => (
-              <button
-                key={point.id}
-                type="button"
-                className="sr-lagoa-map-marker"
-                style={{
-                  left: `${18 + ((Math.abs(point.lon) - 50.9) / 1.8) * 62}%`,
-                  top: `${18 + ((Math.abs(point.lat) - 30.1) / 2.3) * 68}%`,
-                  textAlign: "left",
-                  cursor: "pointer",
-                }}
-                onClick={() => setSelectedStationId(point.id)}
-              >
-                <span className="sr-status-dot" style={{ background: lagoa?.isReal ? lagoaStatusColor(lagoa?.levelStatus) : "#94a3b8" }} />
-                <strong>{shortName(point)}</strong>
-                <small>{lagoa?.isReal && typeof lagoa.atual === "number" ? `${lagoa.atual.toFixed(2)} m` : "Sem leitura"}</small>
-              </button>
-            ))}
-          </div>
-          <div className="sr-map-legend">
-            <span>
-              <span className="sr-status-dot green" /> Normal
-            </span>
-            <span>
-              <span className="sr-status-dot orange" /> Atencao
-            </span>
-            <span>
-              <span className="sr-status-dot red" /> Alerta
-            </span>
-            <span>
-              <span className="sr-status-dot" style={{ background: "#94a3b8" }} /> Sem leitura
-            </span>
+          <LagoaSVGMap
+            points={points}
+            selectedStationId={selectedStationId}
+            setSelectedStationId={setSelectedStationId}
+            lagoaStatusColor={lagoaStatusColor}
+          />
+          <div className="sr-map-legend" style={{ marginTop: 10 }}>
+            <span><span className="sr-status-dot green" /> Normal</span>
+            <span><span className="sr-status-dot orange" /> Atencao</span>
+            <span><span className="sr-status-dot red" /> Alerta</span>
+            <span><span className="sr-status-dot" style={{ background: "#94a3b8" }} /> Sem leitura</span>
           </div>
         </div>
 
