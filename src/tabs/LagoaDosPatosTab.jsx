@@ -59,20 +59,29 @@ function pickHighlight(points) {
 
 
 // Bounding box da imagem Landsat 8 (24 mai 2018)
-const LANDSAT_BOUNDS = { latN: -30.05, latS: -32.20, lonW: -52.50, lonE: -50.50 };
+const LANDSAT_BOUNDS = { latN: -29.944, latS: -32.306, lonW: -52.408, lonE: -50.593 };
 
-// Coordenadas calibradas contra imagem Landsat de referência (pontos vermelhos)
+// Coordenadas reais das estações (extraídas do Google Maps)
 const STATION_COORDS = {
-  lagoa_patos_itapua:         { lat: -30.3856, lon: -51.0596 },
-  lagoa_patos_arambare:       { lat: -30.9067, lon: -51.4917 },
-  lagoa_patos_sao_lourenco:   { lat: -31.3781, lon: -51.9654 },
-  lagoa_patos_pelotas:        { lat: -31.7715, lon: -52.2215 },
-  lagoa_patos_sao_jose_norte: { lat: -32.0151, lon: -52.0448 },
-  lagoa_patos_rio_grande:     { lat: -32.0257, lon: -52.1057 },
+  // Itapuã: margem NE da lagoa, dentro da água (não na restinga)
+  lagoa_patos_itapua:         { lat: -30.38, lon: -51.02 },
+  // Arambaré: beira da lagoa, margem oeste
+  lagoa_patos_arambare:       { lat: -30.91, lon: -51.51 },
+  // São Lourenço do Sul: margem oeste, beira da água
+  lagoa_patos_sao_lourenco:   { lat: -31.37, lon: -51.98 },
+  // Pelotas/Laranjal: canal do Arroio Pelotas entrando na lagoa
+  lagoa_patos_pelotas:        { lat: -31.82, lon: -52.12 },
+  // São José do Norte: canal da barra, margem leste
+  lagoa_patos_sao_jose_norte: { lat: -32.00, lon: -52.05 },
+  // Rio Grande/Barra: canal de saída para o mar
+  lagoa_patos_rio_grande:     { lat: -32.06, lon: -52.09 },
+  // fallbacks
+  lagoa_patos_porto_alegre:   { lat: -30.10, lon: -51.20 },
+  lagoa_patos_guaiba:         { lat: -30.15, lon: -51.30 },
 };
 
-function getStationPct(point, coords = STATION_COORDS) {
-  const known = coords[point.id];
+function getStationPct(point) {
+  const known = STATION_COORDS[point.id];
   const lat = known?.lat ?? point.lat;
   const lon = known?.lon ?? point.lon;
   if (!lat || !lon) return null;
@@ -83,53 +92,12 @@ function getStationPct(point, coords = STATION_COORDS) {
   };
 }
 
-function pctToStationCoord(leftPct, topPct) {
-  const { latN, latS, lonW, lonE } = LANDSAT_BOUNDS;
-  return {
-    lat: Number((latN + (topPct / 100) * (latS - latN)).toFixed(4)),
-    lon: Number((lonW + (leftPct / 100) * (lonE - lonW)).toFixed(4)),
-  };
-}
-
 function LagoaSVGMap({ points, selectedStationId, setSelectedStationId, lagoaStatusColor }) {
+  // Salve o arquivo Landsat em: public/landsat_lagoa.webp (ou .jpg)
   const LANDSAT_URL = "/sentinela-rs/landsat_lagoa.webp";
-  const editMode = typeof window !== "undefined"
-    && new URLSearchParams(window.location.search).get("editPontos") === "1";
-  const [dragCoords, setDragCoords] = useState(STATION_COORDS);
-  const [draggingId, setDraggingId] = useState(null);
-  const activeCoords = editMode ? dragCoords : STATION_COORDS;
-
-  function moveDraggingPoint(event) {
-    if (!editMode || !draggingId) return;
-    const rect = event.currentTarget.getBoundingClientRect();
-    const leftPct = Math.max(0, Math.min(100, ((event.clientX - rect.left) / rect.width) * 100));
-    const topPct = Math.max(0, Math.min(100, ((event.clientY - rect.top) / rect.height) * 100));
-    setDragCoords((prev) => ({
-      ...prev,
-      [draggingId]: pctToStationCoord(leftPct, topPct),
-    }));
-  }
-
-  const editableCoords = Object.entries(dragCoords)
-    .filter(([id]) => points.some(({ point }) => point.id === id))
-    .map(([id, coord]) => `${id}: { lat: ${coord.lat.toFixed(4)}, lon: ${coord.lon.toFixed(4)} }`)
-    .join("\n");
 
   return (
-    <div
-      data-lagoa-map
-      onPointerMove={moveDraggingPoint}
-      onPointerUp={() => setDraggingId(null)}
-      onPointerLeave={() => setDraggingId(null)}
-      style={{
-        position: "relative",
-        width: "100%",
-        borderRadius: 8,
-        overflow: "hidden",
-        background: "#0a1628",
-        touchAction: editMode ? "none" : "auto",
-      }}
-    >
+    <div style={{ position: "relative", width: "100%", borderRadius: 8, overflow: "hidden", background: "#0a1628" }}>
       <style>{`
         @keyframes lp-pulse {
           0%   { transform: translate(-50%,-50%) scale(1);   opacity: 0.8; }
@@ -141,49 +109,46 @@ function LagoaSVGMap({ points, selectedStationId, setSelectedStationId, lagoaSta
         .lp-tooltip { display: none; }
       `}</style>
 
+      {/* Imagem Landsat de fundo */}
       <img
         src={LANDSAT_URL}
-        alt="Lagoa dos Patos - Landsat 8, 24 mai 2018"
+        alt="Lagoa dos Patos — Landsat 8, 24 mai 2018"
         style={{ width: "100%", display: "block", opacity: 0.92 }}
-        onError={(event) => { event.target.style.display = "none"; }}
+        onError={(e) => { e.target.style.display = "none"; }}
       />
 
+      {/* Crédito */}
       <div style={{
         position: "absolute", bottom: 6, right: 8,
         fontSize: 9, color: "rgba(255,255,255,0.55)", pointerEvents: "none",
       }}>
-        Landsat 8 / NASA - 24 mai 2018
+        Landsat 8 / NASA · 24 mai 2018
       </div>
 
+      {/* Pontos pulsantes */}
       {points.map(({ point, lagoa }, idx) => {
-        const pct = getStationPct(point, activeCoords);
+        const pct = getStationPct(point);
         if (!pct) return null;
         const color = lagoa?.isReal ? lagoaStatusColor(lagoa?.levelStatus) : "#94a3b8";
         const sel = point.id === selectedStationId;
-        const name = (point.displayName || point.name || "").replace(/^Lagoa dos Patos\s*[-?]\s*/, "");
+        const name = (point.displayName || point.name || "").replace(/^Lagoa dos Patos\s*[-—]\s*/, "");
         const nivel = lagoa?.isReal && typeof lagoa?.atual === "number"
-          ? `${lagoa.atual.toFixed(2)} m` : "-";
+          ? `${lagoa.atual.toFixed(2)} m` : "—";
 
         return (
           <div
             key={point.id}
             className="lp-marker"
             onClick={() => setSelectedStationId(point.id)}
-            onPointerDown={(event) => {
-              if (!editMode) return;
-              event.preventDefault();
-              event.stopPropagation();
-              setSelectedStationId(point.id);
-              setDraggingId(point.id);
-            }}
             style={{
               position: "absolute",
               left: `${pct.left}%`,
               top: `${pct.top}%`,
-              cursor: editMode ? "grab" : "pointer",
+              cursor: "pointer",
               zIndex: sel ? 10 : 5,
             }}
           >
+            {/* Anel pulsante */}
             <div className="lp-ring" style={{
               position: "absolute",
               width: 20, height: 20,
@@ -192,6 +157,7 @@ function LagoaSVGMap({ points, selectedStationId, setSelectedStationId, lagoaSta
               transform: "translate(-50%,-50%)",
               animationDelay: `${idx * 0.4}s`,
             }} />
+            {/* Ponto central */}
             <div style={{
               position: "absolute",
               width: sel ? 14 : 10,
@@ -203,6 +169,7 @@ function LagoaSVGMap({ points, selectedStationId, setSelectedStationId, lagoaSta
               transition: "all 0.2s",
               boxShadow: "0 1px 4px rgba(0,0,0,0.5)",
             }} />
+            {/* Tooltip sempre visível quando selecionado */}
             {sel && (
               <div style={{
                 position: "absolute",
@@ -225,25 +192,6 @@ function LagoaSVGMap({ points, selectedStationId, setSelectedStationId, lagoaSta
           </div>
         );
       })}
-
-      {editMode && (
-        <div style={{
-          position: "absolute",
-          left: 10,
-          bottom: 10,
-          maxWidth: "calc(100% - 20px)",
-          padding: "8px 10px",
-          borderRadius: 6,
-          background: "rgba(15,23,42,0.88)",
-          color: "white",
-          fontSize: 11,
-          lineHeight: 1.4,
-          boxShadow: "0 4px 16px rgba(0,0,0,0.35)",
-        }}>
-          <strong>Modo ajuste:</strong> arraste os pontos verdes.
-          <pre style={{ margin: "6px 0 0", whiteSpace: "pre-wrap", fontSize: 10 }}>{editableCoords}</pre>
-        </div>
-      )}
     </div>
   );
 }
