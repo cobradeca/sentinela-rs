@@ -64,12 +64,12 @@ const LANDSAT_BOUNDS = { latN: -30.05, latS: -32.20, lonW: -52.50, lonE: -50.50 
 // Coordenadas calibradas contra imagem Landsat de referência (pontos vermelhos)
 const STATION_COORDS = {
   // Coordenadas calibradas manualmente via ferramenta de arrasto (jun/2026)
-  lagoa_patos_itapua:         { lat: -30.3025, lon: -51.2093 },
+  lagoa_patos_itapua:         { lat: -30.28,   lon: -51.52   },
   lagoa_patos_arambare:       { lat: -30.8779, lon: -51.5650 },
-  lagoa_patos_sao_lourenco:   { lat: -31.4016, lon: -51.9502 },
+  lagoa_patos_sao_lourenco:   { lat: -30.91,   lon: -51.72   },
   lagoa_patos_pelotas:        { lat: -31.8686, lon: -52.0974 },
-  lagoa_patos_sao_jose_norte: { lat: -32.0128, lon: -51.8318 },
-  lagoa_patos_rio_grande:     { lat: -32.0348, lon: -51.8818 },
+  lagoa_patos_sao_jose_norte: { lat: -31.52,   lon: -52.10   },
+  lagoa_patos_rio_grande:     { lat: -32.03,   lon: -51.92   },
   // fallbacks
   lagoa_patos_porto_alegre:   { lat: -30.10, lon: -51.20 },
   lagoa_patos_guaiba:         { lat: -30.15, lon: -51.30 },
