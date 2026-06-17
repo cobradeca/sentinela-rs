@@ -58,31 +58,47 @@ function pickHighlight(points) {
 }
 
 
-// Coordenadas reais das estações mapeadas para o SVG (viewBox 0 0 260 520)
-const LAT_N = -30.05, LAT_S = -32.25, LON_W = -51.35, LON_E = -50.60;
+// viewBox 0 0 260 520 — lagoa completa de norte (Guaíba) a sul (barra Rio Grande)
+// Bounds reais: lat -30.05 (N) a -32.20 (S), lon -52.40 (W) a -50.65 (E)
+const LAT_N = -30.05, LAT_S = -32.20, LON_W = -52.40, LON_E = -50.65;
+const VW = 220, VH = 460, PAD_X = 20, PAD_Y = 30;
 
-function latToY(lat) {
-  return ((lat - LAT_N) / (LAT_S - LAT_N)) * 460 + 30;
-}
-function lonToX(lon) {
-  return ((lon - LON_W) / (LON_E - LON_W)) * 200 + 30;
-}
+function toX(lon) { return ((lon - LON_W) / (LON_E - LON_W)) * VW + PAD_X; }
+function toY(lat) { return ((lat - LAT_N) / (LAT_S - LAT_N)) * VH + PAD_Y; }
 
+// Polígono real da Lagoa dos Patos traçado sobre Landsat/Maps
+// Norte: Guaíba ~-30.1 / Sul: barra ~-32.1
 const LAGOA_POLY_PTS = [
-  [-50.90, -30.10], [-50.75, -30.18], [-50.72, -30.45], [-50.78, -30.80],
-  [-50.93, -31.10], [-51.05, -31.30], [-51.10, -31.52], [-51.14, -31.72],
-  [-51.20, -31.92], [-51.24, -32.10], [-51.15, -32.20], [-51.00, -32.15],
-  [-50.95, -31.95], [-50.90, -31.70], [-50.85, -31.42], [-50.82, -31.12],
-  [-50.84, -30.82], [-50.87, -30.50], [-50.88, -30.22], [-50.90, -30.10],
+  // margem leste (barreira/restinga) — de norte para sul
+  [-51.10, -30.08], [-50.90, -30.18], [-50.75, -30.38], [-50.72, -30.58],
+  [-50.80, -30.78], [-50.93, -31.00], [-51.03, -31.18], [-51.08, -31.38],
+  [-51.12, -31.55], [-51.18, -31.72], [-51.22, -31.90], [-51.28, -32.05],
+  [-51.32, -32.12],
+  // barra sul (estreitamento para Rio Grande)
+  [-52.00, -32.10], [-52.08, -32.00],
+  // margem oeste — de sul para norte
+  [-52.10, -31.85], [-52.05, -31.65], [-51.95, -31.45], [-51.85, -31.25],
+  [-51.75, -31.05], [-51.65, -30.88], [-51.55, -30.70], [-51.48, -30.50],
+  [-51.42, -30.30], [-51.35, -30.12], [-51.20, -30.06], [-51.10, -30.08],
 ];
 
+// Coordenadas reais extraídas do Google Maps / Landsat
 const STATION_COORDS = {
-  lagoa_patos_porto_alegre: { lon: -51.23, lat: -30.03 },
-  lagoa_patos_guaiba:       { lon: -51.32, lat: -30.25 },
-  lagoa_patos_arambare:     { lon: -51.50, lat: -30.90 },
-  lagoa_patos_sao_lourenco: { lon: -51.50, lat: -31.37 },
-  lagoa_patos_pelotas:      { lon: -51.20, lat: -31.77 },
-  lagoa_patos_rio_grande:   { lon: -51.10, lat: -32.03 },
+  // Farol de Itapuã — NE da lagoa, margem leste
+  lagoa_patos_itapua:        { lon: -50.90, lat: -30.22 },
+  // Arambaré — margem oeste, altura ~-30.9
+  lagoa_patos_arambare:      { lon: -51.50, lat: -30.92 },
+  // São Lourenço do Sul — margem oeste -31.37
+  lagoa_patos_sao_lourenco:  { lon: -51.97, lat: -31.37 },
+  // Pelotas / Laranjal — Av. Dr. Antônio Augusto, margem oeste -31.78
+  lagoa_patos_pelotas:       { lon: -52.08, lat: -31.78 },
+  // São José do Norte — barra sul, margem leste -32.02
+  lagoa_patos_sao_jose_norte:{ lon: -51.98, lat: -32.02 },
+  // Rio Grande / Barra — saída para o mar -32.08
+  lagoa_patos_rio_grande:    { lon: -52.08, lat: -32.08 },
+  // Fallbacks por nome genérico
+  lagoa_patos_porto_alegre:  { lon: -51.23, lat: -30.10 },
+  lagoa_patos_guaiba:        { lon: -51.35, lat: -30.15 },
 };
 
 function getStationXY(point) {
@@ -90,15 +106,11 @@ function getStationXY(point) {
   const lon = known?.lon ?? point.lon;
   const lat = known?.lat ?? point.lat;
   if (!lon || !lat) return null;
-  return { x: ((lon - LON_W) / (LON_E - LON_W)) * 200 + 30, y: ((lat - LAT_N) / (LAT_S - LAT_N)) * 460 + 30 };
+  return { x: toX(lon), y: toY(lat) };
 }
 
 function LagoaSVGMap({ points, selectedStationId, setSelectedStationId, lagoaStatusColor }) {
-  const poly = LAGOA_POLY_PTS.map(([lon, lat]) => {
-    const x = ((lon - LON_W) / (LON_E - LON_W)) * 200 + 30;
-    const y = ((lat - LAT_N) / (LAT_S - LAT_N)) * 460 + 30;
-    return `${x},${y}`;
-  }).join(" ");
+  const poly = LAGOA_POLY_PTS.map(([lon, lat]) => `${toX(lon)},${toY(lat)}`).join(" ");
 
   return (
     <div style={{ position: "relative", width: "100%", maxWidth: 280, margin: "0 auto" }}>
@@ -120,9 +132,9 @@ function LagoaSVGMap({ points, selectedStationId, setSelectedStationId, lagoaSta
       >
         <rect width="260" height="520" fill="var(--color-background-secondary,#f0f9ff)" rx="8" />
         <polygon points={poly} fill="#bfdbfe" stroke="#3b82f6" strokeWidth="1.5" opacity="0.75" />
-        <text x="110" y="270" textAnchor="middle" fontSize="10" fontWeight="600"
+        <text x="140" y="320" textAnchor="middle" fontSize="10" fontWeight="600"
           fill="#1e40af" opacity="0.55" fontStyle="italic">Lagoa dos Patos</text>
-        <g transform="translate(238,36)">
+        <g transform="translate(238,46)">
           <circle r="13" fill="white" stroke="#cbd5e1" strokeWidth="1" opacity="0.85" />
           <text x="0" y="-3" textAnchor="middle" fontSize="8" fontWeight="700" fill="#475569">N</text>
           <line x1="0" y1="-1" x2="0" y2="-9" stroke="#475569" strokeWidth="1.2" />
