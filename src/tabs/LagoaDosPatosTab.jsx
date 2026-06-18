@@ -376,14 +376,6 @@ export function LagoaDosPatosTab({ ctx }) {
               label={shortName(selectedPoint?.point || {})}
             />
           </div>
-
-          <div className="sr-card-v2">
-            <h3 className="sr-card-title">Previsao do nivel da Lagoa</h3>
-            <LineChart points={[0.61, 0.60, 0.59, 0.58, 0.57, 0.57, 0.56].map((v) => ({ v }))} width={480} height={190} color="#1a6fd4" dashed referenceY={0} />
-            <button type="button" className="sr-card-footer-link" style={{ background: "none", border: "none", width: "100%" }}>
-              Sobre a previsao <NavIcon name="info" size={14} />
-            </button>
-          </div>
         </div>
       </div>
 
