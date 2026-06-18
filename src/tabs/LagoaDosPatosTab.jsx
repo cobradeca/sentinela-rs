@@ -60,12 +60,12 @@ function pickHighlight(points) {
 
 // Posições percentuais extraídas diretamente da imagem Landsat com pontos de referência
 const STATION_PCT = {
-  lagoa_patos_itapua:         { left: 58.5, top: 12.3 },  // calibrado jun/2026
-  lagoa_patos_arambare:       { left: 46.5, top: 37.8 },  // âncora verificada
-  lagoa_patos_sao_lourenco:   { left: 30.2, top: 60.0 },  // calibrado jun/2026
-  lagoa_patos_pelotas:        { left: 19.0, top: 81.8 },  // âncora verificada
-  lagoa_patos_rio_grande:     { left: 33.0, top: 91.0 },  // calibrado jun/2026
-  lagoa_patos_sao_jose_norte: { left: 36.5, top: 90.5 },  // calibrado jun/2026
+  lagoa_patos_itapua:         { left: 64.47, top: 11.63 },
+  lagoa_patos_arambare:       { left: 46.50, top: 37.80 },
+  lagoa_patos_sao_lourenco:   { left: 28.11, top: 62.97 },
+  lagoa_patos_pelotas:        { left: 19.00, top: 81.80 },
+  lagoa_patos_rio_grande:     { left: 30.75, top: 92.24 },
+  lagoa_patos_sao_jose_norte: { left: 33.41, top: 91.66 },
   lagoa_patos_porto_alegre:   { left: 55.0, top:  8.0 },
   lagoa_patos_guaiba:         { left: 50.0, top: 10.0 },
 };
