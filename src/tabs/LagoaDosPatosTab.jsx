@@ -58,38 +58,20 @@ function pickHighlight(points) {
 }
 
 
-// Bounding box da imagem Landsat 8 (24 mai 2018)
-const LANDSAT_BOUNDS = { latN: -29.944, latS: -32.306, lonW: -52.408, lonE: -50.593 };
-
-// Coordenadas reais das estações (extraídas do Google Maps)
-const STATION_COORDS = {
-  // Itapuã: margem NE da lagoa, dentro da água (não na restinga)
-  lagoa_patos_itapua:         { lat: -30.38, lon: -51.02 },
-  // Arambaré: beira da lagoa, margem oeste
-  lagoa_patos_arambare:       { lat: -30.91, lon: -51.51 },
-  // São Lourenço do Sul: margem oeste, beira da água
-  lagoa_patos_sao_lourenco:   { lat: -31.37, lon: -51.98 },
-  // Pelotas/Laranjal: canal do Arroio Pelotas entrando na lagoa
-  lagoa_patos_pelotas:        { lat: -31.82, lon: -52.12 },
-  // São José do Norte: canal da barra, margem leste
-  lagoa_patos_sao_jose_norte: { lat: -32.00, lon: -52.05 },
-  // Rio Grande/Barra: canal de saída para o mar
-  lagoa_patos_rio_grande:     { lat: -32.06, lon: -52.09 },
-  // fallbacks
-  lagoa_patos_porto_alegre:   { lat: -30.10, lon: -51.20 },
-  lagoa_patos_guaiba:         { lat: -30.15, lon: -51.30 },
+// Posições percentuais extraídas diretamente da imagem Landsat com pontos de referência
+const STATION_PCT = {
+  lagoa_patos_itapua:         { left: 64.4, top: 11.6 },
+  lagoa_patos_arambare:       { left: 46.5, top: 37.8 },
+  lagoa_patos_sao_lourenco:   { left: 27.9, top: 62.8 },
+  lagoa_patos_pelotas:        { left: 19.0, top: 81.8 },
+  lagoa_patos_sao_jose_norte: { left: 33.1, top: 91.5 },
+  lagoa_patos_rio_grande:     { left: 30.6, top: 92.2 },
+  lagoa_patos_porto_alegre:   { left: 55.0, top:  8.0 },
+  lagoa_patos_guaiba:         { left: 50.0, top: 10.0 },
 };
 
 function getStationPct(point) {
-  const known = STATION_COORDS[point.id];
-  const lat = known?.lat ?? point.lat;
-  const lon = known?.lon ?? point.lon;
-  if (!lat || !lon) return null;
-  const { latN, latS, lonW, lonE } = LANDSAT_BOUNDS;
-  return {
-    left: ((lon - lonW) / (lonE - lonW)) * 100,
-    top:  ((lat - latN) / (latS - latN)) * 100,
-  };
+  return STATION_PCT[point.id] ?? null;
 }
 
 function LagoaSVGMap({ points, selectedStationId, setSelectedStationId, lagoaStatusColor }) {
