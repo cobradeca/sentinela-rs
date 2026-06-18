@@ -64,8 +64,8 @@ const STATION_PCT = {
   lagoa_patos_arambare:       { left: 46.5, top: 37.8 },
   lagoa_patos_sao_lourenco:   { left: 27.9, top: 62.8 },
   lagoa_patos_pelotas:        { left: 19.0, top: 81.8 },
-  lagoa_patos_sao_jose_norte: { left: 33.1, top: 91.5 },
   lagoa_patos_rio_grande:     { left: 30.6, top: 92.2 },
+  lagoa_patos_sao_jose_norte: { left: 33.1, top: 91.5 },
   lagoa_patos_porto_alegre:   { left: 55.0, top:  8.0 },
   lagoa_patos_guaiba:         { left: 50.0, top: 10.0 },
 };
