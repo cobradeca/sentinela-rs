@@ -60,12 +60,12 @@ function pickHighlight(points) {
 
 // Posições percentuais extraídas diretamente da imagem Landsat com pontos de referência
 const STATION_PCT = {
-  lagoa_patos_itapua:         { left: 64.4, top: 11.6 },
-  lagoa_patos_arambare:       { left: 46.5, top: 37.8 },
-  lagoa_patos_sao_lourenco:   { left: 27.9, top: 62.8 },
-  lagoa_patos_pelotas:        { left: 19.0, top: 81.8 },
-  lagoa_patos_rio_grande:     { left: 30.6, top: 92.2 },
-  lagoa_patos_sao_jose_norte: { left: 33.1, top: 91.5 },
+  lagoa_patos_itapua:         { left: 58.5, top: 12.3 },  // calibrado jun/2026
+  lagoa_patos_arambare:       { left: 46.5, top: 37.8 },  // âncora verificada
+  lagoa_patos_sao_lourenco:   { left: 30.2, top: 60.0 },  // calibrado jun/2026
+  lagoa_patos_pelotas:        { left: 19.0, top: 81.8 },  // âncora verificada
+  lagoa_patos_rio_grande:     { left: 33.0, top: 91.0 },  // calibrado jun/2026
+  lagoa_patos_sao_jose_norte: { left: 36.5, top: 90.5 },  // calibrado jun/2026
   lagoa_patos_porto_alegre:   { left: 55.0, top:  8.0 },
   lagoa_patos_guaiba:         { left: 50.0, top: 10.0 },
 };
@@ -295,8 +295,8 @@ export function LagoaDosPatosTab({ ctx }) {
         </div>
       </div>
 
-      <div className="sr-grid-2-1">
-        <div className="sr-card-v2">
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, alignItems: "start" }}>
+        <div className="sr-card-v2" style={{ alignSelf: "stretch" }}>
           <h3 className="sr-card-title">Mapa da Lagoa dos Patos</h3>
           <LagoaSVGMap
             points={points}
@@ -312,103 +312,80 @@ export function LagoaDosPatosTab({ ctx }) {
           </div>
         </div>
 
-        <div className="sr-card-v2">
-          <h3 className="sr-card-title">Estacoes de monitoramento</h3>
-          <table className="sr-data-table">
-            <thead>
-              <tr>
-                <th>Estacao</th>
-                <th>Nivel atual (m)</th>
-                <th>Tendencia 24h</th>
-                <th>Ultima leitura</th>
-                <th>Fonte</th>
-              </tr>
-            </thead>
-            <tbody>
-              {points.map(({ point, lagoa, trendCm, history }) => {
-                const hasLevel = lagoa?.isReal && lagoa?.atual != null;
-                const color = lagoaStatusColor(lagoa?.levelStatus);
-                const measuredAt = getLagoaMeasuredAt(lagoa);
-                return (
-                  <tr key={point.id}>
-                    <td>
-                      <span className="sr-status-dot" style={{ background: hasLevel ? color : "#94a3b8" }} />
-                      {shortName(point)}
-                    </td>
-                    <td>
-                      <strong>{hasLevel ? lagoa.atual.toFixed(2) : "—"}</strong>
-                    </td>
-                    <td style={{ color: trendColor(trendCm), fontWeight: 700 }}>
-                      {history.length >= 2 ? formatTrendCm(trendCm) : "sem historico suficiente"}
-                    </td>
-                    <td>{measuredAt ? formatDateTimeBR(measuredAt) : "Sem leitura"}</td>
-                    <td>{getLagoaSourceText(lagoa) || point.sourceHint || "—"}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div className="sr-card-v2">
+            <h3 className="sr-card-title">Estacoes de monitoramento</h3>
+            <table className="sr-data-table">
+              <thead>
+                <tr>
+                  <th>Estacao</th>
+                  <th>Nivel atual (m)</th>
+                  <th>Tendencia 24h</th>
+                  <th>Ultima leitura</th>
+                  <th>Fonte</th>
+                </tr>
+              </thead>
+              <tbody>
+                {points.map(({ point, lagoa, trendCm, history }) => {
+                  const hasLevel = lagoa?.isReal && lagoa?.atual != null;
+                  const color = lagoaStatusColor(lagoa?.levelStatus);
+                  const measuredAt = getLagoaMeasuredAt(lagoa);
+                  return (
+                    <tr key={point.id}>
+                      <td>
+                        <span className="sr-status-dot" style={{ background: hasLevel ? color : "#94a3b8" }} />
+                        {shortName(point)}
+                      </td>
+                      <td>
+                        <strong>{hasLevel ? lagoa.atual.toFixed(2) : "—"}</strong>
+                      </td>
+                      <td style={{ color: trendColor(trendCm), fontWeight: 700 }}>
+                        {history.length >= 2 ? formatTrendCm(trendCm) : "sem historico suficiente"}
+                      </td>
+                      <td>{measuredAt ? formatDateTimeBR(measuredAt) : "Sem leitura"}</td>
+                      <td>{getLagoaSourceText(lagoa) || point.sourceHint || "—"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
 
-      <div className="sr-grid-2">
-        <div className="sr-card-v2">
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 12, flexWrap: "wrap" }}>
-            <div>
-              <h3 className="sr-card-title" style={{ marginBottom: 4 }}>Historico do nivel</h3>
-              <div style={{ color: "var(--sr-text-muted)", fontSize: 12 }}>
-                Medias diarias dos ultimos 7 dias por estacao. Laranjal/Pelotas usa HidroSens.
+          <div className="sr-card-v2">
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 12, flexWrap: "wrap" }}>
+              <div>
+                <h3 className="sr-card-title" style={{ marginBottom: 4 }}>Historico do nivel</h3>
+                <div style={{ color: "var(--sr-text-muted)", fontSize: 12 }}>
+                  Medias diarias dos ultimos 7 dias por estacao. Laranjal/Pelotas usa HidroSens.
+                </div>
               </div>
+              <select value={selectedStationId} onChange={(event) => setSelectedStationId(event.target.value)} style={{ minHeight: 36 }}>
+                {points.map(({ point, history }) => (
+                  <option key={point.id} value={point.id}>
+                    {shortName(point)}{history.length >= 2 ? "" : " (sem historico)"}
+                  </option>
+                ))}
+              </select>
             </div>
-            <select value={selectedStationId} onChange={(event) => setSelectedStationId(event.target.value)} style={{ minHeight: 36 }}>
-              {points.map(({ point, history }) => (
-                <option key={point.id} value={point.id}>
-                  {shortName(point)}{history.length >= 2 ? "" : " (sem historico)"}
-                </option>
-              ))}
-            </select>
+            <LineChart
+              points={selectedHistory}
+              width={480}
+              height={190}
+              color="#1a6fd4"
+              referenceY={0}
+              label={shortName(selectedPoint?.point || {})}
+            />
           </div>
 
-          <LineChart
-            points={selectedHistory}
-            width={480}
-            height={190}
-            color="#1a6fd4"
-            referenceY={0}
-            label={shortName(selectedPoint?.point || {})}
-          />
-        </div>
-
-        <div className="sr-card-v2">
-          <h3 className="sr-card-title">Previsao do nivel da Lagoa</h3>
-          <LineChart points={[0.61, 0.60, 0.59, 0.58, 0.57, 0.57, 0.56].map((v) => ({ v }))} width={480} height={190} color="#1a6fd4" dashed referenceY={0} />
-          <button type="button" className="sr-card-footer-link" style={{ background: "none", border: "none", width: "100%" }}>
-            Sobre a previsao <NavIcon name="info" size={14} />
-          </button>
+          <div className="sr-card-v2">
+            <h3 className="sr-card-title">Previsao do nivel da Lagoa</h3>
+            <LineChart points={[0.61, 0.60, 0.59, 0.58, 0.57, 0.57, 0.56].map((v) => ({ v }))} width={480} height={190} color="#1a6fd4" dashed referenceY={0} />
+            <button type="button" className="sr-card-footer-link" style={{ background: "none", border: "none", width: "100%" }}>
+              Sobre a previsao <NavIcon name="info" size={14} />
+            </button>
+          </div>
         </div>
       </div>
-
-      <details className="sr-card-v2">
-        <summary className="sr-card-title" style={{ cursor: "pointer" }}>Condicoes atuais</summary>
-        {[
-          { label: "Temperatura da agua", value: seaTemperature != null ? `${seaTemperature.toFixed(1)} °C` : "sem leitura" },
-          { label: "Vento medio", value: marineWindSpeed != null ? `${marineWindSpeed.toFixed(0)} km/h` : "—" },
-          { label: "Direcao do vento", value: marineDirection != null ? `${marineDirection.toFixed(0)}°` : "—" },
-          { label: "Pressao atmosferica", value: poaWeather?.surface_pressure != null ? `${poaWeather.surface_pressure.toFixed(0)} hPa` : "—" },
-        ].map((item) => (
-          <div key={item.label} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid var(--sr-border)", fontSize: 13 }}>
-            <span style={{ color: "var(--sr-text-muted)" }}>{item.label}</span>
-            <strong>{item.value}</strong>
-          </div>
-        ))}
-      </details>
-
-      <details className="sr-card-v2">
-        <summary className="sr-card-title" style={{ cursor: "pointer" }}>Mares (Rio Grande)</summary>
-        <p style={{ color: "var(--sr-text-muted)", lineHeight: 1.55, marginTop: 8 }}>
-          Secao mantida como contexto secundario. Integrar endpoint de mare antes de exibir valores operacionais.
-        </p>
-      </details>
 
       <div className="sr-info-banner">
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
