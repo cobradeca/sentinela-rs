@@ -141,7 +141,7 @@ function EmsAoiMap() {
             🛰 Áreas Analisadas pelo Copernicus — EMSN194
           </div>
           <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginTop: 2 }}>
-            Viewer oficial · Porto Alegre e região metropolitana · mai/2024
+            Representação esquemática · Porto Alegre e região metropolitana · mai/2024
           </div>
         </div>
         <LinkBtn href="https://riskandrecovery.emergency.copernicus.eu/EMSN194/viewer/" color="#1e40af" filled>
@@ -149,25 +149,54 @@ function EmsAoiMap() {
         </LinkBtn>
       </div>
 
-      <div style={{ position: "relative", width: "100%", paddingBottom: "75%", background: "#e8f4fd" }}>
-        <iframe
-          src="https://riskandrecovery.emergency.copernicus.eu/EMSN194/viewer/"
-          title="Copernicus EMS — EMSN194 Viewer"
-          style={{
-            position: "absolute", top: 0, left: 0,
-            width: "100%", height: "100%",
-            border: "none",
-          }}
-          allowFullScreen
-        />
-      </div>
+      <svg viewBox="0 0 352 312" width="100%" style={{ display: "block", background: "#e8f4fd" }}>
+        <defs>
+          <pattern id="copgrid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(59,130,246,0.07)" strokeWidth="1"/>
+          </pattern>
+        </defs>
+        <rect width="352" height="312" fill="url(#copgrid)" />
+
+        {EMSN194_AOIS.map((aoi, i) => (
+          <g key={i}>
+            <polygon
+              points={aoi.pts}
+              fill={aoi.fill}
+              stroke={aoi.color}
+              strokeWidth="1.8"
+              strokeLinejoin="round"
+            />
+            <circle cx={aoi.cx} cy={aoi.cy} r="3.5" fill={aoi.color} />
+            <text x={aoi.cx} y={aoi.cy - 7} textAnchor="middle"
+              fontSize="9" fontWeight="700" fill={aoi.color}
+              paintOrder="stroke" stroke="white" strokeWidth="3">
+              {aoi.label}
+            </text>
+          </g>
+        ))}
+
+        <g transform="translate(330,28)">
+          <circle r="14" fill="white" stroke="#cbd5e1" strokeWidth="1" opacity="0.9"/>
+          <text x="0" y="-4" textAnchor="middle" fontSize="8" fontWeight="700" fill="#475569">N</text>
+          <line x1="0" y1="-2" x2="0" y2="-10" stroke="#475569" strokeWidth="1.2"/>
+        </g>
+
+        <text x="8" y="308" fontSize="8" fill="rgba(30,64,175,0.45)">
+          Copernicus EMS · EMSN194 · representação esquemática das áreas de análise
+        </text>
+      </svg>
+
       <div style={{
-        padding: "8px 14px",
+        padding: "10px 14px", display: "flex", gap: 16, flexWrap: "wrap",
         borderTop: "1px solid var(--color-border-tertiary)",
-        background: "var(--color-background-primary)",
-        fontSize: 11, color: "var(--color-text-secondary)",
+        background: "var(--color-background-primary)", fontSize: 11,
       }}>
-        Fonte: Copernicus Emergency Management Service · EMSN194 · viewer oficial
+        {EMSN194_AOIS.map((aoi, i) => (
+          <span key={i} style={{ display: "flex", alignItems: "center", gap: 5, color: "var(--color-text-secondary)" }}>
+            <span style={{ width: 10, height: 10, borderRadius: 2, background: aoi.color, display: "inline-block" }}/>
+            {aoi.label}
+          </span>
+        ))}
       </div>
     </div>
   );
