@@ -55,7 +55,7 @@ export const APAS_RS = [
   { id: "apa_banhado_grande", name: "APA Banhado Grande",        lat: -29.85, lon: -50.85, municipio: "Glorinha/Viam\u00e3o", proximityRadiusKm: 10, spatialAliases: ["Area de Protecao Ambiental do Banhado Grande"] },
   { id: "apa_rota_sol",       name: "APA Rota do Sol",           lat: -29.40, lon: -50.10, municipio: "Serra Ga\u00facha", proximityRadiusKm: 10 },
   { id: "apa_balneario",      name: "APA Balne\u00e1rio Pinhal",      lat: -30.22, lon: -50.21, municipio: "Palmares do Sul", proximityRadiusKm: 10 },
-  { id: "apa_litoral_medio",  name: "APA Litoral M\u00e9dio",         lat: -30.80, lon: -50.22, municipio: "Mostardas/Tavares", proximityRadiusKm: 10 },
+  { id: "apa_litoral_médio",  name: "APA Litoral M\u00e9dio",         lat: -30.80, lon: -50.22, municipio: "Mostardas/Tavares", proximityRadiusKm: 10 },
   { id: "rebio_sao_donato",   name: "REBIO S\u00e3o Donato",          lat: -28.28, lon: -54.87, municipio: "S\u00e3o Nicolau", proximityRadiusKm: 10 },
   { id: "esec_taim",          name: "Esta\u00e7\u00e3o Ecol\u00f3gica do Taim", lat: -32.55, lon: -52.60, municipio: "Rio Grande/Santa Vit\u00f3ria", proximityRadiusKm: 10 },
   { id: "parna_aparados",     name: "PARNA Aparados da Serra",   lat: -29.15, lon: -50.07, municipio: "Cambar\u00e1 do Sul", proximityRadiusKm: 10, spatialAliases: ["Parque Nacional de Aparados da Serra"] },

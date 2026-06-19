@@ -181,7 +181,7 @@ export function QueimadasTab({ ctx }) {
             <div className="sr-mini-stat-value">{fireStats.total}</div>
           </div>
           <div className="sr-mini-stat">
-            <div className="sr-mini-stat-label">Fogo provavel</div>
+            <div className="sr-mini-stat-label">Fogo provável</div>
             <div className="sr-mini-stat-value" style={{ color:fireStats.probable ? "#f97316" : "#22c55e" }}>{fireStats.probable}</div>
           </div>
           <div className="sr-mini-stat">
@@ -241,10 +241,10 @@ export function QueimadasTab({ ctx }) {
       <div style={{ ...s.card }}>
         <div style={{ fontSize:10, color:t.textMuted, letterSpacing:2, marginBottom:6 }}>FONTES DO MONITORAMENTO</div>
         <div style={{ fontSize:9, color:t.textMuted, lineHeight:1.6 }}>
-          INPE BDQueimadas: focos detectados por satélite nas últimas 48 horas.<br />
+          INPE BDQueimadas: focos detectados por satélite nas úúltimas 48 horas.<br />
           INPE Eventos de Fogo: eventos agregados em KML, separados entre ativos e em observação.<br />
-          CENSIPAM Painel do Fogo: eventos consolidados com detecção nas últimas 48 horas.<br />
-          INPE isolado é tratado como alerta térmico; fogo provável exige Evento de Fogo INPE, Evento de Fogo CENSIPAM ou cruzamento entre fontes.
+          CENSIPAM Painel do Fogo: eventos consolidados com detecção nas úúltimas 48 horas.<br />
+          INPE isolado éé tratado como alerta térmico; fogo provável exige Evento de Fogo INPE, Evento de Fogo CENSIPAM ou cruzamento entre fontes.
         </div>
       </div>
     </div>

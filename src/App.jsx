@@ -103,7 +103,7 @@ class TabErrorBoundary extends Component {
     if (this.state.hasError) {
       return (
         <div style={{ padding: 24, border: "1px solid rgba(239,68,68,0.35)", borderRadius: 8, background: "rgba(239,68,68,0.08)" }}>
-          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>Nao foi possivel abrir esta aba.</div>
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>Não foi possível abrir esta aba.</div>
           <div style={{ fontSize: 12, opacity: 0.9 }}>Atualize a pagina. Se persistir, volte para Dashboard e tente novamente.</div>
         </div>
       );

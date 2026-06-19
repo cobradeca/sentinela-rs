@@ -27,7 +27,7 @@ function trendFromHistory(history) {
 }
 
 function formatTrendCm(value) {
-  if (!Number.isFinite(value)) return "sem historico suficiente";
+  if (!Number.isFinite(value)) return "sem histórico suficiente";
   if (Math.abs(value) < 0.5) return "estavel";
   return `${value > 0 ? "+" : ""}${value.toFixed(0)} cm`;
 }
@@ -221,7 +221,7 @@ export function LagoaDosPatosTab({ ctx }) {
     statusRank(worstPoint?.lagoa?.levelStatus) >= 3
       ? "Alerta"
       : statusRank(worstPoint?.lagoa?.levelStatus) >= 2
-      ? "Atencao"
+      ? "Atenção"
       : "Normal";
 
   const poaWeather = selData?.weather?.current;
@@ -265,7 +265,7 @@ export function LagoaDosPatosTab({ ctx }) {
             <div className="sr-kpi-label">SITUACAO GERAL</div>
             <div className="sr-kpi-value">{situation}</div>
             <div className="sr-kpi-sublabel">
-              {worstPoint ? `${shortName(worstPoint.point)} | pior caso entre as estacoes` : "Sem leitura consolidada"}
+              {worstPoint ? `${shortName(worstPoint.point)} | pior caso entre as estações` : "Sem leitura consolidada"}
             </div>
           </div>
         </div>
@@ -277,7 +277,7 @@ export function LagoaDosPatosTab({ ctx }) {
           <div>
             <div className="sr-kpi-label">MONITORAMENTO</div>
             <div className="sr-kpi-value">{validPoints.length}/{STATIONS_LAGOA.length}</div>
-            <div className="sr-kpi-sublabel">estacoes com leitura real</div>
+            <div className="sr-kpi-sublabel">estações com leitura real</div>
           </div>
         </div>
 
@@ -306,7 +306,7 @@ export function LagoaDosPatosTab({ ctx }) {
           />
           <div className="sr-map-legend" style={{ marginTop: 10 }}>
             <span><span className="sr-status-dot green" /> Normal</span>
-            <span><span className="sr-status-dot orange" /> Atencao</span>
+            <span><span className="sr-status-dot orange" /> Atenção</span>
             <span><span className="sr-status-dot red" /> Alerta</span>
             <span><span className="sr-status-dot" style={{ background: "#94a3b8" }} /> Sem leitura</span>
           </div>
@@ -314,12 +314,12 @@ export function LagoaDosPatosTab({ ctx }) {
 
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div className="sr-card-v2">
-            <h3 className="sr-card-title">Estacoes de monitoramento</h3>
+            <h3 className="sr-card-title">Estações de monitoramento</h3>
             <table className="sr-data-table">
               <thead>
                 <tr>
-                  <th>Estacao</th>
-                  <th>Nivel atual (m)</th>
+                  <th>Estação</th>
+                  <th>Nível atual (m)</th>
                   <th>Tendencia 24h</th>
                   <th>Ultima leitura</th>
                   <th>Fonte</th>
@@ -340,7 +340,7 @@ export function LagoaDosPatosTab({ ctx }) {
                         <strong>{hasLevel ? lagoa.atual.toFixed(2) : "—"}</strong>
                       </td>
                       <td style={{ color: trendColor(trendCm), fontWeight: 700 }}>
-                        {history.length >= 2 ? formatTrendCm(trendCm) : "sem historico suficiente"}
+                        {history.length >= 2 ? formatTrendCm(trendCm) : "sem histórico suficiente"}
                       </td>
                       <td>{measuredAt ? formatDateTimeBR(measuredAt) : "Sem leitura"}</td>
                       <td>{getLagoaSourceText(lagoa) || point.sourceHint || "—"}</td>
@@ -356,7 +356,7 @@ export function LagoaDosPatosTab({ ctx }) {
               <div>
                 <h3 className="sr-card-title" style={{ marginBottom: 4 }}>Historico do nivel</h3>
                 <div style={{ color: "var(--sr-text-muted)", fontSize: 12 }}>
-                  Medias diarias dos ultimos 7 dias por estacao. Laranjal/Pelotas usa HidroSens.
+                  Médias diárias dos últimos 7 dias por estação. Laranjal/Pelotas usa HidroSens.
                 </div>
               </div>
               <select value={selectedStationId} onChange={(event) => setSelectedStationId(event.target.value)} style={{ minHeight: 36 }}>
@@ -382,7 +382,7 @@ export function LagoaDosPatosTab({ ctx }) {
       <div className="sr-info-banner">
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <NavIcon name="info" size={18} />
-          <span>Historico: Monitoramento Lagoa dos Patos + HidroSens/UFPel. Medias diarias calculadas a partir das leituras validas dos ultimos 7 dias.</span>
+          <span>Historico: Monitoramento Lagoa dos Patos + HidroSens/UFPel. Médias diárias calculadas a partir das leituras validas dos últimos 7 dias.</span>
         </div>
         <button type="button" onClick={() => setActiveTab("alertas")}>Defesa Civil RS</button>
       </div>

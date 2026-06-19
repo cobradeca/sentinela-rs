@@ -16,7 +16,7 @@ export function Sparkline({ points, color, t, sourceLabel }) {
   return (
     <div style={{ marginTop: 8 }}>
       <div style={{ fontSize: 8, color: t.textMuted, marginBottom: 3 }}>
-        HISTORICO 7 DIAS ({points.length} leituras){sourceLabel ? ` - ${sourceLabel}` : ""}
+        HISTÓRICO 7 DIAS ({points.length} leituras){sourceLabel ? ` - ${sourceLabel}` : ""}
       </div>
       <svg width={W} height={H + 4} style={{ display: "block" }}>
         <polyline

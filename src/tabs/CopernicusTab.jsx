@@ -405,7 +405,7 @@ export function CopernicusTab({ ctx }) {
           </a>
 
           {/* SEPLAN-RS */}
-          <a href="https://planejamento.rs.gov.br/upload/arquivos/202504/29092549-relatorio-dee-impactos-socioeconomicos-dos-eventos-climaticos-extremos-de-2024-no-rio-grande-do-sul-uma-analise-apos-um-ano-do-desastre-1.pdf"
+          <a href="https://planejamento.rs.gov.br/upload/arquivos/202504/29092549-relatorio-dee-impactos-socioeconomicos-dos-eventos-climáticos-extremos-de-2024-no-rio-grande-do-sul-uma-analise-apos-um-ano-do-desastre-1.pdf"
             target="_blank" rel="noreferrer"
             style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 12,
               padding: "12px 14px", borderRadius: 8,

@@ -71,8 +71,8 @@ export function LagoadosPatos({ className = "", data = [], loading = false, erro
           <span className="sr-source-pill is-muted">sem dados</span>
         </header>
         <div className="sr-lagoa-empty-state">
-          <strong>Sem leitura real disponivel.</strong>
-          <span>Aguarde a sincronizacao das estacoes monitoradas.</span>
+          <strong>Sem leitura real disponível.</strong>
+          <span>Aguarde a sincronização das estações monitoradas.</span>
         </div>
       </section>
     );
@@ -81,7 +81,7 @@ export function LagoadosPatos({ className = "", data = [], loading = false, erro
   const status = rows.some((row) => Number(row?.nivelM) >= 1.2)
     ? "Alerta"
     : rows.some((row) => Number(row?.nivelM) >= 0.8)
-    ? "Atencao"
+    ? "Atenção"
     : "Normal";
 
   return (
@@ -117,7 +117,7 @@ export function LagoadosPatos({ className = "", data = [], loading = false, erro
                   <Sparkline values={history} />
                 </>
               ) : (
-                <span className="sr-lagoa-empty-note" style={{ gridColumn: "3 / span 2" }}>sem historico suficiente</span>
+                <span className="sr-lagoa-empty-note" style={{ gridColumn: "3 / span 2" }}>sem histórico suficiente</span>
               )}
             </div>
           );

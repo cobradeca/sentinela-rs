@@ -71,7 +71,7 @@ export function QueimadasVegetacao({ className = "", data = MOCK_QUEIMADAS, load
         </div>
 
         <div>
-          <span>NDVI m?dio RS</span>
+          <span>NDVI médio RS</span>
           <strong style={{ color }}>{ndviLabel}</strong>
           <div className="sr-ndvi-bar">
             <i style={{ width: `${Math.max(0, Math.min(100, (normalized.ndviMedio ?? 0) * 100))}%`, background: color }} />

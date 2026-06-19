@@ -76,21 +76,21 @@ export function PanoramaGeral({
     <section className={`sr-mod-card ${className}`}>
       <header className="sr-mod-header">
         <div className="sr-mod-title"><span>↗</span> PANORAMA GERAL</div>
-        <div className="sr-mod-badge">Dados informativos • nao sao alertas ⓘ</div>
+        <div className="sr-mod-badge">Dados informativos • não são alertas ⓘ</div>
       </header>
 
       <div className="sr-panorama-grid" style={{ gridTemplateColumns: "repeat(4, minmax(0, 1fr))" }}>
         <div className="sr-panorama-block">
           <span>≋ Lagoa dos Patos</span>
           <strong>{nivelMedio.toFixed(2).replace(".", ",")} m</strong>
-          <small>Nivel medio</small>
+          <small>Nível médio</small>
           <em className={variacaoMedia > 0 ? "sr-var-up" : "sr-var-down"}>
             {variacaoMedia > 0 ? "↑" : "↓"} {Math.abs(variacaoMedia).toFixed(2).replace(".", ",")} m (24h)
           </em>
         </div>
 
         <div className="sr-panorama-block">
-          <span>☔ Previsao</span>
+          <span>☔ Previsão</span>
           <strong>{chuva5dMm} mm</strong>
           <small>Acumulado 5 dias</small>
           <em>Chuva prevista</em>
@@ -147,7 +147,7 @@ export function PanoramaGeral({
 
       <div className="sr-defesa-banner">
         <div className="sr-defesa-logo">DEFESA<br />CIVIL</div>
-        <p><strong>Atencao:</strong> os alertas oficiais sobre eventos adversos sao emitidos pela Defesa Civil RS. Em caso de riscos, siga as orientacoes dos canais oficiais e ligue <strong>199</strong>.</p>
+        <p><strong>Atenção:</strong> os alertas oficiais sobre eventos adversos são emitidos pela Defesa Civil RS. Em caso de riscos, siga as orientações dos canais oficiais e ligue <strong>199</strong>.</p>
         <a href="https://defesacivil.rs.gov.br/" target="_blank" rel="noreferrer">Defesa Civil RS - saiba mais ↗</a>
         <a href="https://api.whatsapp.com/send?phone=555133338000" target="_blank" rel="noreferrer">WhatsApp ↗</a>
       </div>
