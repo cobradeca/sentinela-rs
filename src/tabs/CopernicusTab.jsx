@@ -145,7 +145,7 @@ function EmsAoiMap() {
       </div>
 
       <img
-        src="/map_screenshot_1781799234470.png"
+        src="/map_screenshot_1781799234470.webp"
         alt="Mapeamento Copernicus EMS EMSN194 — inundação Porto Alegre maio 2024"
         style={{ width: "100%", display: "block" }}
       />
@@ -268,6 +268,27 @@ export function CopernicusTab({ ctx }) {
           </div>
         </div>
       )}
+
+      {/* MUP-RS */}
+      <div style={{
+        padding: "14px 16px", borderRadius: 10,
+        background: "linear-gradient(135deg, #eef2ff 0%, #fff 100%)",
+        border: "1px solid rgba(99,102,241,0.32)",
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <div style={{ flex: "1 1 240px" }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#3730a3" }}>
+              🗺 MUP-RS — Monitoramento do Uso e Permeabilidade do Solo
+            </div>
+            <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginTop: 4, lineHeight: 1.5 }}>
+              Plataforma do Governo do RS para acompanhamento de áreas de risco, ocupação e permeabilidade do solo — complementa o mapeamento de satélite desta aba.
+            </div>
+          </div>
+          <LinkBtn href="https://mup.rs.gov.br/" color="#4338ca" filled>
+            ↗ Acessar MUP-RS
+          </LinkBtn>
+        </div>
+      </div>
 
       {/* DOCUMENTOS E PUBLICAÇÕES CIENTÍFICAS */}
       <div style={{
@@ -392,9 +413,9 @@ export function CopernicusTab({ ctx }) {
               border: "1px solid var(--color-border-tertiary)",
               borderLeft: "3px solid #0c4a6e",
             }}>
-            <img src="https://planejamento.rs.gov.br/favicon.ico" alt="SEPLAN-RS" width={20} height={20}
-              style={{ borderRadius: 3, flexShrink: 0 }}
-              onError={e => { e.target.style.display="none"; }} />
+            <img src="https://spgg.rs.gov.br/conteudo/files/ead2f0_spgg-logo.png" alt="SPGG-RS" width={28} height={28}
+              style={{ borderRadius: 4, flexShrink: 0, objectFit: "contain" }}
+              onError={e => { e.target.src="https://planejamento.rs.gov.br/favicon.ico"; e.target.width=20; e.target.height=20; }} />
             <div>
               <div style={{ fontSize: 12, fontWeight: 700, color: "var(--color-text-primary)" }}>
                 Impactos Socioeconômicos — 1 ano após o desastre
@@ -455,26 +476,6 @@ export function CopernicusTab({ ctx }) {
         </div>
       </div>
 
-      {/* MUP-RS */}
-      <div style={{
-        padding: "14px 16px", borderRadius: 10,
-        background: "linear-gradient(135deg, #eef2ff 0%, #fff 100%)",
-        border: "1px solid rgba(99,102,241,0.32)",
-      }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          <div style={{ flex: "1 1 240px" }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#3730a3" }}>
-              🗺 MUP-RS — Monitoramento do Uso e Permeabilidade do Solo
-            </div>
-            <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginTop: 4, lineHeight: 1.5 }}>
-              Plataforma do Governo do RS para acompanhamento de áreas de risco, ocupação e permeabilidade do solo — complementa o mapeamento de satélite desta aba.
-            </div>
-          </div>
-          <LinkBtn href="https://mup.rs.gov.br/" color="#4338ca" filled>
-            ↗ Acessar MUP-RS
-          </LinkBtn>
-        </div>
-      </div>
 
       {/* AVISO */}
       <div style={{
