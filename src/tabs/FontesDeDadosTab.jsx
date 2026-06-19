@@ -13,6 +13,7 @@ export function FontesDeDadosTab({ ctx }) {
     s,
     t,
     loadAllData,
+    refreshAll,
     loadQueimadas,
     loadCptecProducts,
     loadCopernicusWater,
@@ -99,14 +100,14 @@ export function FontesDeDadosTab({ ctx }) {
           <div style={{ fontSize: 10, color: t.textMuted, letterSpacing: 2 }}>SAÚDE DAS FONTES — ÚLTIMA VERIFICAÇÃO</div>
           <button
             type="button"
-            onClick={loadAllData}
+            onClick={refreshAll}
             className="sr-btn-outline"
             style={{ fontSize: 10, padding: "4px 10px" }}
           >
             ↻ Atualizar tudo
           </button>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))", gap: 8 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: 8 }}>
           {sourceNames.map((name) => {
             const h = getValidatedSourceHealth(name);
             const ok = h?.ok;

@@ -168,7 +168,7 @@ async function fetchFloodVulnerabilityForStation(station, radiusDeg = 0.2) {
   });
 
   const res = await fetch(`${ANA_FLOOD_VULNERABILITY_URL}?${params.toString()}`, {
-    signal: AbortSignal.timeout(12000),
+    signal: AbortSignal.timeout(6000),
     cache: "no-store",
     headers: { Accept: "application/json" },
   });
@@ -186,7 +186,7 @@ async function fetchFloodVulnerabilityForStation(station, radiusDeg = 0.2) {
 
 export async function fetchAnaFloodVulnerability(stations) {
   const cacheKey = "sentinela_ana_flood_vulnerability_v1";
-  const cached = readJsonCache(cacheKey, 24 * 60 * 60 * 1000);
+  const cached = readJsonCache(cacheKey, 7 * 24 * 60 * 60 * 1000);
   if (cached) return cached;
 
   const entries = await Promise.allSettled(stations.map((station) => fetchFloodVulnerabilityForStation(station)));

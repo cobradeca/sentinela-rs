@@ -668,6 +668,26 @@ export default function SentinelaRS() {
     setSourceHealth({ ...next });
   }
 
+  // ── Carregamento de ANA Vulnerabilidade em background (não-bloqueante) ──
+  const loadAnaVulnerability = useCallback(async () => {
+    const floodVulnerabilityStart = Date.now();
+    try {
+      const floodVulnerability = await fetchAnaFloodVulnerability(STATIONS);
+      setStationData((prev) => {
+        const next = { ...prev };
+        Object.entries(floodVulnerability.by_station || {}).forEach(([stationId, context]) => {
+          if (next[stationId]) {
+            next[stationId] = { ...next[stationId], floodVulnerability: context };
+          }
+        });
+        return next;
+      });
+      markSourceHealth("ANA Vulnerabilidade Inundacoes", Boolean(floodVulnerability?.ok), floodVulnerabilityStart, floodVulnerability?.ok ? null : "sem contexto territorial validado");
+    } catch (err) {
+      markSourceHealth("ANA Vulnerabilidade Inundacoes", false, floodVulnerabilityStart, err?.message || "falha ao consultar vulnerabilidade ANA");
+    }
+  }, []);
+
   const loadAllData = useCallback(async () => {
     setLoading(true);
     setSplashProgress(5);
@@ -675,8 +695,6 @@ export default function SentinelaRS() {
     const results = {};
     const health = { ...sourceHealthRef.current };
     const t0 = Date.now();
-    const historyResult = await loadLagoaHistory(STATIONS_LAGOA.map((station) => station.id));
-    let nextLagoaHistory = historyResult.history || {};
 
     // ── fetch com rastreio de saúde ──────────────────────────────────────────
     async function tracked(key, fn) {
@@ -692,18 +710,24 @@ export default function SentinelaRS() {
       }
     }
 
-    const [lagoaRadarResult, hidrosensResult, sensorsResult, riverLevelsResult, roadBlocksResult] = await Promise.allSettled([
+    // Fase 1: carregar histórico + fontes de nível + Defesa Civil em paralelo
+    const [historySettled, lagoaRadarResult, hidrosensResult, sensorsResult, riverLevelsResult, roadBlocksResult, defesaResult] = await Promise.allSettled([
+      loadLagoaHistory(STATIONS_LAGOA.map((station) => station.id)),
       tracked("RADAR Lagoa", fetchLagoaRadarLevels),
       tracked("HidroSens", fetchHidroSensLaranjalLevel),
       tracked("Sensores Monitoramento", fetchSensorsLagoaMonitoramento),
       tracked("ANA Telemetria Rios", fetchAnaRiverLevels),
       tracked("Rodovias RS", fetchRoadBlocksRs),
+      (async () => { const defesaStart = Date.now(); const alerts = await fetchDefesaCivilAlerts(); health["Defesa Civil RS"] = { ok: Array.isArray(alerts), lastOk: Array.isArray(alerts) ? new Date().toISOString() : health["Defesa Civil RS"]?.lastOk || null, latencyMs: Date.now() - defesaStart, error: null }; return alerts; })(),
     ]);
+    const historyResult = historySettled.status === "fulfilled" ? historySettled.value : { history: {}, source: "erro", persistent: false, error: "falha ao carregar historico" };
+    let nextLagoaHistory = historyResult.history || {};
     const lagoaRadarMap = lagoaRadarResult.status === "fulfilled" ? (lagoaRadarResult.value || {}) : {};
     const hidrosensLaranjal = hidrosensResult.status === "fulfilled" ? hidrosensResult.value : null;
     const sensorsMap = sensorsResult.status === "fulfilled" ? (sensorsResult.value?.sensors || {}) : {};
     const riverLevelsData = riverLevelsResult.status === "fulfilled" ? riverLevelsResult.value : null;
     const roadBlocksData = roadBlocksResult.status === "fulfilled" ? roadBlocksResult.value : null;
+    const officialAlerts = defesaResult.status === "fulfilled" ? defesaResult.value : [];
     if (riverLevelsData) {
       health["ANA Telemetria Rios"] = {
         ...(health["ANA Telemetria Rios"] || {}),
@@ -720,10 +744,12 @@ export default function SentinelaRS() {
         error: roadBlocksData.ok ? null : roadBlocksData.error || "sem leitura de rodovias validada",
       };
     }
+    setSplashProgress(15);
 
+    // Fase 2: estações meteorológicas com concorrência aumentada (6)
     const _totalStations = ALL_STATIONS.length || 1;
     let _stationsDone = 0;
-    await mapWithConcurrency(ALL_STATIONS, 4, async (st) => {
+    await mapWithConcurrency(ALL_STATIONS, 6, async (st) => {
       try {
         const weather = await (async () => {
           const start = Date.now();
@@ -795,42 +821,13 @@ export default function SentinelaRS() {
         const risk = st.type === "cidade" && hasMonitoringSignal({ precip, tempMin, windMax, dailyPrecip: precipValues }) ? "MONITORAR" : calculatedRisk;
         results[st.id] = { weather, inmet, lagoa, precip, observedPrecip24h, tempMin, tempCurrent, precipCurrent, windCurrent, windCurrentDirection, weatherCurrentCode, windMax, risk, radarLevel };
         _stationsDone++;
-        setSplashProgress(Math.round(5 + (_stationsDone / _totalStations) * 60));
+        setSplashProgress(Math.round(15 + (_stationsDone / _totalStations) * 75));
       } catch { results[st.id] = { error: true, risk: "NORMAL" };
         _stationsDone++;
-        setSplashProgress(Math.round(5 + (_stationsDone / _totalStations) * 60));
+        setSplashProgress(Math.round(15 + (_stationsDone / _totalStations) * 75));
       }
     });
-    const floodVulnerabilityStart = Date.now();
-    setSplashProgress(70);
-    try {
-      const floodVulnerability = await fetchAnaFloodVulnerability(STATIONS);
-      Object.entries(floodVulnerability.by_station || {}).forEach(([stationId, context]) => {
-        if (results[stationId]) {
-          results[stationId] = {
-            ...results[stationId],
-            floodVulnerability: context,
-          };
-        }
-      });
-      health["ANA Vulnerabilidade Inundacoes"] = {
-        ok: Boolean(floodVulnerability?.ok),
-        lastOk: floodVulnerability?.ok ? floodVulnerability.fetched_at || new Date().toISOString() : health["ANA Vulnerabilidade Inundacoes"]?.lastOk || null,
-        latencyMs: Date.now() - floodVulnerabilityStart,
-        error: floodVulnerability?.ok ? null : "sem contexto territorial validado",
-      };
-    } catch (err) {
-      health["ANA Vulnerabilidade Inundacoes"] = {
-        ok: false,
-        lastOk: health["ANA Vulnerabilidade Inundacoes"]?.lastOk || null,
-        latencyMs: Date.now() - floodVulnerabilityStart,
-        error: err?.message || "falha ao consultar vulnerabilidade ANA",
-      };
-    }
-    const defesaStart = Date.now();
-    setSplashProgress(85);
-    const officialAlerts = await fetchDefesaCivilAlerts();
-    health["Defesa Civil RS"] = { ok: Array.isArray(officialAlerts), lastOk: Array.isArray(officialAlerts) ? new Date().toISOString() : health["Defesa Civil RS"]?.lastOk || null, latencyMs: Date.now() - defesaStart, error: null };
+    setSplashProgress(95);
     health["Carga geral"] = { ok: true, lastOk: new Date().toISOString(), latencyMs: Date.now() - t0, error: null };
 
     const mergedHealth = {
@@ -851,6 +848,9 @@ export default function SentinelaRS() {
     });
     setAlerts(officialAlerts);
     setLastUpdate(new Date());
+
+    // ANA Vulnerabilidade carrega em background sem bloquear a UI
+    loadAnaVulnerability();
     } catch (err) {
       const nextHealth = {
         ...sourceHealthRef.current,
@@ -869,7 +869,7 @@ export default function SentinelaRS() {
       splashTimerRef.current = setTimeout(() => setSplashDone(true), 1500);
     }
     }
-  }, []);
+  }, [loadAnaVulnerability]);
 
   const loadQueimadas = useCallback(async () => {
     if (fireSourcesLoadingRef.current) return;
@@ -1159,7 +1159,7 @@ export default function SentinelaRS() {
 
           {/* Previsão compacta dos 14 dias */}
           <div style={{ fontSize: 9, color: t.textMuted, letterSpacing: 2, marginBottom: 8 }}>PREVISÃO 14 DIAS</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(42px, 1fr))", gap: 4 }}>
             {forecastDayIndexes.map((dayIndex, i) => {
               const date = days[dayIndex];
               const dd = new Date(date + "T12:00:00");
@@ -1197,9 +1197,10 @@ export default function SentinelaRS() {
     ensoNoticias, ensoNoticiasLoading, icmbioUcs, inpeFireEvents, loadAllData, loadEnsoNoticias, loadQueimadas, percentValue, qLoading, queimadas, riverLevels, roadBlocks, s, safeEnsoForecast, selData, selStation, setActiveTab, setExpanded, setExpandedCard, setRiskExplain, setSelStation, sourceHealth, stationData, t, wmoDesc, wmoEmoji,
     marineWeather,
     userCity,
+    refreshAll,
     loadCptecProducts, loadMarineWeather, loadCopernicusWater, loadCopernicusSentinel1, loadCopernicusEms, loadCopernicusNdvi, loadIriProbabilities, loadEnsoLive,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [stationData, alerts, dark, activeTab, selStation, selData, loading, lastUpdate, sourceHealth, lagoaHistory, lagoaHistoryMeta, expanded, expandedCard, riskExplain, queimadas, inpeFireEvents, censipamFireEvents, qLoading, copernicusWater, copernicusS1, copernicusNdvi, copernicusEms, cptecProducts, effisHealth, icmbioUcs, activeENSO, ensoNoticias, ensoNoticiasLoading, riverLevels, roadBlocks, marineWeather, userCity, anaComplementar]);
+  }), [stationData, alerts, dark, activeTab, selStation, selData, loading, lastUpdate, sourceHealth, lagoaHistory, lagoaHistoryMeta, expanded, expandedCard, riskExplain, queimadas, inpeFireEvents, censipamFireEvents, qLoading, copernicusWater, copernicusS1, copernicusNdvi, copernicusEms, cptecProducts, effisHealth, icmbioUcs, activeENSO, ensoNoticias, ensoNoticiasLoading, riverLevels, roadBlocks, marineWeather, userCity, anaComplementar, refreshAll]);
 
   const renderNavButton = (tab, compact = false) => {
     const labelText = tab.label;
@@ -1220,8 +1221,24 @@ export default function SentinelaRS() {
     );
   };
 
+  // ── Atualizar tudo: chama TODOS os loaders em paralelo ──
+  const refreshAll = useCallback(async () => {
+    await Promise.allSettled([
+      loadAllData(),
+      loadEnsoLive(),
+      loadIriProbabilities(),
+      loadCptecProducts(),
+      loadCopernicusWater(),
+      loadCopernicusSentinel1(),
+      loadCopernicusNdvi(),
+      loadCopernicusEms(),
+      loadQueimadas(),
+      loadMarineWeather(),
+    ]);
+  }, [loadAllData, loadEnsoLive, loadIriProbabilities, loadCptecProducts, loadCopernicusWater, loadCopernicusSentinel1, loadCopernicusNdvi, loadCopernicusEms, loadQueimadas, loadMarineWeather]);
+
   const handleBottomAction = (action) => {
-    if (action === "refresh") loadAllData();
+    if (action === "refresh") refreshAll();
     else if (action === "share" && navigator.share) {
       navigator.share({ title: "Sentinela·RS", url: window.location.href }).catch(() => {});
     }

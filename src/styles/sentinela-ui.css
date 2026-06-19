@@ -855,7 +855,10 @@ body[data-theme="dark"] .sr-panorama-roads {
     display: grid;
   }
 
-  .sr-forecast-grid,
+  .sr-forecast-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .sr-panorama-grid,
   .sr-veg-grid,
   .sr-dashboard-two-col {
@@ -866,6 +869,17 @@ body[data-theme="dark"] .sr-panorama-roads {
   .sr-voo-row,
   .sr-voo-head {
     grid-template-columns: 1fr;
+  }
+
+  .sr-lagoa-feature {
+    grid-template-columns: 1fr;
+  }
+
+  .sr-lagoa-feature-side {
+    padding-left: 0;
+    border-left: none;
+    padding-top: 10px;
+    border-top: 1px solid var(--sr-border);
   }
 }
 
@@ -1736,7 +1750,7 @@ body[data-theme="dark"] .sr-weather-temp {
   }
 
   .sr-content-v2 {
-    padding: 16px 16px 80px;
+    padding: 12px 12px 88px;
   }
 
   .sr-bottom-nav {
@@ -1811,6 +1825,44 @@ body[data-theme="dark"] .sr-weather-temp {
   .sr-kpi-row {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  .sr-lagoa-mini-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .sr-lagoa-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .sr-lagoa-row-compact {
+    grid-template-columns: 1fr;
+  }
+
+  .sr-voo-table--compact .sr-voo-head,
+  .sr-voo-table--compact .sr-voo-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .sr-voo-table--detail .sr-voo-head,
+  .sr-voo-table--detail .sr-voo-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .sr-lagoa-feature-value {
+    font-size: 26px;
+  }
+
+  .sr-page-title {
+    font-size: clamp(1.4rem, 4vw, 1.8rem);
+  }
+
+  .sr-mobile-drawer .sr-nav-item {
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
 }
 
 @media (max-width: 520px) {
@@ -1820,6 +1872,140 @@ body[data-theme="dark"] .sr-weather-temp {
 
   .sr-grid-2 {
     grid-template-columns: 1fr;
+  }
+
+  .sr-forecast-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .sr-panorama-grid,
+  .sr-veg-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sr-lagoa-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .sr-city-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .sr-emergency-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Narrow mobile (iPhone SE, small Android) ──────────────── */
+@media (max-width: 480px) {
+  .sr-content-v2 {
+    padding: 10px 8px 88px;
+  }
+
+  .sr-card-v2 {
+    padding: 14px 12px;
+  }
+
+  .sr-mod-card {
+    padding: 14px 12px;
+  }
+
+  .sr-page-title {
+    font-size: 1.3rem;
+  }
+
+  .sr-page-subtitle {
+    font-size: 13px;
+  }
+
+  .sr-kpi-card {
+    padding: 12px 10px;
+    gap: 10px;
+  }
+
+  .sr-kpi-value {
+    font-size: 20px;
+  }
+
+  .sr-kpi-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .sr-lagoa-mini-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sr-lagoa-mini-card strong {
+    font-size: 16px;
+  }
+
+  .sr-lagoa-feature {
+    padding: 10px;
+  }
+
+  .sr-lagoa-feature-value {
+    font-size: 22px;
+  }
+
+  .sr-lagoa-feature-main strong {
+    font-size: 16px;
+  }
+
+  .sr-enso-gauge {
+    width: 100%;
+  }
+
+  .sr-sst-mosaic {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .sr-forecast-day-card {
+    flex: 0 0 106px;
+    padding: 10px 6px;
+  }
+
+  .sr-forecast-day-card .sr-emoji {
+    font-size: 22px;
+    margin: 4px 0;
+  }
+
+  .sr-mini-stat-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .sr-mini-stat-value {
+    font-size: 16px;
+  }
+
+  .sr-bottom-nav-item {
+    padding: 6px 6px;
+    font-size: 9px;
+  }
+
+  .sr-info-banner {
+    font-size: 12px;
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .sr-btn-outline {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .sr-defesa-banner {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .sr-defesa-logo {
+    display: none;
+  }
+
+  .sr-mobile-quickbar {
+    gap: 6px;
+    padding: 0 2px;
   }
 }
 
