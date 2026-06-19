@@ -145,7 +145,7 @@ function EmsAoiMap() {
       </div>
 
       <img
-        src="/map_screenshot_1781799234470.webp"
+        src="/sentinela-rs/map_screenshot_1781799234470.webp"
         alt="Mapeamento Copernicus EMS EMSN194 — inundação Porto Alegre maio 2024"
         style={{ width: "100%", display: "block" }}
       />
@@ -413,7 +413,7 @@ export function CopernicusTab({ ctx }) {
               border: "1px solid var(--color-border-tertiary)",
               borderLeft: "3px solid #0c4a6e",
             }}>
-            <img src="/icons/spggrs.png" alt="SPGG-RS" width={28} height={28}
+            <img src="/sentinela-rs/icons/spggrs.png" alt="SPGG-RS" width={28} height={28}
               style={{ borderRadius: 4, flexShrink: 0, objectFit: "contain" }}
               onError={e => { e.target.style.display="none"; }} />
             <div>
