@@ -1,7 +1,7 @@
 export const NAV_ITEMS = [
   { id: "dashboard", tab: "dashboard", label: "Dashboard", icon: "dashboard" },
   { id: "previsao", tab: "previsao", label: "Previsão", icon: "forecast" },
-  { id: "radar", tab: "copernicus", label: "Radar", icon: "radar" },
+  { id: "radar", tab: "copernicus", label: "Satélite EMS", icon: "radar" },
   { id: "lagoa", tab: "lagoa", label: "Lagoa dos Patos", icon: "waves" },
   { id: "alertas", tab: "alertas", label: "Defesa Civil RS", icon: "shield" },
   { id: "queimadas", tab: "queimadas", label: "Queimadas", icon: "fire" },
@@ -20,7 +20,7 @@ export const PAGE_META = {
   enso: { title: "ENSO", subtitle: "El Niño / La Niña — índice e probabilidades" },
   "noticias-enso": { title: "Notícias El Niño", subtitle: "Acompanhe o cenário climático" },
   cptec: { title: "CPTEC/INPE", subtitle: "Produtos oficiais de previsão climática" },
-  copernicus: { title: "Radar & Satélite", subtitle: "Copernicus — sensoriamento remoto" },
+  copernicus: { title: "Satélite EMS", subtitle: "Copernicus — mapeamento de emergência por satélite" },
   queimadas: { title: "Queimadas", subtitle: "Focos e áreas monitoradas no RS" },
   alertas: { title: "Defesa Civil RS", subtitle: "Alertas e avisos oficiais" },
   apis: { title: "Fontes de Dados", subtitle: "Saúde e origem das informações" },

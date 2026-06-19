@@ -127,16 +127,16 @@ export function AlertasTab({ ctx }) {
           <div style={smallCard}>
             <div style={{ fontSize: 11, fontWeight: 800, color: t.text }}>WhatsApp oficial</div>
             <div style={{ fontSize: 10, color: t.textMuted, marginTop: 3 }}>
-              Clique{" "}
+              Registre-se pelo telefone (61) 2034-4611 ou clique{" "}
               <a
-                href="https://web.whatsapp.com/accept?channel_invite_code=0029VbAHjAn2f3EQlWU7nz2E&source_surface="
+                href="https://wa.me/556120344611"
                 target="_blank"
                 rel="noreferrer"
                 style={{ color: t.accent, fontWeight: 800, textDecoration: "underline" }}
               >
                 aqui
               </a>{" "}
-              e entre no canal do WhatsApp.
+              e envie "Oi" para o robô de atendimento.
             </div>
           </div>
         </div>
@@ -154,10 +154,22 @@ export function AlertasTab({ ctx }) {
         }}
       >
         <div style={{ fontSize: 10, letterSpacing: 2, marginBottom: 8, color: t.textMuted }}>COMO SE CADASTRAR NOS ALERTAS OFICIAIS</div>
-        <div>1. Abra o app de SMS do celular.</div>
-        <div>2. No destinatário, digite 40199.</div>
-        <div>3. No corpo da mensagem, digite o CEP que deseja monitorar.</div>
-        <div>4. Envie. Você pode cadastrar mais de um CEP.</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 14 }}>
+          <div>
+            <div style={{ fontWeight: 800, marginBottom: 4 }}>Via SMS</div>
+            <div>1. Abra o app de SMS do celular.</div>
+            <div>2. No destinatário, digite 40199.</div>
+            <div>3. No corpo da mensagem, digite o CEP que deseja monitorar.</div>
+            <div>4. Envie. Você pode cadastrar mais de um CEP.</div>
+          </div>
+          <div>
+            <div style={{ fontWeight: 800, marginBottom: 4 }}>Via WhatsApp</div>
+            <div>1. Registre-se pelo (61) 2034-4611 ou pelo link acima.</div>
+            <div>2. Envie "Oi" para iniciar a conversa com o robô.</div>
+            <div>3. Compartilhe sua localização atual ou outra de interesse.</div>
+            <div>4. Você passa a receber os alertas dessa localidade.</div>
+          </div>
+        </div>
       </div>
 
       <div

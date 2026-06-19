@@ -348,6 +348,134 @@ export function CopernicusTab({ ctx }) {
         </div>
       )}
 
+      {/* OBRAS E REGISTROS HISTÓRICOS PÓS-EVENTO */}
+      <div style={{
+        padding: "14px 16px", borderRadius: 10,
+        border: "1px solid var(--color-border-tertiary)",
+        background: "var(--color-background-primary)",
+      }}>
+        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>🏛 Obras & Registros Históricos Pós-Evento</div>
+        <div style={{ fontSize: 12, color: "var(--color-text-secondary)", marginBottom: 12, lineHeight: 1.5 }}>
+          Documentos oficiais e estudos técnicos produzidos após maio de 2024 — legislação, impacto socioeconômico, gestão hídrica e resposta institucional.
+        </div>
+        <div style={{ display: "grid", gap: 10 }}>
+
+          {/* Senado */}
+          <a href="https://www2.senado.leg.br/bdsf/bitstream/handle/id/660728/Alem_calamidade_respostas_reconstrucao_RS.pdf"
+            target="_blank" rel="noreferrer"
+            style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 12,
+              padding: "12px 14px", borderRadius: 8,
+              background: "var(--color-background-secondary)",
+              border: "1px solid var(--color-border-tertiary)",
+              borderLeft: "3px solid #1e3a5f",
+            }}>
+            <img src="https://www.senado.leg.br/favicon.ico" alt="Senado" width={20} height={20}
+              style={{ borderRadius: 3, flexShrink: 0 }}
+              onError={e => { e.target.style.display="none"; }} />
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--color-text-primary)" }}>
+                Além da Calamidade — Respostas e Reconstrução do RS
+              </div>
+              <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginTop: 2 }}>
+                Senado Federal · Análise legislativa e institucional das respostas ao desastre, propostas de reconstrução e lacunas de governança
+              </div>
+            </div>
+            <span style={{ marginLeft: "auto", fontSize: 14, flexShrink: 0 }}>↗</span>
+          </a>
+
+          {/* SEPLAN-RS */}
+          <a href="https://planejamento.rs.gov.br/upload/arquivos/202504/29092549-relatorio-dee-impactos-socioeconomicos-dos-eventos-climaticos-extremos-de-2024-no-rio-grande-do-sul-uma-analise-apos-um-ano-do-desastre-1.pdf"
+            target="_blank" rel="noreferrer"
+            style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 12,
+              padding: "12px 14px", borderRadius: 8,
+              background: "var(--color-background-secondary)",
+              border: "1px solid var(--color-border-tertiary)",
+              borderLeft: "3px solid #0c4a6e",
+            }}>
+            <img src="https://planejamento.rs.gov.br/favicon.ico" alt="SEPLAN-RS" width={20} height={20}
+              style={{ borderRadius: 3, flexShrink: 0 }}
+              onError={e => { e.target.style.display="none"; }} />
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--color-text-primary)" }}>
+                Impactos Socioeconômicos — 1 ano após o desastre
+              </div>
+              <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginTop: 2 }}>
+                SEPLAN-RS · Quantificação de perdas por setor (agropecuária, indústria, infraestrutura) e análise regional do impacto econômico acumulado
+              </div>
+            </div>
+            <span style={{ marginLeft: "auto", fontSize: 14, flexShrink: 0 }}>↗</span>
+          </a>
+
+          {/* ANA */}
+          <a href="https://biblioteca.ana.gov.br/sophia_web/Busca/Download?codigoArquivo=171447&tipoMidia=0"
+            target="_blank" rel="noreferrer"
+            style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 12,
+              padding: "12px 14px", borderRadius: 8,
+              background: "var(--color-background-secondary)",
+              border: "1px solid var(--color-border-tertiary)",
+              borderLeft: "3px solid #155e75",
+            }}>
+            <img src="https://www.gov.br/ana/favicon.ico" alt="ANA" width={20} height={20}
+              style={{ borderRadius: 3, flexShrink: 0 }}
+              onError={e => { e.target.style.display="none"; }} />
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--color-text-primary)" }}>
+                Relatório Técnico ANA — Gestão Hídrica na Crise
+              </div>
+              <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginTop: 2 }}>
+                Agência Nacional de Águas · Avaliação das barragens, níveis fluviais, operação do sistema e recomendações para monitoramento futuro
+              </div>
+            </div>
+            <span style={{ marginLeft: "auto", fontSize: 14, flexShrink: 0 }}>↗</span>
+          </a>
+
+          {/* CGU */}
+          <a href="https://www.gov.br/cgu/pt-br/acoes-da-cgu-em-apoio-ao-rio-grande-do-sul/imagens/GuiaCalamidade1.pdf"
+            target="_blank" rel="noreferrer"
+            style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 12,
+              padding: "12px 14px", borderRadius: 8,
+              background: "var(--color-background-secondary)",
+              border: "1px solid var(--color-border-tertiary)",
+              borderLeft: "3px solid #166534",
+            }}>
+            <img src="https://www.gov.br/favicon.ico" alt="CGU" width={20} height={20}
+              style={{ borderRadius: 3, flexShrink: 0 }}
+              onError={e => { e.target.style.display="none"; }} />
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--color-text-primary)" }}>
+                Guia de Gestão de Calamidade — CGU
+              </div>
+              <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginTop: 2 }}>
+                Controladoria-Geral da União · Orientações sobre controle, transparência e prestação de contas dos recursos federais destinados à reconstrução do RS
+              </div>
+            </div>
+            <span style={{ marginLeft: "auto", fontSize: 14, flexShrink: 0 }}>↗</span>
+          </a>
+
+        </div>
+      </div>
+
+      {/* MUP-RS */}
+      <div style={{
+        padding: "14px 16px", borderRadius: 10,
+        background: "linear-gradient(135deg, #eef2ff 0%, #fff 100%)",
+        border: "1px solid rgba(99,102,241,0.32)",
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <div style={{ flex: "1 1 240px" }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#3730a3" }}>
+              🗺 MUP-RS — Monitoramento do Uso e Permeabilidade do Solo
+            </div>
+            <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginTop: 4, lineHeight: 1.5 }}>
+              Plataforma do Governo do RS para acompanhamento de áreas de risco, ocupação e permeabilidade do solo — complementa o mapeamento de satélite desta aba.
+            </div>
+          </div>
+          <LinkBtn href="https://mup.rs.gov.br/" color="#4338ca" filled>
+            ↗ Acessar MUP-RS
+          </LinkBtn>
+        </div>
+      </div>
+
       {/* AVISO */}
       <div style={{
         padding: "12px 14px", borderRadius: 8, fontSize: 12, lineHeight: 1.6,
