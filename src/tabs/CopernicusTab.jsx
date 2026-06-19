@@ -413,9 +413,9 @@ export function CopernicusTab({ ctx }) {
               border: "1px solid var(--color-border-tertiary)",
               borderLeft: "3px solid #0c4a6e",
             }}>
-            <img src="https://spgg.rs.gov.br/conteudo/files/ead2f0_spgg-logo.png" alt="SPGG-RS" width={28} height={28}
+            <img src="/icons/spggrs.png" alt="SPGG-RS" width={28} height={28}
               style={{ borderRadius: 4, flexShrink: 0, objectFit: "contain" }}
-              onError={e => { e.target.src="https://planejamento.rs.gov.br/favicon.ico"; e.target.width=20; e.target.height=20; }} />
+              onError={e => { e.target.style.display="none"; }} />
             <div>
               <div style={{ fontSize: 12, fontWeight: 700, color: "var(--color-text-primary)" }}>
                 Impactos Socioeconômicos — 1 ano após o desastre
