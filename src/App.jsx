@@ -919,40 +919,31 @@ export default function SentinelaRS() {
     return () => clearInterval(iv);
   }, [loadQueimadas]);
 
+  const loadCptecProducts = useCallback(async () => {
+    const startedAt = Date.now();
+    const data = await fetchCptecInpeProducts();
+    markSourceHealth("CPTEC/INPE", Boolean(data?.ok), startedAt, data?.ok ? null : data?.error || "sem produto oficial validado");
+    if (!data?.ok) return;
+    setCptecProducts(data);
+  }, []);
+
   useEffect(() => {
-    let alive = true;
-
-    async function loadCptecProducts() {
-      const startedAt = Date.now();
-      const data = await fetchCptecInpeProducts();
-      if (!alive) return;
-      markSourceHealth("CPTEC/INPE", Boolean(data?.ok), startedAt, data?.ok ? null : data?.error || "sem produto oficial validado");
-      if (!data?.ok) return;
-      setCptecProducts(data);
-    }
-
     loadCptecProducts();
     const iv = setInterval(loadCptecProducts, 6 * 60 * 60 * 1000);
+    return () => clearInterval(iv);
+  }, [loadCptecProducts]);
 
-    return () => {
-      alive = false;
-      clearInterval(iv);
-    };
+  const loadMarineWeather = useCallback(async () => {
+    try {
+      const data = await fetchMarineWeather(-32.03, -52.09);
+      setMarineWeather(data);
+    } catch {
+      setMarineWeather(null);
+    }
   }, []);
 
   useEffect(() => {
     let alive = true;
-
-    async function loadMarineWeather() {
-      try {
-        const data = await fetchMarineWeather(-32.03, -52.09);
-        if (!alive) return;
-        setMarineWeather(data);
-      } catch {
-        if (!alive) return;
-        setMarineWeather(null);
-      }
-    }
 
     async function loadUserCity() {
       const city = await fetchUserCity();
@@ -967,142 +958,99 @@ export default function SentinelaRS() {
       alive = false;
       clearInterval(iv);
     };
+  }, [loadMarineWeather]);
+
+  const loadCopernicusWater = useCallback(async () => {
+    const startedAt = Date.now();
+    const data = await fetchCopernicusWater("lagoa_patos", 30);
+    if (data?.ok && typeof data?.water_percent === "number") {
+      markSourceHealth("Copernicus Water", true, startedAt, null);
+    } else {
+      markSourcePending("Copernicus Water", startedAt, data?.error || (data ? data.status : "sem resposta"));
+    }
+    setCopernicusWater(data);
   }, []);
 
   useEffect(() => {
-    let alive = true;
-
-    async function loadCopernicusWater() {
-      const startedAt = Date.now();
-      const data = await fetchCopernicusWater("lagoa_patos", 30);
-      if (!alive) return;
-      if (data?.ok && typeof data?.water_percent === "number") {
-        markSourceHealth("Copernicus Water", true, startedAt, null);
-      } else {
-        markSourcePending("Copernicus Water", startedAt, data?.error || (data ? data.status : "sem resposta"));
-      }
-      setCopernicusWater(data);
-    }
-
     loadCopernicusWater();
     const iv = setInterval(loadCopernicusWater, 6 * 60 * 60 * 1000);
+    return () => clearInterval(iv);
+  }, [loadCopernicusWater]);
 
-    return () => {
-      alive = false;
-      clearInterval(iv);
-    };
+  const loadCopernicusSentinel1 = useCallback(async () => {
+    const startedAt = Date.now();
+    const data = await fetchCopernicusSentinel1("lagoa_patos", 18);
+    if (data?.water_like_percent !== undefined) {
+      markSourceHealth("Copernicus Sentinel-1", true, startedAt, null);
+    } else {
+      markSourcePending("Copernicus Sentinel-1", startedAt, data?.error || (data ? data.status : "sem resposta"));
+    }
+    setCopernicusS1(data);
   }, []);
 
   useEffect(() => {
-    let alive = true;
-
-    async function loadCopernicusSentinel1() {
-      const startedAt = Date.now();
-      const data = await fetchCopernicusSentinel1("lagoa_patos", 18);
-      if (!alive) return;
-      if (data?.water_like_percent !== undefined) {
-        markSourceHealth("Copernicus Sentinel-1", true, startedAt, null);
-      } else {
-        markSourcePending("Copernicus Sentinel-1", startedAt, data?.error || (data ? data.status : "sem resposta"));
-      }
-      setCopernicusS1(data);
-    }
-
     loadCopernicusSentinel1();
     const iv = setInterval(loadCopernicusSentinel1, 6 * 60 * 60 * 1000);
+    return () => clearInterval(iv);
+  }, [loadCopernicusSentinel1]);
 
-    return () => {
-      alive = false;
-      clearInterval(iv);
-    };
+  const loadCopernicusEms = useCallback(async () => {
+    const startedAt = Date.now();
+    const data = await fetchCopernicusEms();
+    markSourceHealth("Copernicus EMS", Boolean(data?.ok), startedAt, data?.error || (data ? data.source : "sem resposta"));
+    setCopernicusEms(data);
   }, []);
 
   useEffect(() => {
-    let alive = true;
-
-    async function loadCopernicusEms() {
-      const startedAt = Date.now();
-      const data = await fetchCopernicusEms();
-      if (!alive) return;
-      markSourceHealth("Copernicus EMS", Boolean(data?.ok), startedAt, data?.error || (data ? data.source : "sem resposta"));
-      setCopernicusEms(data);
-    }
-
     loadCopernicusEms();
     const iv = setInterval(loadCopernicusEms, 6 * 60 * 60 * 1000);
+    return () => clearInterval(iv);
+  }, [loadCopernicusEms]);
 
-    return () => {
-      alive = false;
-      clearInterval(iv);
-    };
+  const loadCopernicusNdvi = useCallback(async () => {
+    const startedAt = Date.now();
+    const data = await fetchCopernicusNdvi("entorno_lagoa_patos", 30);
+    if (data?.ok && typeof data?.ndvi_mean === "number") {
+      markSourceHealth("Copernicus NDVI", true, startedAt, null);
+    } else {
+      markSourcePending("Copernicus NDVI", startedAt, data?.error || (data ? data.status : "sem resposta"));
+    }
+    setCopernicusNdvi(data);
   }, []);
 
   useEffect(() => {
-    let alive = true;
-
-    async function loadCopernicusNdvi() {
-      const startedAt = Date.now();
-      const data = await fetchCopernicusNdvi("entorno_lagoa_patos", 30);
-      if (!alive) return;
-      if (data?.ok && typeof data?.ndvi_mean === "number") {
-        markSourceHealth("Copernicus NDVI", true, startedAt, null);
-      } else {
-        markSourcePending("Copernicus NDVI", startedAt, data?.error || (data ? data.status : "sem resposta"));
-      }
-      setCopernicusNdvi(data);
-    }
-
     loadCopernicusNdvi();
     const iv = setInterval(loadCopernicusNdvi, 6 * 60 * 60 * 1000);
+    return () => clearInterval(iv);
+  }, [loadCopernicusNdvi]);
 
-    return () => {
-      alive = false;
-      clearInterval(iv);
-    };
+  const loadIriProbabilities = useCallback(async () => {
+    const startedAt = Date.now();
+    const live = await fetchIriEnsoProbabilities();
+    markSourceHealth("IRI/CCSR ENSO", Boolean(live?.ok), startedAt, live?.ok ? null : live?.error || "sem probabilidade validada");
+    if (!live?.ok) return;
+    setEnsoProbLive(live);
   }, []);
 
   useEffect(() => {
-    let alive = true;
-
-    async function loadIriProbabilities() {
-      const startedAt = Date.now();
-      const live = await fetchIriEnsoProbabilities();
-      if (!alive) return;
-      markSourceHealth("IRI/CCSR ENSO", Boolean(live?.ok), startedAt, live?.ok ? null : live?.error || "sem probabilidade validada");
-      if (!live?.ok) return;
-      setEnsoProbLive(live);
-    }
-
     loadIriProbabilities();
     const iv = setInterval(loadIriProbabilities, 6 * 60 * 60 * 1000);
+    return () => clearInterval(iv);
+  }, [loadIriProbabilities]);
 
-    return () => {
-      alive = false;
-      clearInterval(iv);
-    };
+  const loadEnsoLive = useCallback(async () => {
+    const startedAt = Date.now();
+    const live = await fetchNoaaEnso();
+    markSourceHealth("NOAA/CPC ENSO", Boolean(live), startedAt, live ? null : "sem índice observado validado", live?.fetchedAt);
+    if (!live) return;
+    setEnsoLive(live);
   }, []);
 
   useEffect(() => {
-    let alive = true;
-
-    async function loadEnsoLive() {
-      const startedAt = Date.now();
-      const live = await fetchNoaaEnso();
-      if (!alive) return;
-      markSourceHealth("NOAA/CPC ENSO", Boolean(live), startedAt, live ? null : "sem índice observado validado", live?.fetchedAt);
-      if (!live) return;
-
-      setEnsoLive(live);
-    }
-
     loadEnsoLive();
     const iv = setInterval(loadEnsoLive, 6 * 60 * 60 * 1000);
-
-    return () => {
-      alive = false;
-      clearInterval(iv);
-    };
-  }, []);
+    return () => clearInterval(iv);
+  }, [loadEnsoLive]);
 
   useEffect(() => {
     if ((activeTab === "queimadas" || activeTab === "apis") && !fireSourcesLoadedRef.current) {
@@ -1243,6 +1191,7 @@ export default function SentinelaRS() {
     ensoNoticias, ensoNoticiasLoading, icmbioUcs, inpeFireEvents, loadAllData, loadEnsoNoticias, loadQueimadas, percentValue, qLoading, queimadas, riverLevels, roadBlocks, s, safeEnsoForecast, selData, selStation, setActiveTab, setExpanded, setExpandedCard, setRiskExplain, setSelStation, sourceHealth, stationData, t, wmoDesc, wmoEmoji,
     marineWeather,
     userCity,
+    loadCptecProducts, loadMarineWeather, loadCopernicusWater, loadCopernicusSentinel1, loadCopernicusEms, loadCopernicusNdvi, loadIriProbabilities, loadEnsoLive,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [stationData, alerts, dark, activeTab, selStation, selData, loading, lastUpdate, sourceHealth, lagoaHistory, lagoaHistoryMeta, expanded, expandedCard, riskExplain, queimadas, inpeFireEvents, censipamFireEvents, qLoading, copernicusWater, copernicusS1, copernicusNdvi, copernicusEms, cptecProducts, effisHealth, icmbioUcs, activeENSO, ensoNoticias, ensoNoticiasLoading, riverLevels, roadBlocks, marineWeather, userCity]);
 

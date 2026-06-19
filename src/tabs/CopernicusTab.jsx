@@ -390,8 +390,8 @@ export function CopernicusTab({ ctx }) {
               border: "1px solid var(--color-border-tertiary)",
               borderLeft: "3px solid #1e3a5f",
             }}>
-            <img src="https://www.senado.leg.br/favicon.ico" alt="Senado" width={20} height={20}
-              style={{ borderRadius: 3, flexShrink: 0 }}
+            <img src="https://www.senado.leg.br/favicon.ico" alt="Senado" width={24} height={24}
+              style={{ borderRadius: 4, flexShrink: 0, objectFit: "contain" }}
               onError={e => { e.target.style.display="none"; }} />
             <div>
               <div style={{ fontSize: 12, fontWeight: 700, color: "var(--color-text-primary)" }}>
@@ -413,7 +413,7 @@ export function CopernicusTab({ ctx }) {
               border: "1px solid var(--color-border-tertiary)",
               borderLeft: "3px solid #0c4a6e",
             }}>
-            <img src="/sentinela-rs/icons/spggrs.png" alt="SPGG-RS" width={28} height={28}
+            <img src="/sentinela-rs/icons/spggrs.png" alt="SPGG-RS" width={24} height={24}
               style={{ borderRadius: 4, flexShrink: 0, objectFit: "contain" }}
               onError={e => { e.target.style.display="none"; }} />
             <div>
@@ -436,8 +436,8 @@ export function CopernicusTab({ ctx }) {
               border: "1px solid var(--color-border-tertiary)",
               borderLeft: "3px solid #155e75",
             }}>
-            <img src="https://www.gov.br/ana/favicon.ico" alt="ANA" width={20} height={20}
-              style={{ borderRadius: 3, flexShrink: 0 }}
+            <img src="https://www.gov.br/ana/favicon.ico" alt="ANA" width={24} height={24}
+              style={{ borderRadius: 4, flexShrink: 0, objectFit: "contain" }}
               onError={e => { e.target.style.display="none"; }} />
             <div>
               <div style={{ fontSize: 12, fontWeight: 700, color: "var(--color-text-primary)" }}>
@@ -459,8 +459,8 @@ export function CopernicusTab({ ctx }) {
               border: "1px solid var(--color-border-tertiary)",
               borderLeft: "3px solid #166534",
             }}>
-            <img src="https://www.gov.br/favicon.ico" alt="CGU" width={20} height={20}
-              style={{ borderRadius: 3, flexShrink: 0 }}
+            <img src="https://www.gov.br/favicon.ico" alt="CGU" width={24} height={24}
+              style={{ borderRadius: 4, flexShrink: 0, objectFit: "contain" }}
               onError={e => { e.target.style.display="none"; }} />
             <div>
               <div style={{ fontSize: 12, fontWeight: 700, color: "var(--color-text-primary)" }}>
