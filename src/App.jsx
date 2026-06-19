@@ -1188,6 +1188,22 @@ export default function SentinelaRS() {
     );
   }
 
+  // ── Atualizar tudo: chama TODOS os loaders em paralelo ──
+  const refreshAll = useCallback(async () => {
+    await Promise.allSettled([
+      loadAllData(),
+      loadEnsoLive(),
+      loadIriProbabilities(),
+      loadCptecProducts(),
+      loadCopernicusWater(),
+      loadCopernicusSentinel1(),
+      loadCopernicusNdvi(),
+      loadCopernicusEms(),
+      loadQueimadas(),
+      loadMarineWeather(),
+    ]);
+  }, [loadAllData, loadEnsoLive, loadIriProbabilities, loadCptecProducts, loadCopernicusWater, loadCopernicusSentinel1, loadCopernicusNdvi, loadCopernicusEms, loadQueimadas, loadMarineWeather]);
+
   const tabCtx = useMemo(() => ({
     APAS_RS, COPERNICUS_REFERENCE, FIRE_MONITORED_AREAS_RS, FreshnessBadge, HistorySparkline, RISK_LEVELS, STATIONS, STATIONS_CIDADES, STATIONS_LAGOA,
     activeENSO, alerts, anaComplementar, censipamFireEvents, copernicusEms, copernicusNdvi, copernicusS1, copernicusWater, cptecProducts, dark, dataStaleness, dayNames, effisHealth,
@@ -1220,22 +1236,6 @@ export default function SentinelaRS() {
       </button>
     );
   };
-
-  // ── Atualizar tudo: chama TODOS os loaders em paralelo ──
-  const refreshAll = useCallback(async () => {
-    await Promise.allSettled([
-      loadAllData(),
-      loadEnsoLive(),
-      loadIriProbabilities(),
-      loadCptecProducts(),
-      loadCopernicusWater(),
-      loadCopernicusSentinel1(),
-      loadCopernicusNdvi(),
-      loadCopernicusEms(),
-      loadQueimadas(),
-      loadMarineWeather(),
-    ]);
-  }, [loadAllData, loadEnsoLive, loadIriProbabilities, loadCptecProducts, loadCopernicusWater, loadCopernicusSentinel1, loadCopernicusNdvi, loadCopernicusEms, loadQueimadas, loadMarineWeather]);
 
   const handleBottomAction = (action) => {
     if (action === "refresh") refreshAll();
