@@ -49,12 +49,30 @@ function statusRank(status) {
 }
 
 function pickHighlight(points) {
+  const validPoints = points.filter(({ lagoa, point }) => 
+    lagoa?.isReal && typeof lagoa.atual === "number" && typeof point?.floodLimitM === "number" && point.floodLimitM > 0
+  );
+
+  if (validPoints.length > 0) {
+    return [...validPoints].sort((a, b) => {
+      const ratioA = a.lagoa.atual / a.point.floodLimitM;
+      const ratioB = b.lagoa.atual / b.point.floodLimitM;
+      return ratioB - ratioA;
+    })[0];
+  }
+
   return (
     points.find(({ point }) => point.id === "lagoa_patos_pelotas") ||
     points.find(({ lagoa }) => lagoa?.isReal && typeof lagoa.atual === "number") ||
     points[0] ||
     null
   );
+}
+
+function formatShortDate(isoString) {
+  if (!isoString) return "";
+  const d = new Date(isoString);
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" }).replace(",", "");
 }
 
 
@@ -320,11 +338,10 @@ export function LagoaDosPatosTab({ ctx }) {
                 <tr>
                   <th>Estação</th>
                   <th>Nível atual (m)</th>
-                  <th>Inundação</th>
-                  <th>Máx Histórica</th>
-                  <th>Tendencia 24h</th>
-                  <th>Ultima leitura</th>
-                  <th>Fonte</th>
+                  <th>Cota de Inundação (m)</th>
+                  <th>Máx Histórica (m)</th>
+                  <th>Tendência 24h</th>
+                  <th>Última leitura</th>
                 </tr>
               </thead>
               <tbody>
@@ -352,21 +369,23 @@ export function LagoaDosPatosTab({ ctx }) {
                       <td style={{ color: "var(--sr-text-muted)" }}>{typeof point.floodLimitM === "number" ? point.floodLimitM.toFixed(2) : "—"}</td>
                       <td style={{ color: "var(--sr-text-muted)" }}>{typeof point.historicMaxM === "number" ? point.historicMaxM.toFixed(2) : "—"}</td>
                       <td style={{ color: trendColor(trendCm), fontWeight: 700 }}>
-                        {history.length >= 2 ? formatTrendCm(trendCm) : "sem histórico suficiente"}
+                        {history.length >= 2 ? formatTrendCm(trendCm) : "sem histórico"}
                       </td>
-                      <td>{measuredAt ? formatDateTimeBR(measuredAt) : "Sem leitura"}</td>
-                      <td>{getLagoaSourceText(lagoa) || point.sourceHint || "—"}</td>
+                      <td>{measuredAt ? formatShortDate(measuredAt) : "Sem leitura"}</td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
+            <div style={{ fontSize: 11, color: "var(--sr-text-muted)", marginTop: 12, textAlign: "right" }}>
+              Fonte: Radar Lagoa dos Patos e HidroSens/UFPel
+            </div>
           </div>
 
           <div className="sr-card-v2">
             <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 12, flexWrap: "wrap" }}>
               <div>
-                <h3 className="sr-card-title" style={{ marginBottom: 4 }}>Historico do nivel</h3>
+                <h3 className="sr-card-title" style={{ marginBottom: 4 }}>Histórico do Nível (m)</h3>
                 <div style={{ color: "var(--sr-text-muted)", fontSize: 12 }}>
                   Médias diárias dos últimos 7 dias por estação. Laranjal/Pelotas usa HidroSens.
                 </div>
