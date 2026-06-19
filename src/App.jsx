@@ -9,7 +9,6 @@ import { NAV_ITEMS, PAGE_META } from "./config/navigation";
 import { Sparkline as HistorySparkline } from "./components/Sparkline";
 import { appendLagoaHistorySnapshot, loadLagoaHistory } from "./services/lagoaHistory";
 import {
-  fetchAnaFloodVulnerability,
   fetchAnaRiverLevels,
   fetchCensipamFireEventsRs,
   fetchCopernicusEms,
@@ -351,11 +350,6 @@ function explainCityRisk(station, d, ensoText = "") {
     lines.push("Open-Meteo observado: acumulado de 24h indisponível nesta consulta.");
   }
 
-  if (d.floodVulnerability && d.floodVulnerability.level && d.floodVulnerability.level !== "Sem trecho" && d.floodVulnerability.level !== "Indisponivel") {
-    const rivers = d.floodVulnerability.rivers?.length ? ` (${d.floodVulnerability.rivers.join(", ")})` : "";
-    lines.push(`ANA Atlas: vulnerabilidade territorial a inundações ${d.floodVulnerability.level}${rivers}. Dado estático, usado apenas como contexto.`);
-  }
-
   const riskLabel = RISK_LEVELS[d.risk]?.label || d.risk || "Indefinido";
 
   return {
@@ -513,7 +507,6 @@ export default function SentinelaRS() {
   // BLOCO D — saúde das fontes
   const [sourceHealth, setSourceHealth] = useState({});
   const sourceHealthRef = useRef({});
-  const [anaComplementar, setAnaComplementar] = useState(false);
   const fireSourcesLoadedRef = useRef(false);
   const fireSourcesLoadingRef = useRef(false);
 
@@ -536,11 +529,6 @@ export default function SentinelaRS() {
       window.removeEventListener("offline", syncOnlineState);
     };
   }, []);
-
-  useEffect(() => {
-    const anaHealth = sourceHealth?.["ANA Vulnerabilidade Inundacoes"];
-    setAnaComplementar(anaHealth && !anaHealth.ok);
-  }, [sourceHealth]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -667,26 +655,6 @@ export default function SentinelaRS() {
     sourceHealthRef.current = next;
     setSourceHealth({ ...next });
   }
-
-  // ── Carregamento de ANA Vulnerabilidade em background (não-bloqueante) ──
-  const loadAnaVulnerability = useCallback(async () => {
-    const floodVulnerabilityStart = Date.now();
-    try {
-      const floodVulnerability = await fetchAnaFloodVulnerability(STATIONS);
-      setStationData((prev) => {
-        const next = { ...prev };
-        Object.entries(floodVulnerability.by_station || {}).forEach(([stationId, context]) => {
-          if (next[stationId]) {
-            next[stationId] = { ...next[stationId], floodVulnerability: context };
-          }
-        });
-        return next;
-      });
-      markSourceHealth("ANA Vulnerabilidade Inundacoes", Boolean(floodVulnerability?.ok), floodVulnerabilityStart, floodVulnerability?.ok ? null : "sem contexto territorial validado");
-    } catch (err) {
-      markSourceHealth("ANA Vulnerabilidade Inundacoes", false, floodVulnerabilityStart, err?.message || "falha ao consultar vulnerabilidade ANA");
-    }
-  }, []);
 
   const loadAllData = useCallback(async () => {
     setLoading(true);
@@ -851,8 +819,6 @@ export default function SentinelaRS() {
     setAlerts(officialAlerts);
     setLastUpdate(new Date());
 
-    // ANA Vulnerabilidade carrega em background sem bloquear a UI
-    loadAnaVulnerability();
     } catch (err) {
       const nextHealth = {
         ...sourceHealthRef.current,
@@ -871,7 +837,7 @@ export default function SentinelaRS() {
       splashTimerRef.current = setTimeout(() => setSplashDone(true), 1500);
     }
     }
-  }, [loadAnaVulnerability]);
+  }, []);
 
   const loadQueimadas = useCallback(async () => {
     if (fireSourcesLoadingRef.current) return;
@@ -1208,7 +1174,7 @@ export default function SentinelaRS() {
 
   const tabCtx = useMemo(() => ({
     APAS_RS, COPERNICUS_REFERENCE, FIRE_MONITORED_AREAS_RS, FreshnessBadge, HistorySparkline, RISK_LEVELS, STATIONS, STATIONS_CIDADES, STATIONS_LAGOA,
-    activeENSO, alerts, anaComplementar, censipamFireEvents, copernicusEms, copernicusNdvi, copernicusS1, copernicusWater, cptecProducts, dark, dataStaleness, dayNames, effisHealth,
+    activeENSO, alerts, censipamFireEvents, copernicusEms, copernicusNdvi, copernicusS1, copernicusWater, cptecProducts, dark, dataStaleness, dayNames, effisHealth,
     ensoClass, ensoDominantProb, ensoFirstForecast, ensoObservedAvailable, ensoObservedText, ensoProbabilityAvailable, ensoProbabilityText, expanded, explainCityRisk, explainDailyRisk, explainLagoaRisk,
     formatDateTimeBR, formatProbability, formatSignedCelsius, getFallbackWarningText, getLagoaMaxMay2024, getLagoaMeasuredAt, getLagoaPointData, getLagoaSourceText,
     getResponsibleAgencyText, getRiskBg, getRiskColor, getRiskLevel, getValidatedSourceHealth, lagoaHistory, lagoaHistoryMeta, lagoaStatusColor, lagoaStatusLabel, lagoaSummary, lastUpdate,
@@ -1218,7 +1184,7 @@ export default function SentinelaRS() {
     refreshAll,
     loadCptecProducts, loadMarineWeather, loadCopernicusWater, loadCopernicusSentinel1, loadCopernicusEms, loadCopernicusNdvi, loadIriProbabilities, loadEnsoLive,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [stationData, alerts, dark, activeTab, selStation, selData, loading, lastUpdate, sourceHealth, lagoaHistory, lagoaHistoryMeta, expanded, expandedCard, riskExplain, queimadas, inpeFireEvents, censipamFireEvents, qLoading, copernicusWater, copernicusS1, copernicusNdvi, copernicusEms, cptecProducts, effisHealth, icmbioUcs, activeENSO, ensoNoticias, ensoNoticiasLoading, riverLevels, roadBlocks, marineWeather, userCity, anaComplementar, refreshAll]);
+  }), [stationData, alerts, dark, activeTab, selStation, selData, loading, lastUpdate, sourceHealth, lagoaHistory, lagoaHistoryMeta, expanded, expandedCard, riskExplain, queimadas, inpeFireEvents, censipamFireEvents, qLoading, copernicusWater, copernicusS1, copernicusNdvi, copernicusEms, cptecProducts, effisHealth, icmbioUcs, activeENSO, ensoNoticias, ensoNoticiasLoading, riverLevels, roadBlocks, marineWeather, userCity, refreshAll]);
 
   const renderNavButton = (tab, compact = false) => {
     const labelText = tab.label;

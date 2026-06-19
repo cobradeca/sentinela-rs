@@ -27,6 +27,8 @@ function toLagoaRows(STATIONS_LAGOA, stationData, getLagoaPointData, lagoaHistor
       subEstacao: point.rioRef || point.name,
       nivelM: lagoa.atual,
       variacaoM: typeof historyTrend === "number" ? historyTrend : null,
+      floodLimitM: point.floodLimitM,
+      historicMaxM: point.historicMaxM,
       historico: historyValues.length >= 2 ? historyValues : [],
       temHistorico: historyValues.length >= 2,
       hora: lagoa.measuredAt ? new Date(lagoa.measuredAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "--:--",

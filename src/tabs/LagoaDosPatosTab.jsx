@@ -320,6 +320,8 @@ export function LagoaDosPatosTab({ ctx }) {
                 <tr>
                   <th>Estação</th>
                   <th>Nível atual (m)</th>
+                  <th>Inundação</th>
+                  <th>Máx Histórica</th>
                   <th>Tendencia 24h</th>
                   <th>Ultima leitura</th>
                   <th>Fonte</th>
@@ -337,8 +339,18 @@ export function LagoaDosPatosTab({ ctx }) {
                         {shortName(point)}
                       </td>
                       <td>
-                        <strong>{hasLevel ? lagoa.atual.toFixed(2) : "—"}</strong>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                          <strong>{hasLevel ? lagoa.atual.toFixed(2) : "—"}</strong>
+                          {hasLevel && typeof point.floodLimitM === "number" && typeof point.historicMaxM === "number" && (
+                            <div style={{ position: "relative", width: "100%", height: 6, background: "rgba(255,255,255,0.08)", borderRadius: 3, overflow: "hidden" }}>
+                              <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${Math.min(100, Math.max(0, (lagoa.atual / point.historicMaxM) * 100))}%`, background: lagoa.atual >= point.floodLimitM ? "#ef4444" : "#3b82f6" }} />
+                              <div style={{ position: "absolute", left: `${(point.floodLimitM / point.historicMaxM) * 100}%`, top: 0, bottom: 0, width: 2, background: "#facc15" }} title="Cota de Inundação" />
+                            </div>
+                          )}
+                        </div>
                       </td>
+                      <td style={{ color: "var(--sr-text-muted)" }}>{typeof point.floodLimitM === "number" ? point.floodLimitM.toFixed(2) : "—"}</td>
+                      <td style={{ color: "var(--sr-text-muted)" }}>{typeof point.historicMaxM === "number" ? point.historicMaxM.toFixed(2) : "—"}</td>
                       <td style={{ color: trendColor(trendCm), fontWeight: 700 }}>
                         {history.length >= 2 ? formatTrendCm(trendCm) : "sem histórico suficiente"}
                       </td>

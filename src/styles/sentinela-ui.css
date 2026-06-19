@@ -121,7 +121,7 @@ a:focus-visible {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 22px;
+  margin-bottom: 14px;
   padding: 4px 4px 2px;
 }
 
@@ -895,7 +895,7 @@ body[data-theme="dark"] .sr-panorama-roads {
 .sr-sidebar-nav-v2 {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   flex: 1;
   overflow-y: auto;
 }
@@ -905,7 +905,7 @@ body[data-theme="dark"] .sr-panorama-roads {
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 10px 12px;
+  padding: 8px 12px;
   border: none;
   border-radius: var(--sr-radius-sm);
   background: transparent;
@@ -933,8 +933,8 @@ body[data-theme="dark"] .sr-panorama-roads {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: 18px;
-  padding: 16px 14px;
+  margin-top: 12px;
+  padding: 14px 14px;
   border-radius: 16px;
   background: linear-gradient(135deg, #8f1d27, #5f1020);
   color: #fff;

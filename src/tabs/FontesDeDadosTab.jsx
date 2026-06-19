@@ -2,7 +2,6 @@ import { useState } from "react";
 
 export function FontesDeDadosTab({ ctx }) {
   const {
-    anaComplementar,
     copernicusEms,
     copernicusNdvi,
     copernicusS1,
@@ -38,7 +37,6 @@ export function FontesDeDadosTab({ ctx }) {
     "Defesa Civil RS": loadAllData,
     "ANA Telemetria Rios": loadAllData,
     "Rodovias RS": loadAllData,
-    "ANA Vulnerabilidade Inundacoes": loadAllData,
     "NOAA/CPC ENSO": loadEnsoLive,
     "IRI/CCSR ENSO": loadIriProbabilities,
     "CPTEC/INPE": loadCptecProducts,
@@ -82,7 +80,7 @@ export function FontesDeDadosTab({ ctx }) {
     "Open-Meteo", "INMET", "RADAR Lagoa", "HidroSens", "Sensores Monitoramento", "Defesa Civil RS",
     "NOAA/CPC ENSO", "IRI/CCSR ENSO", "CPTEC/INPE", "ANA Telemetria Rios", "Rodovias RS",
     "INPE BDQueimadas", "INPE Eventos de Fogo", "CENSIPAM Painel do Fogo", "Copernicus EFFIS",
-    "Copernicus Water", "Copernicus Sentinel-1", "Copernicus NDVI", "Copernicus EMS", "ANA Vulnerabilidade Inundacoes",
+    "Copernicus Water", "Copernicus Sentinel-1", "Copernicus NDVI", "Copernicus EMS",
   ];
 
   return (
@@ -157,11 +155,11 @@ export function FontesDeDadosTab({ ctx }) {
                     <div style={{ fontSize: 8, color: t.textMuted }}>Latência: {pending ? "sem consulta recente" : (typeof h.latencyMs === "number" ? `${h.latencyMs}ms` : "OK")}</div>
                     {h.lastOk && <div style={{ fontSize: 8, color: t.textFaint }}>Último OK: {formatDateTimeBR(h.lastOk)}</div>}
                     {h.error && !ok && !pending && (
-                      <div style={{ fontSize: 8, color: anaComplementar ? "#eab308" : "#ef4444", marginTop: 2 }}>
-                        {anaComplementar ? h.error || "sem leitura operacional validada da ANA" : h.error}
+                      <div style={{ fontSize: 8, color: "#ef4444", marginTop: 2 }}>
+                        {h.error}
                       </div>
                     )}
-                    {h.error && pending && !anaComplementar && (
+                    {h.error && pending && (
                       <div style={{ fontSize: 8, color: "#64748b", marginTop: 2 }}>{h.error}</div>
                     )}
                   </>

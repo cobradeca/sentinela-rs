@@ -110,7 +110,15 @@ export function LagoadosPatos({ className = "", data = [], loading = false, erro
                 <strong>{row.nome}</strong>
                 <span>{row.subEstacao || row.fonte || "Fonte real"}</span>
               </div>
-              <strong>{formatMeters(row.nivelM)}</strong>
+              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <strong>{formatMeters(row.nivelM)}</strong>
+                {typeof row.floodLimitM === "number" && typeof row.historicMaxM === "number" && (
+                  <div style={{ position: "relative", width: 50, height: 4, background: "var(--sr-border-active, #334155)", borderRadius: 2, overflow: "hidden", marginTop: 2 }}>
+                    <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${Math.min(100, Math.max(0, (row.nivelM / row.historicMaxM) * 100))}%`, background: row.nivelM >= row.floodLimitM ? "#ef4444" : "#3b82f6" }} />
+                    <div style={{ position: "absolute", left: `${(row.floodLimitM / row.historicMaxM) * 100}%`, top: 0, bottom: 0, width: 2, background: "#facc15" }} title={`Inundação: ${row.floodLimitM}m | Máx: ${row.historicMaxM}m`} />
+                  </div>
+                )}
+              </div>
               {hasHistory ? (
                 <>
                   <span className={trendClass(trend)}>{trendLabel}</span>
