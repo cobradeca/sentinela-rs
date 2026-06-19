@@ -25,6 +25,7 @@ export function FontesDeDadosTab({ ctx }) {
   } = ctx;
 
   const [reloading, setReloading] = useState({});
+  const [isRefreshingAll, setIsRefreshingAll] = useState(false);
 
   // Mapa: nome da fonte exibido -> função de reload específica.
   // Fontes sem handler próprio caem no loadAllData (consulta geral).
@@ -100,11 +101,19 @@ export function FontesDeDadosTab({ ctx }) {
           <div style={{ fontSize: 10, color: t.textMuted, letterSpacing: 2 }}>SAÚDE DAS FONTES — ÚLTIMA VERIFICAÇÃO</div>
           <button
             type="button"
-            onClick={refreshAll}
+            onClick={async () => {
+              setIsRefreshingAll(true);
+              try {
+                await refreshAll();
+              } finally {
+                setIsRefreshingAll(false);
+              }
+            }}
+            disabled={isRefreshingAll}
             className="sr-btn-outline"
-            style={{ fontSize: 10, padding: "4px 10px" }}
+            style={{ fontSize: 10, padding: "4px 10px", opacity: isRefreshingAll ? 0.6 : 1 }}
           >
-            ↻ Atualizar tudo
+            {isRefreshingAll ? "↻ Atualizando..." : "↻ Atualizar tudo"}
           </button>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: 8 }}>

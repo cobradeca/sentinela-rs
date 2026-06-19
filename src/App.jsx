@@ -746,10 +746,12 @@ export default function SentinelaRS() {
     }
     setSplashProgress(15);
 
-    // Fase 2: estações meteorológicas com concorrência aumentada (6)
+    // Fase 2: estações meteorológicas com concorrência reduzida (3) para evitar rate limit do Open-Meteo (429)
     const _totalStations = ALL_STATIONS.length || 1;
     let _stationsDone = 0;
-    await mapWithConcurrency(ALL_STATIONS, 6, async (st) => {
+    await mapWithConcurrency(ALL_STATIONS, 3, async (st) => {
+      // Pequeno atraso para espaçar as requisições e não engatilhar o anti-burst do Open-Meteo
+      await new Promise(resolve => setTimeout(resolve, 200));
       try {
         const weather = await (async () => {
           const start = Date.now();
