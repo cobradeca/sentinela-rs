@@ -52,6 +52,23 @@ function normalizeHistory(map) {
   );
 }
 
+/**
+ * Merge por ponto (timestamp), não por estação inteira.
+ * Nunca apaga histórico existente com array vazio do incoming.
+ * Pontos do incoming prevalecem apenas quando o timestamp coincide.
+ */
+function mergeStationPoints(base, incoming) {
+  const out = { ...base };
+  for (const [stationId, points] of Object.entries(incoming || {})) {
+    if (!points || !points.length) continue; // nunca sobrescreve com vazio
+    const existing = out[stationId] || [];
+    const byTime = new Map(existing.map((p) => [p.t, p]));
+    for (const p of points) byTime.set(p.t, p); // incoming prevalece só no timestamp igual
+    out[stationId] = [...byTime.values()];
+  }
+  return out;
+}
+
 export function appendLagoaHistorySnapshot(history, stationId, levelM, measuredAt) {
   if (typeof levelM !== "number" || !Number.isFinite(levelM)) return history || {};
 
@@ -77,14 +94,18 @@ export async function loadLagoaHistory(stationIds) {
   // Carrega localStorage como base imediata (mantém histórico entre sessões)
   const localCache = loadHistoryFromLocalStorage();
   if (localCache) {
-    sessionHistory = normalizeHistory({ ...localCache, ...sessionHistory });
+    sessionHistory = normalizeHistory(mergeStationPoints(sessionHistory, localCache));
   }
 
   try {
     const remote = await fetchLagoaMonitoramentoHistorico();
     if (remote?.ok && remote.history && Object.keys(remote.history).length) {
-      const filteredRemote = remote.history;
-      const mergedRemote = normalizeHistory({ ...sessionHistory, ...filteredRemote });
+      // Filtra apenas as estações conhecidas (evita chaves inesperadas do backend)
+      const filteredRemote = Object.fromEntries(
+        Object.entries(remote.history).filter(([stationId]) => stationIds.includes(stationId))
+      );
+      // Merge por ponto: nunca sobrescreve array acumulado com array vazio/raso
+      const mergedRemote = normalizeHistory(mergeStationPoints(sessionHistory, filteredRemote));
       sessionHistory = mergedRemote;
       saveHistoryToLocalStorage(mergedRemote);
 
@@ -119,8 +140,8 @@ export async function loadLagoaHistory(stationIds) {
       fromSupabase[row.station_id].push({ t: row.recorded_at, v: level });
     }
 
-    // Supabase + localStorage + sessão atual — Supabase prevalece para o mesmo período
-    const merged = normalizeHistory({ ...sessionHistory, ...fromSupabase });
+    // Supabase + localStorage + sessão atual — merge por ponto, não por estação
+    const merged = normalizeHistory(mergeStationPoints(sessionHistory, fromSupabase));
     sessionHistory = merged;
     saveHistoryToLocalStorage(merged);
 
@@ -132,7 +153,7 @@ export async function loadLagoaHistory(stationIds) {
   } catch (error) {
     // Supabase falhou: usa localStorage como fallback persistido
     const fromLocal = loadHistoryFromLocalStorage();
-    const fallback = normalizeHistory({ ...(fromLocal || {}), ...sessionHistory });
+    const fallback = normalizeHistory(mergeStationPoints(sessionHistory, fromLocal || {}));
     sessionHistory = fallback;
 
     return {
