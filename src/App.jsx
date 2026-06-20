@@ -717,6 +717,8 @@ export default function SentinelaRS() {
     // Fase 2: estações meteorológicas com concorrência reduzida (3) para evitar rate limit do Open-Meteo (429)
     const _totalStations = ALL_STATIONS.length || 1;
     let _stationsDone = 0;
+    // Coleta snapshots de nível para aplicar sequencialmente após o loop (evita race condition)
+    const pendingLagoaSnapshots = [];
     await mapWithConcurrency(ALL_STATIONS, 3, async (st) => {
       // Pequeno atraso para espaçar as requisições e não engatilhar o anti-burst do Open-Meteo
       await new Promise(resolve => setTimeout(resolve, 200));
@@ -779,9 +781,9 @@ export default function SentinelaRS() {
         } : null;
 
         // Não usa limiar único de 0,8m. Risco de nível só entra quando a fonte traz limiar próprio validado.
-        // Registra o ponto atual na série exibida e mescla com histórico persistido do Supabase.
+        // Coleta snapshot para aplicar sequencialmente depois (evita race condition do mapWithConcurrency)
         if (lagoa?.isReal && lagoa.atual !== null) {
-          nextLagoaHistory = appendLagoaHistorySnapshot(nextLagoaHistory, st.id, lagoa.atual, getLagoaMeasuredAt(lagoa));
+          pendingLagoaSnapshots.push({ stationId: st.id, levelM: lagoa.atual, measuredAt: getLagoaMeasuredAt(lagoa) });
         }
 
         const baseRisk = getRiskLevel(precip, tempMin, windMax, null);
@@ -797,6 +799,10 @@ export default function SentinelaRS() {
         setSplashProgress(Math.round(15 + (_stationsDone / _totalStations) * 75));
       }
     });
+    // Aplica snapshots de nível sequencialmente (sem race condition)
+    for (const snap of pendingLagoaSnapshots) {
+      nextLagoaHistory = appendLagoaHistorySnapshot(nextLagoaHistory, snap.stationId, snap.levelM, snap.measuredAt);
+    }
     setSplashProgress(95);
     health["Carga geral"] = { ok: true, lastOk: new Date().toISOString(), latencyMs: Date.now() - t0, error: null };
 
