@@ -83,9 +83,7 @@ export async function loadLagoaHistory(stationIds) {
   try {
     const remote = await fetchLagoaMonitoramentoHistorico();
     if (remote?.ok && remote.history && Object.keys(remote.history).length) {
-      const filteredRemote = Object.fromEntries(
-        Object.entries(remote.history).filter(([stationId]) => stationIds.includes(stationId))
-      );
+      const filteredRemote = remote.history;
       const mergedRemote = normalizeHistory({ ...sessionHistory, ...filteredRemote });
       sessionHistory = mergedRemote;
       saveHistoryToLocalStorage(mergedRemote);
