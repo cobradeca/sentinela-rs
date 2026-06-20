@@ -211,12 +211,12 @@ export function EnsoTab({ ctx }) {
       <div className="sr-card-v2" style={{ display: "grid", gap: 14 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <div style={{ width: 64, height: 64, borderRadius: "50%", background: "linear-gradient(135deg,#dbeafe,#60a5fa)", display: "grid", placeItems: "center", color: "#1d4ed8" }}>
-              <NavIcon name="waves" size={34} />
+            <div style={{ width: "clamp(48px, 8vw, 64px)", height: "clamp(48px, 8vw, 64px)", borderRadius: "50%", background: "linear-gradient(135deg,#dbeafe,#60a5fa)", display: "grid", placeItems: "center", color: "#1d4ed8" }}>
+              <NavIcon name="waves" size={26} />
             </div>
             <div>
-              <h1 style={{ margin: 0, fontSize: 38, fontWeight: 900, color: "var(--sr-text)", letterSpacing: "-0.5px" }}>ENSO</h1>
-              <div style={{ color: "var(--sr-text-muted)", fontSize: 15, fontWeight: 500 }}>El Niño-Oscilação Sul</div>
+              <h1 style={{ margin: 0, fontSize: "clamp(24px, 6vw, 36px)", fontWeight: 900, color: "var(--sr-text)", letterSpacing: "-0.5px" }}>ENSO</h1>
+              <div style={{ color: "var(--sr-text-muted)", fontSize: "clamp(12px, 3vw, 15px)", fontWeight: 500 }}>El Niño-Oscilação Sul</div>
             </div>
           </div>
           <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
@@ -227,23 +227,23 @@ export function EnsoTab({ ctx }) {
             <div className="sr-btn-outline" style={{ fontSize: 13, fontWeight: 600, borderRadius: 20, padding: "8px 14px", border: "1px solid #cbd5e1", background: "#f1f5f9" }}>Fonte: NOAA / CPC <NavIcon name="info" size={14} /></div>
           </div>
         </div>
-
-        <div className="sr-kpi-row" style={{ gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+ 
+        <div className="sr-kpi-row">
           {[
             ["Índice Niño 3.4 (°C)", celsius(activeENSO.nino34), observedReady ? "NOAA/CPC observado" : "Sem leitura validada", phase.key, phaseColors[phase.key]],
             ["Tendência (3 meses)", trendText(forecast), probReady ? "IRI/CCSR probabilístico" : "Sem curva validada", "elNino", phaseColors.elNino],
             ["Atualização", fetchedAt ? formatDateTimeBR(fetchedAt).split(",")[0] : "--", "dados oficiais", "neutral", phaseColors.neutral],
           ].map(([label, value, sub, colorKey, borderColor]) => (
-            <div key={label} className="sr-card-v2" style={{ margin: 0, padding: 18, borderRadius: 8, borderLeft: `4px solid ${borderColor}`, background: borderColor === phaseColors.elNino ? "#fef2f2" : borderColor === phaseColors.laNina ? "#f0f9ff" : "var(--sr-card-bg)" }}>
+            <div key={label} className="sr-card-v2" style={{ margin: 0, padding: "clamp(12px, 3vw, 18px)", borderRadius: 8, borderLeft: `4px solid ${borderColor}`, background: borderColor === phaseColors.elNino ? "#fef2f2" : borderColor === phaseColors.laNina ? "#f0f9ff" : "var(--sr-card-bg)" }}>
               <div className="sr-kpi-label" style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px", color: "var(--sr-text-muted)" }}>{label}</div>
-              <div style={{ fontSize: 28, fontWeight: 900, color: borderColor, marginTop: 10, marginBottom: 8 }}>{value}</div>
+              <div style={{ fontSize: "clamp(20px, 4.5vw, 28px)", fontWeight: 900, color: borderColor, marginTop: 10, marginBottom: 8 }}>{value}</div>
               <div className="sr-kpi-sublabel" style={{ fontSize: 12, color: "var(--sr-text-muted)", fontWeight: 600 }}>{sub}</div>
             </div>
           ))}
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div className="sr-enso-two-col">
         <div className="sr-card-v2" style={{ background: "linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%)", borderTop: `3px solid ${phaseColors.elNino}`, gridColumn: 1 }}>
           <div style={{ marginBottom: 16 }}>
             <h3 className="sr-card-title" style={{ fontSize: 18, fontWeight: 800, color: "#0c2d4a", margin: "0 0 4px" }}>Previsão 12 meses</h3>

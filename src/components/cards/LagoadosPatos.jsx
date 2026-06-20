@@ -1,24 +1,54 @@
+import { useId } from "react";
 import { NavIcon } from "../layout/NavIcons";
 
 export const MOCK_LAGOA = [];
 
 function Sparkline({ values, color = "#2563eb" }) {
-  const width = 96;
-  const height = 28;
+  const gradientId = useId();
+  const width = 120;
+  const height = 36;
+  
+  if (!values || values.length < 2) return null;
+
   const min = Math.min(...values);
   const max = Math.max(...values);
-  const range = max - min || 1;
-  const points = values
-    .map((value, index) => {
-      const x = (index / (values.length - 1)) * width;
-      const y = height - ((value - min) / range) * height;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(" ");
+  const range = max - min || 0.01;
+  const pad = 2; // Margem de segurança para não cortar o traço nas bordas
+  
+  const xs = values.map((_, i) => (i / (values.length - 1)) * (width - pad * 2) + pad);
+  const ys = values.map((v) => height - pad - ((v - min) / range) * (height - pad * 2));
+  
+  let linePath = `M ${xs[0]},${ys[0]}`;
+  for (let i = 0; i < xs.length - 1; i++) {
+    const x0 = i === 0 ? xs[0] : xs[i - 1];
+    const y0 = i === 0 ? ys[0] : ys[i - 1];
+    const x1 = xs[i];
+    const y1 = ys[i];
+    const x2 = xs[i + 1];
+    const y2 = ys[i + 1];
+    const x3 = i + 2 < xs.length ? xs[i + 2] : x2;
+    const y3 = i + 2 < xs.length ? ys[i + 2] : y2;
+
+    const cp1x = x1 + (x2 - x0) / 6;
+    const cp1y = y1 + (y2 - y0) / 6;
+    const cp2x = x2 - (x3 - x1) / 6;
+    const cp2y = y2 - (y3 - y1) / 6;
+
+    linePath += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${x2},${y2}`;
+  }
+  
+  const areaPath = `${linePath} L ${xs[xs.length - 1]},${height} L ${xs[0]},${height} Z`;
 
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="sr-mod-spark" aria-hidden="true">
-      <polyline points={points} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <svg viewBox={`0 0 ${width} ${height}`} className="sr-mod-spark" aria-hidden="true" style={{ width: width, height: height, display: "block" }}>
+      <defs>
+        <linearGradient id={`spark-grad-${gradientId}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.28" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={areaPath} fill={`url(#spark-grad-${gradientId})`} stroke="none" />
+      <path d={linePath} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -125,7 +155,7 @@ export function LagoadosPatos({ className = "", data = [], loading = false, erro
                   <Sparkline values={history} />
                 </>
               ) : (
-                <span className="sr-lagoa-empty-note" style={{ gridColumn: "3 / span 2" }}>sem histórico suficiente</span>
+                <span className="sr-lagoa-empty-note">sem histórico suficiente</span>
               )}
             </div>
           );

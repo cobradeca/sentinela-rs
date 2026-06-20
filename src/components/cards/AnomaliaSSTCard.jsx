@@ -42,8 +42,9 @@ function SSTMap({ currentIso, compareIso, dividerPos, onDividerChange, mapRef })
       const L = window.L;
       if (!L || leafletRef.current) return;
 
+      const isMobile = window.innerWidth < 768;
       const map = L.map(containerId, {
-        center: [-7, -110],
+        center: isMobile ? [-30, -52] : [-7, -110],
         zoom: 3,
         zoomControl: false,
         attributionControl: false,
@@ -94,7 +95,11 @@ function SSTMap({ currentIso, compareIso, dividerPos, onDividerChange, mapRef })
         dashArray: "6 4",
       }).addTo(map);
 
-      map.fitBounds(INITIAL_BOUNDS);
+      if (isMobile) {
+        map.setView([-30, -52], 3);
+      } else {
+        map.fitBounds(INITIAL_BOUNDS);
+      }
 
       leafletRef.current = map;
       if (mapRef) mapRef.current = map;
@@ -254,7 +259,14 @@ export function AnomaliaSSTCard({ className = "" }) {
   const mapRef = useRef(null);
 
   const resetView = useCallback(() => {
-    if (mapRef.current) mapRef.current.fitBounds(INITIAL_BOUNDS);
+    if (mapRef.current) {
+      const isMobile = window.innerWidth < 768;
+      if (isMobile) {
+        mapRef.current.setView([-30, -52], 3);
+      } else {
+        mapRef.current.fitBounds(INITIAL_BOUNDS);
+      }
+    }
   }, []);
 
   // Datas calculadas automaticamente: hoje e 15 dias atrás (atualiza todo dia)

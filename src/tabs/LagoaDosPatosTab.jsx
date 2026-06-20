@@ -254,7 +254,7 @@ export function LagoaDosPatosTab({ ctx }) {
 
   return (
     <div style={{ display: "grid", gap: 14 }}>
-      <div className="sr-kpi-row" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+      <div className="sr-kpi-row">
         <div className="sr-kpi-card sr-kpi-blue">
           <div className="sr-kpi-icon">
             <NavIcon name="waves" size={20} />
@@ -313,7 +313,7 @@ export function LagoaDosPatosTab({ ctx }) {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, alignItems: "start" }}>
+      <div className="sr-lagoa-map-table">
         <div className="sr-card-v2" style={{ alignSelf: "stretch" }}>
           <h3 className="sr-card-title">Mapa da Lagoa dos Patos</h3>
           <LagoaSVGMap
@@ -333,50 +333,52 @@ export function LagoaDosPatosTab({ ctx }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div className="sr-card-v2">
             <h3 className="sr-card-title">Estações de monitoramento</h3>
-            <table className="sr-data-table">
-              <thead>
-                <tr>
-                  <th>Estação</th>
-                  <th>Nível atual (m)</th>
-                  <th>Cota de Inundação (m)</th>
-                  <th>Máx Histórica (m)</th>
-                  <th>Tendência 24h</th>
-                  <th>Última leitura</th>
-                </tr>
-              </thead>
-              <tbody>
-                {points.map(({ point, lagoa, trendCm, history }) => {
-                  const hasLevel = lagoa?.isReal && lagoa?.atual != null;
-                  const color = lagoaStatusColor(lagoa?.levelStatus);
-                  const measuredAt = getLagoaMeasuredAt(lagoa);
-                  return (
-                    <tr key={point.id}>
-                      <td>
-                        <span className="sr-status-dot" style={{ background: hasLevel ? color : "#94a3b8" }} />
-                        {shortName(point)}
-                      </td>
-                      <td>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                          <strong>{hasLevel ? lagoa.atual.toFixed(2) : "—"}</strong>
-                          {hasLevel && typeof point.floodLimitM === "number" && typeof point.historicMaxM === "number" && (
-                            <div style={{ position: "relative", width: "100%", height: 6, background: "rgba(255,255,255,0.08)", borderRadius: 3, overflow: "hidden" }}>
-                              <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${Math.min(100, Math.max(0, (lagoa.atual / point.historicMaxM) * 100))}%`, background: lagoa.atual >= point.floodLimitM ? "#ef4444" : "#3b82f6" }} />
-                              <div style={{ position: "absolute", left: `${(point.floodLimitM / point.historicMaxM) * 100}%`, top: 0, bottom: 0, width: 2, background: "#facc15" }} title="Cota de Inundação" />
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      <td style={{ color: "var(--sr-text-muted)" }}>{typeof point.floodLimitM === "number" ? point.floodLimitM.toFixed(2) : "—"}</td>
-                      <td style={{ color: "var(--sr-text-muted)" }}>{typeof point.historicMaxM === "number" ? point.historicMaxM.toFixed(2) : "—"}</td>
-                      <td style={{ color: trendColor(trendCm), fontWeight: 700 }}>
-                        {history.length >= 2 ? formatTrendCm(trendCm) : "sem histórico"}
-                      </td>
-                      <td>{measuredAt ? formatShortDate(measuredAt) : "Sem leitura"}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <div className="sr-table-scroll">
+              <table className="sr-data-table">
+                <thead>
+                  <tr>
+                    <th>Estação</th>
+                    <th>Nível atual (m)</th>
+                    <th>Cota de Inundação (m)</th>
+                    <th>Máx Histórica (m)</th>
+                    <th>Tendência 24h</th>
+                    <th>Última leitura</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {points.map(({ point, lagoa, trendCm, history }) => {
+                    const hasLevel = lagoa?.isReal && lagoa?.atual != null;
+                    const color = lagoaStatusColor(lagoa?.levelStatus);
+                    const measuredAt = getLagoaMeasuredAt(lagoa);
+                    return (
+                      <tr key={point.id}>
+                        <td>
+                          <span className="sr-status-dot" style={{ background: hasLevel ? color : "#94a3b8" }} />
+                          {shortName(point)}
+                        </td>
+                        <td>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                            <strong>{hasLevel ? lagoa.atual.toFixed(2) : "—"}</strong>
+                            {hasLevel && typeof point.floodLimitM === "number" && typeof point.historicMaxM === "number" && (
+                              <div style={{ position: "relative", width: "100%", height: 6, background: "rgba(255,255,255,0.08)", borderRadius: 3, overflow: "hidden" }}>
+                                <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${Math.min(100, Math.max(0, (lagoa.atual / point.historicMaxM) * 100))}%`, background: lagoa.atual >= point.floodLimitM ? "#ef4444" : "#3b82f6" }} />
+                                <div style={{ position: "absolute", left: `${(point.floodLimitM / point.historicMaxM) * 100}%`, top: 0, bottom: 0, width: 2, background: "#facc15" }} title="Cota de Inundação" />
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td style={{ color: "var(--sr-text-muted)" }}>{typeof point.floodLimitM === "number" ? point.floodLimitM.toFixed(2) : "—"}</td>
+                        <td style={{ color: "var(--sr-text-muted)" }}>{typeof point.historicMaxM === "number" ? point.historicMaxM.toFixed(2) : "—"}</td>
+                        <td style={{ color: trendColor(trendCm), fontWeight: 700 }}>
+                          {history.length >= 2 ? formatTrendCm(trendCm) : "sem histórico"}
+                        </td>
+                        <td>{measuredAt ? formatShortDate(measuredAt) : "Sem leitura"}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
             <div style={{ fontSize: 11, color: "var(--sr-text-muted)", marginTop: 12, textAlign: "right" }}>
               Fonte: Radar Lagoa dos Patos e HidroSens/UFPel
             </div>

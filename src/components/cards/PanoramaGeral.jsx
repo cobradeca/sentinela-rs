@@ -25,6 +25,18 @@ const statusColor = {
   alerta: "#f87171",
 };
 
+const statusBgColor = {
+  livre: "rgba(74, 222, 128, 0.15)",
+  lenta: "rgba(250, 204, 21, 0.15)",
+  bloqueada: "rgba(248, 113, 113, 0.15)",
+  normal: "rgba(74, 222, 128, 0.15)",
+  "transito normal": "rgba(74, 222, 128, 0.15)",
+  lentidao: "rgba(250, 204, 21, 0.15)",
+  erro: "rgba(148, 163, 184, 0.15)",
+  atencao: "rgba(250, 204, 21, 0.15)",
+  alerta: "rgba(248, 113, 113, 0.15)",
+};
+
 function ndviColor(value) {
   if (!Number.isFinite(value)) return "#94a3b8";
   if (value < 0.3) return "#f87171";
@@ -50,7 +62,7 @@ export function PanoramaGeral({
     return (
       <section className={`sr-mod-card ${className}`}>
         <div className="sr-mod-skeleton h-5 w-1-3" />
-        <div className="sr-panorama-grid" style={{ gridTemplateColumns: "repeat(4, minmax(0, 1fr))" }}>
+        <div className="sr-panorama-grid">
           {Array.from({ length: 4 }).map((_, index) => <div key={index} className="sr-mod-skeleton h-32 w-full" />)}
         </div>
       </section>
@@ -79,32 +91,75 @@ export function PanoramaGeral({
         <div className="sr-mod-badge">Dados informativos • não são alertas ⓘ</div>
       </header>
 
-      <div className="sr-panorama-grid" style={{ gridTemplateColumns: "repeat(4, minmax(0, 1fr))" }}>
+      <div className="sr-panorama-grid">
         <div className="sr-panorama-block">
           <span>≋ Lagoa dos Patos</span>
           <strong>{nivelMedio.toFixed(2).replace(".", ",")} m</strong>
           <small>Nível médio</small>
-          <em className={variacaoMedia > 0 ? "sr-var-up" : "sr-var-down"}>
+          <span style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "3px",
+            fontSize: "11px",
+            fontWeight: "700",
+            padding: "2px 6px",
+            borderRadius: "6px",
+            background: variacaoMedia > 0 ? "rgba(248, 113, 113, 0.15)" : "rgba(74, 222, 128, 0.15)",
+            color: variacaoMedia > 0 ? "#ef4444" : "#22c55e",
+            marginTop: "6px"
+          }}>
             {variacaoMedia > 0 ? "↑" : "↓"} {Math.abs(variacaoMedia).toFixed(2).replace(".", ",")} m (24h)
-          </em>
+          </span>
         </div>
 
         <div className="sr-panorama-block">
           <span>☔ Previsão</span>
           <strong>{chuva5dMm} mm</strong>
           <small>Acumulado 5 dias</small>
-          <em>Chuva prevista</em>
+          <span style={{
+            display: "inline-flex",
+            alignItems: "center",
+            fontSize: "11px",
+            fontWeight: "600",
+            padding: "2px 6px",
+            borderRadius: "6px",
+            background: "rgba(59, 130, 246, 0.12)",
+            color: "#2563eb",
+            marginTop: "6px"
+          }}>
+            Chuva prevista
+          </span>
         </div>
 
         <div className="sr-panorama-block">
           <span>≋ Niveis dos Rios</span>
-          {rios.map((rio) => (
-            <small key={rio.nome}>
-              <b>{rio.nome}</b> {rio.nivelM.toFixed(2)} m
-              <br />
-              <i style={{ color: statusColor[rio.status] || statusColor.normal }}>{rio.status}</i>
-            </small>
-          ))}
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "6px" }}>
+            {rios.map((rio) => {
+              const rStatus = rio.status ? String(rio.status).toLowerCase() : "normal";
+              const sColor = statusColor[rio.status] || statusColor.normal;
+              const sBg = statusBgColor[rStatus] || "rgba(74, 222, 128, 0.15)";
+              return (
+                <div key={rio.nome} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "11px", borderBottom: "1px solid var(--sr-border)", paddingBottom: "4px" }}>
+                  <span style={{ color: "var(--sr-text)", fontWeight: 700 }}>{rio.nome}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{rio.nivelM.toFixed(2)} m</span>
+                    <span style={{
+                      fontSize: "8px",
+                      fontWeight: "800",
+                      textTransform: "uppercase",
+                      padding: "1px 5px",
+                      borderRadius: "4px",
+                      background: sBg,
+                      color: sColor,
+                      letterSpacing: "0.02em"
+                    }}>
+                      {rio.status}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Bloco Vertical de Queimadas e Vegetação */}
@@ -135,9 +190,18 @@ export function PanoramaGeral({
         <div className="sr-panorama-roads-list">
           {rodovias.map((road) => (
             <div key={road.br} className="sr-panorama-roads-item">
-              <b style={{ color: statusColor[road.status] || statusColor.Normal }}>●</b>
+              <span style={{
+                display: "inline-block",
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                background: statusColor[road.status] || statusColor.Normal,
+                boxShadow: `0 0 8px ${statusColor[road.status] || statusColor.Normal}`,
+                marginTop: 6,
+                flexShrink: 0
+              }} />
               <div>
-                <strong>{road.br}</strong> — {road.status}
+                <strong>{road.br}</strong> — <span style={{ color: statusColor[road.status] || statusColor.Normal, fontWeight: 700 }}>{road.status}</span>
                 <small>{road.trecho}{road.detalhe ? ` · ${road.detalhe}` : ""}</small>
               </div>
             </div>
@@ -147,9 +211,13 @@ export function PanoramaGeral({
 
       <div className="sr-defesa-banner">
         <div className="sr-defesa-logo">DEFESA<br />CIVIL</div>
-        <p><strong>Atenção:</strong> os alertas oficiais sobre eventos adversos são emitidos pela Defesa Civil RS. Em caso de riscos, siga as orientações dos canais oficiais e ligue <strong>199</strong>.</p>
-        <a href="https://defesacivil.rs.gov.br/" target="_blank" rel="noreferrer">Defesa Civil RS - saiba mais ↗</a>
-        <a href="https://api.whatsapp.com/send?phone=555133338000" target="_blank" rel="noreferrer">WhatsApp ↗</a>
+        <div>
+          <p style={{ margin: "0 0 10px 0" }}><strong>Atenção:</strong> os alertas oficiais sobre eventos adversos são emitidos pela Defesa Civil RS. Em caso de riscos, siga as orientações dos canais oficiais e ligue <strong>199</strong>.</p>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            <a href="https://defesacivil.rs.gov.br/" target="_blank" rel="noreferrer">Defesa Civil RS ↗</a>
+            <a href="https://api.whatsapp.com/send?phone=555133338000" target="_blank" rel="noreferrer">WhatsApp ↗</a>
+          </div>
+        </div>
       </div>
     </section>
   );

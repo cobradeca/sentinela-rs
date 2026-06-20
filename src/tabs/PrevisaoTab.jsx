@@ -115,39 +115,41 @@ export function PrevisaoTab({ ctx }) {
 
           <div className="sr-card-v2" style={{ marginBottom: 18 }}>
             <h3 className="sr-card-title">Previsão diária detalhada</h3>
-            <div className="sr-forecast-carousel">
-              {forecastDayIndexes.map((dayIndex, i) => {
-                const date = daily.time[dayIndex];
-                const dd = new Date(`${date}T12:00:00`);
-                const p = precipValues[i];
-                const tx = tempMaxValues[i];
-                const tn = tempMinValues[i];
-                const w = windValues[i];
-                const c = daily.weathercode?.[dayIndex] || 0;
-                const dr = p > 20 || w > 40 || tn < 5 ? "MONITORAR" : "NORMAL";
-                return (
-                  <div key={date} className={`sr-forecast-day-card${i === 0 ? " is-today" : ""}`}>
-                    <div className="sr-day-name">{i === 0 ? "Hoje" : dayNames[dd.getDay()]}</div>
-                    <div className="sr-day-date">{dd.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</div>
-                    <div className="sr-emoji"><WeatherIcon code={c} size={32} /></div>
-                    <div className="sr-tmax">{tx.toFixed(0)}°</div>
-                    <div className="sr-tmin">{tn.toFixed(0)}°</div>
-                    <div className="sr-detail">🌧 {p.toFixed(1)} mm</div>
-                    <div className="sr-detail">💨 {w.toFixed(0)} km/h</div>
-                    <button
-                      type="button"
-                      onClick={() => setRiskExplain(explainDailyRisk(selStation, date, p, tn, w, dr))}
-                      style={{ marginTop: 6, background: "none", border: `1px solid ${getRiskColor(dr)}`, color: getRiskColor(dr), borderRadius: 4, fontSize: 10, padding: "2px 6px", cursor: "pointer" }}
-                    >
-                      {RISK_LEVELS[dr].label}
-                    </button>
-                  </div>
-                );
-              })}
+            <div className="sr-carousel-wrapper">
+              <div className="sr-forecast-carousel">
+                {forecastDayIndexes.map((dayIndex, i) => {
+                  const date = daily.time[dayIndex];
+                  const dd = new Date(`${date}T12:00:00`);
+                  const p = precipValues[i];
+                  const tx = tempMaxValues[i];
+                  const tn = tempMinValues[i];
+                  const w = windValues[i];
+                  const c = daily.weathercode?.[dayIndex] || 0;
+                  const dr = p > 20 || w > 40 || tn < 5 ? "MONITORAR" : "NORMAL";
+                  return (
+                    <div key={date} className={`sr-forecast-day-card${i === 0 ? " is-today" : ""}`}>
+                      <div className="sr-day-name">{i === 0 ? "Hoje" : dayNames[dd.getDay()]}</div>
+                      <div className="sr-day-date">{dd.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</div>
+                      <div className="sr-emoji"><WeatherIcon code={c} size={32} /></div>
+                      <div className="sr-tmax">{tx.toFixed(0)}°</div>
+                      <div className="sr-tmin">{tn.toFixed(0)}°</div>
+                      <div className="sr-detail">🌧 {p.toFixed(1)} mm</div>
+                      <div className="sr-detail">💨 {w.toFixed(0)} km/h</div>
+                      <button
+                        type="button"
+                        onClick={() => setRiskExplain(explainDailyRisk(selStation, date, p, tn, w, dr))}
+                        style={{ marginTop: 6, background: "none", border: `1px solid ${getRiskColor(dr)}`, color: getRiskColor(dr), borderRadius: 4, fontSize: 10, padding: "2px 6px", cursor: "pointer" }}
+                      >
+                        {RISK_LEVELS[dr].label}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
-          <div className="sr-kpi-row" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+          <div className="sr-kpi-row">
             <div className="sr-card-v2">
               <div className="sr-kpi-label">Temp. máx. média</div>
               <div className="sr-kpi-value" style={{ color: "#dc2626" }}>{avgMax != null ? `${avgMax.toFixed(1)} °C` : "—"}</div>
