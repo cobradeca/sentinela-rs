@@ -74,36 +74,73 @@ async function fetchJson(url: string) {
   return response.json();
 }
 
+const PAGE_FETCH_CONCURRENCY = 8;
+
+async function mapWithConcurrency<T, R>(items: T[], concurrency: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let nextIndex = 0;
+  async function worker() {
+    while (true) {
+      const i = nextIndex++;
+      if (i >= items.length) return;
+      results[i] = await fn(items[i]);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
+  return results;
+}
+
 async function fetchMonitoramentoSensor(sensor: typeof MONITORAMENTO_SENSORS[number], cutoffMs: number) {
   const samples: Array<{ ts: number; nivel: number }> = [];
-  let page = 1;
-  let totalPages = PAGE_LIMIT_SAFETY;
 
-  while (page <= totalPages && page <= PAGE_LIMIT_SAFETY) {
-    const url = `${MONITORAMENTO_BASE_URL}/${sensor.sensorId}/ultimos-dias?page=${page}`;
-    const data = await fetchJson(url);
-    const rows = Array.isArray(data?.dados) ? data.dados : [];
-
-    if (Number.isFinite(Number(data?.total_paginas))) {
-      totalPages = Math.min(Number(data.total_paginas), PAGE_LIMIT_SAFETY);
-    }
-
-    if (!rows.length) break;
-
+  function ingestRows(rows: Array<Record<string, unknown>>) {
     let oldestTsInPage = Number.POSITIVE_INFINITY;
     for (const row of rows) {
-      const ts = new Date(row?.data_hora || row?.criado_em || 0).getTime();
+      const ts = new Date((row?.data_hora as string) || (row?.criado_em as string) || 0).getTime();
       if (!Number.isFinite(ts) || !ts) continue;
       oldestTsInPage = Math.min(oldestTsInPage, ts);
       if (ts < cutoffMs) continue;
-
       const levelM = validLevelM(row?.valor);
       if (levelM === null) continue;
       samples.push({ ts, nivel: levelM });
     }
+    return oldestTsInPage;
+  }
 
-    if (oldestTsInPage < cutoffMs) break;
-    page += 1;
+  // Página 1 primeiro: descobre total_paginas e já ingere os dados.
+  const firstUrl = `${MONITORAMENTO_BASE_URL}/${sensor.sensorId}/ultimos-dias?page=1`;
+  const firstData = await fetchJson(firstUrl);
+  const firstRows = Array.isArray(firstData?.dados) ? firstData.dados : [];
+  const totalPages = Number.isFinite(Number(firstData?.total_paginas))
+    ? Math.min(Number(firstData.total_paginas), PAGE_LIMIT_SAFETY)
+    : 1;
+  let pagesRead = 1;
+  let stop = !firstRows.length || ingestRows(firstRows) < cutoffMs;
+
+  // Páginas seguintes: buscadas em paralelo (lotes), com checagem de corte entre lotes.
+  let page = 2;
+  while (!stop && page <= totalPages) {
+    const batchPages: number[] = [];
+    for (let p = page; p < page + PAGE_FETCH_CONCURRENCY && p <= totalPages; p++) batchPages.push(p);
+    if (!batchPages.length) break;
+
+    const batchResults = await mapWithConcurrency(batchPages, PAGE_FETCH_CONCURRENCY, async (p) => {
+      try {
+        const data = await fetchJson(`${MONITORAMENTO_BASE_URL}/${sensor.sensorId}/ultimos-dias?page=${p}`);
+        return Array.isArray(data?.dados) ? data.dados : [];
+      } catch {
+        return [];
+      }
+    });
+
+    pagesRead += batchResults.length;
+    for (const rows of batchResults) {
+      if (!rows.length) continue;
+      const oldestTsInPage = ingestRows(rows);
+      if (oldestTsInPage < cutoffMs) stop = true;
+    }
+
+    page += PAGE_FETCH_CONCURRENCY;
   }
 
   samples.sort((a, b) => a.ts - b.ts);
@@ -115,7 +152,7 @@ async function fetchMonitoramentoSensor(sensor: typeof MONITORAMENTO_SENSORS[num
     sensor_id: sensor.sensorId,
     name: sensor.name,
     source: "Monitoramento Lagoa dos Patos",
-    pages_read: page,
+    pages_read: pagesRead,
     samples,
     daily,
   };

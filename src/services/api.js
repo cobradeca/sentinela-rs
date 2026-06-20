@@ -422,7 +422,7 @@ export async function fetchLagoaMonitoramentoHistorico() {
 
   try {
     const res = await fetch(LAGOA_MONITORAMENTO_HISTORICO_FUNCTION_URL, {
-      signal: AbortSignal.timeout(30000),
+      signal: AbortSignal.timeout(55000),
       cache: "no-store",
       headers: { Accept: "application/json" },
     });
