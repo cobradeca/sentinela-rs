@@ -236,12 +236,17 @@ async function fetchHidrosensLaranjal(cutoffMs: number, endTs: number) {
   url.searchParams.set("startTs", String(cutoffMs));
   url.searchParams.set("endTs", String(endTs));
   url.searchParams.set("agg", "NONE");
-  url.searchParams.set("limit", "50000");
+  url.searchParams.set("interval", "0");
+  url.searchParams.set("limit", "10000");
+  url.searchParams.set("orderBy", "DESC");
 
   const response = await fetch(url.toString(), {
     headers: { Accept: "application/json", "X-Authorization": `Bearer ${token}`, "User-Agent": "SentinelaRS/1.0" },
   });
-  if (!response.ok) throw new Error(`ThingsBoard telemetry HTTP ${response.status}`);
+  if (!response.ok) {
+    const bodyText = await response.text().catch(() => "");
+    throw new Error(`ThingsBoard telemetry HTTP ${response.status}: ${bodyText.slice(0, 200)}`);
+  }
 
   const data = await response.json();
   const payload = Array.isArray(data?.payload) ? data.payload : [];
