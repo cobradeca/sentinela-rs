@@ -414,8 +414,11 @@ export async function fetchUserCity() {
 }
 
 export async function fetchLagoaMonitoramentoHistorico() {
-  const cacheKey = "sentinela_lagoa_monitoramento_historico_v1";
-  const cached = readJsonCache(cacheKey, LAGOA_HISTORY_REMOTE_CACHE_MAX_AGE_MS);
+  // v2: bust stale cache que bloqueava chamada real quando history estava vazio
+  const cacheKey = "sentinela_lagoa_monitoramento_historico_v2";
+  const rawCached = readJsonCache(cacheKey, LAGOA_HISTORY_REMOTE_CACHE_MAX_AGE_MS);
+  // Só usa cache se ele tiver dados históricos reais
+  const cached = rawCached?.history && Object.keys(rawCached.history).length > 0 ? rawCached : null;
 
   try {
     const res = await fetch(LAGOA_MONITORAMENTO_HISTORICO_FUNCTION_URL, {
@@ -427,7 +430,8 @@ export async function fetchLagoaMonitoramentoHistorico() {
     if (!res.ok) return cached || { ok: false, history: {}, stations: [], error: `Historico Lagoa HTTP ${res.status}`, fetched_at: new Date().toISOString() };
 
     const data = await res.json();
-    if (!data?.ok || !data?.history) return cached || { ...data, ok: false, history: data?.history || {}, stations: data?.stations || [] };
+    const hasHistory = data?.ok && data?.history && Object.keys(data.history).length > 0;
+    if (!hasHistory) return cached || { ...data, ok: false, history: data?.history || {}, stations: data?.stations || [] };
 
     saveJsonCache(cacheKey, data);
     return data;
