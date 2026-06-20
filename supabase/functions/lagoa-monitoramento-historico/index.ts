@@ -133,25 +133,98 @@ async function hidrosensLogin() {
   return data.token;
 }
 
-function extractDistanceMeters(value: unknown) {
-  let text = "";
-  try {
-    text = typeof value === "string" ? value : JSON.stringify(value);
+function numberFromValue(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+
+  if (typeof value === "string") {
+    const normalized = value.trim().replace(",", ".");
+    const match = normalized.match(/-?\d+(?:\.\d+)?/);
+    if (!match?.[0]) return null;
+    const n = Number(match[0]);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  return null;
+}
+
+function extractDistanceMeters(payloadValue: unknown) {
+  const seen = new Set<unknown>();
+
+  function walk(value: unknown): number | null {
+    if (value === null || value === undefined) return null;
+
+    if (typeof value === "object") {
+      if (seen.has(value)) return null;
+      seen.add(value);
+
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          const found = walk(item);
+          if (found !== null) return found;
+        }
+        return null;
+      }
+
+      const obj = value as Record<string, unknown>;
+
+      for (const key of [
+        "distance_m",
+        "distance",
+        "Distance",
+        "distancia",
+        "distância",
+        "Distancia",
+        "Distância",
+        "dist",
+      ]) {
+        if (key in obj) {
+          const n = numberFromValue(obj[key]);
+          if (n !== null) return n;
+        }
+      }
+
+      for (const key of ["text", "value", "payload", "data", "message"]) {
+        if (typeof obj[key] === "string") {
+          const found = walk(obj[key]);
+          if (found !== null) return found;
+        }
+      }
+
+      return null;
+    }
+
+    let text = String(value ?? "");
+
     if (typeof value === "string") {
       try {
         const parsed = JSON.parse(value);
-        text = typeof parsed?.text === "string" ? parsed.text : JSON.stringify(parsed);
+        const found = walk(parsed);
+        if (found !== null) return found;
       } catch {
         // texto livre
       }
     }
-  } catch {
+
+    text = text.replace(",", ".");
+
+    const distanceMatch = text.match(/(?:distance|dist[aâ]ncia|distancia|distância|dist)\s*[:=\-]?\s*([0-9]+(?:\.[0-9]+)?)/i);
+    if (distanceMatch?.[1]) {
+      const n = Number(distanceMatch[1]);
+      if (Number.isFinite(n)) return n;
+    }
+
+    const cleaned = text.replace(/WL-?\d+/gi, "");
+    const meterMatch = cleaned.match(/([0-9]+(?:\.[0-9]+)?)\s*m\b/i);
+    if (meterMatch?.[1]) {
+      const n = Number(meterMatch[1]);
+      if (Number.isFinite(n)) return n;
+    }
+
     return null;
   }
 
-  const match = text.match(/Distance[^\d]*([\d.]+)/i);
-  if (!match?.[1]) return null;
-  const distance = Number(match[1]);
+  const distance = walk(payloadValue);
+  if (distance === null) return null;
   if (!Number.isFinite(distance) || distance < 0 || distance > LARANJAL_SENSOR_HEIGHT_M + 1) return null;
   return distance;
 }
