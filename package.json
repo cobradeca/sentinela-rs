@@ -8,6 +8,7 @@
     "lint": "eslint src",
     "audit:pwa": "node scripts/audit-pwa.cjs",
     "verify": "npm run lint && npm run build && npm run audit:pwa",
+    "prebuild": "node scripts/bump-sw-version.cjs",
     "build": "vite build",
     "preview": "vite preview",
     "deploy": "npm run build && gh-pages -d dist"
