@@ -169,7 +169,7 @@ export function CondicoesVoo({ className = "", data = null, loading = false, err
         })}
       </div>
 
-      <footer className="sr-mod-footer" style={{ display: "grid", gap: 8 }}>
+      <footer className="sr-mod-footer" style={{ display: "grid", gap: 8, marginTop: "auto" }}>
         <div style={{ fontSize: 13, color: "var(--sr-text-muted)" }}>Aeroportos: POA • Pelotas • Canoas • Santa Maria</div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, color: "var(--sr-text-muted)", borderTop: "1px solid var(--sr-border)", paddingTop: 8 }}>
           <span>Fonte: AWC/NOAA</span>

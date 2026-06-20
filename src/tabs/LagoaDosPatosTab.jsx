@@ -384,7 +384,7 @@ export function LagoaDosPatosTab({ ctx }) {
             </div>
           </div>
 
-          <div className="sr-card-v2">
+          <div className="sr-card-v2" style={{ flex: 1 }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 12, flexWrap: "wrap" }}>
               <div>
                 <h3 className="sr-card-title" style={{ marginBottom: 4 }}>Histórico do Nível (m)</h3>
