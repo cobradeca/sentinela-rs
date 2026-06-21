@@ -224,6 +224,13 @@ a:focus-visible {
   flex-direction: column;
 }
 
+.sr-mod-card,
+.sr-panorama-block,
+.sr-panorama-roads,
+.sr-dashboard-two-col > * {
+  min-width: 0;
+}
+
 .sr-mod-header {
   display: flex;
   justify-content: space-between;
@@ -672,8 +679,8 @@ body[data-theme="dark"] .sr-panorama-roads {
   background: rgba(255,255,255,0.03);
 }
 
-.sr-panorama-block span,
-.sr-veg-grid span {
+.sr-panorama-block > span,
+.sr-veg-grid > span {
   display: block;
   color: var(--sr-text);
   font-weight: 800;
