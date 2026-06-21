@@ -1,4 +1,4 @@
-const CACHE_NAME = "sentinela-rs-v1782007150159";
+const CACHE_NAME = "sentinela-rs-v1782009632892";
 const APP_BASE = "/sentinela-rs/";
 
 const APP_SHELL = [
