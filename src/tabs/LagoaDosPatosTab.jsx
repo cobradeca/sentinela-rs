@@ -253,7 +253,7 @@ export function LagoaDosPatosTab({ ctx }) {
   const marineWindSpeed = typeof poaWeather?.wind_speed_10m === "number" ? poaWeather.wind_speed_10m : null;
 
   return (
-    <div style={{ display: "grid", gap: 14 }}>
+    <div style={{ display: "grid", gap: 14, minWidth: 0 }}>
       <div className="sr-kpi-row">
         <div className="sr-kpi-card sr-kpi-blue">
           <div className="sr-kpi-icon">
@@ -330,7 +330,7 @@ export function LagoaDosPatosTab({ ctx }) {
           </div>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14, minWidth: 0 }}>
           <div className="sr-card-v2">
             <h3 className="sr-card-title">Estações de monitoramento</h3>
             <div className="sr-table-scroll">

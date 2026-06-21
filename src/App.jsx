@@ -1218,6 +1218,7 @@ export default function SentinelaRS() {
     }
   };
 
+  // eslint-disable-next-line no-constant-condition, no-constant-binary-expression
   const weatherWidget = false && activeTab === "dashboard" && poaData ? (
     <div className="sr-weather-widget">
       <span style={{ fontSize: 22 }}>{wmoEmoji(poaData.weatherCurrentCode ?? 0)}</span>

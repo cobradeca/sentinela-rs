@@ -51,7 +51,7 @@ export function LineChart({ points, width = 320, height = 120, color = "#1a6fd4"
   return (
     <div className="sr-line-chart">
       {label && <div className="sr-chart-label">{label}</div>}
-      <svg width="100%" height="auto" viewBox={`0 0 ${width} ${height}`} style={{ display: "block", maxWidth: width }}>
+      <svg width="100%" viewBox={`0 0 ${width} ${height}`} style={{ display: "block", maxWidth: width, height: "auto" }}>
         <defs>
           <linearGradient id={`sr-area-${gradientId}`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={color} stopOpacity="0.28" />

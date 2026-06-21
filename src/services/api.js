@@ -313,6 +313,12 @@ function classifyFromWeather(visKm, tetoFt) {
   return "VFR";
 }
 
+function toNumber(val) {
+  if (val === null || val === undefined || val === "") return null;
+  const num = Number(val);
+  return Number.isNaN(num) ? null : num;
+}
+
 function normalizeTafForecast(fcst) {
   if (!fcst || typeof fcst !== "object") return null;
   const visib = fcst.visib;
