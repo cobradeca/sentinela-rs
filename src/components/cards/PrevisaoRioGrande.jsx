@@ -456,7 +456,7 @@ export function PrevisaoRioGrande({ className = "", onNavigate, userCity }) {
       <div style={{
         display: "flex",
         justifyContent: "space-between",
-        gap: 6,
+        gap: 4,
         overflowX: "auto",
         paddingBottom: 4,
         marginTop: 8,
@@ -479,7 +479,7 @@ export function PrevisaoRioGrande({ className = "", onNavigate, userCity }) {
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                padding: "10px 4px",
+                padding: "7px 4px",
                 borderRadius: 12,
                 cursor: "pointer",
                 background: isSelected ? "#f1f3f4" : (isHovered ? "#f8f9fa" : "transparent"),
@@ -492,7 +492,7 @@ export function PrevisaoRioGrande({ className = "", onNavigate, userCity }) {
               <span style={{ fontSize: 12, fontWeight: 500, color: "#202124", textTransform: "capitalize" }}>
                 {getShortDayName(day.date, index)}
               </span>
-              <div style={{ margin: "6px 0", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ margin: "3px 0", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <WeatherIcon code={day.code} size={28} />
               </div>
               <div style={{ display: "flex", gap: 4, fontSize: 11, justifyContent: "center", width: "100%" }}>
