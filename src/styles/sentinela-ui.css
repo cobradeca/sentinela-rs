@@ -1419,19 +1419,20 @@ body[data-theme="dark"] .sr-weather-temp {
 
 .sr-forecast-carousel {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   overflow-x: auto;
   padding-bottom: 8px;
   scroll-snap-type: x mandatory;
 }
 
 .sr-forecast-day-card {
-  flex: 0 0 126px;
+  flex: 1 1 0;
+  min-width: 64px;
   scroll-snap-align: start;
   background: var(--sr-card);
   border: 1px solid var(--sr-border);
   border-radius: var(--sr-radius);
-  padding: 14px 10px;
+  padding: 10px 6px;
   text-align: center;
 }
 
@@ -2061,10 +2062,6 @@ body[data-theme="dark"] .sr-weather-temp {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .sr-forecast-day-card {
-    flex: 0 0 106px;
-    padding: 10px 6px;
-  }
 
   .sr-forecast-day-card .sr-emoji {
     font-size: 22px;
