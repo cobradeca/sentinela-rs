@@ -4,3 +4,6 @@ dist/
 .env.local
 .DS_Store
 .codex-remote-attachments/
+
+# SW version é gerado em prebuild
+public/sw.js
