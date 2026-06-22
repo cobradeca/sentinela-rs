@@ -35,7 +35,7 @@ window.addEventListener("unhandledrejection", (event) => {
 
 async function registerPwaServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
-  if (!location.pathname.startsWith("/sentinela-rs/")) return;
+  if (!import.meta.env.PROD) return;
 
   try {
     await navigator.serviceWorker.register("/sentinela-rs/sw.js", {
