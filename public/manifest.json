@@ -6,7 +6,7 @@
   "start_url": "/sentinela-rs/",
   "scope": "/sentinela-rs/",
   "display": "standalone",
-  "display_override": ["standalone"],
+  "display_override": ["window-controls-overlay", "standalone"],
   "background_color": "#070b12",
   "theme_color": "#070b12",
   "orientation": "portrait",
