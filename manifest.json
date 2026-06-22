@@ -72,9 +72,13 @@
     "client_mode": ["navigate-new"]
   },
   "scope_extensions": [
-    {
-      "origin": "https://cobradeca.github.io"
-    }
+    { "origin": "https://api.open-meteo.com" },
+    { "origin": "https://apiprevmet3.inmet.gov.br" },
+    { "origin": "https://ykaaxrzkfeaxatrnkkxj.supabase.co" },
+    { "origin": "https://rapidmapping.emergency.copernicus.eu" },
+    { "origin": "https://riskandrecovery.emergency.copernicus.eu" },
+    { "origin": "https://queimadas.dgi.inpe.br" },
+    { "origin": "https://redemet.decea.mil.br" }
   ],
   "icons": [
     {
