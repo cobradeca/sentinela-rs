@@ -85,8 +85,8 @@ export function PrevisaoTab({ ctx }) {
           <div className="sr-card-v2" style={{ marginBottom: 18 }}>
             <h3 className="sr-card-title">Visão geral dos próximos 14 dias</h3>
             <div style={{ display: "flex", gap: 16, marginBottom: 12, fontSize: 12, color: "var(--sr-text-muted)" }}>
-              <span><span style={{ color: "#dc2626", fontWeight: 700 }}>—</span> Temp. máx.</span>
-              <span><span style={{ color: "#2563eb", fontWeight: 700 }}>—</span> Temp. mín.</span>
+              <span><span style={{ color: "var(--sr-red)", fontWeight: 700 }}>—</span> Temp. máx.</span>
+              <span><span style={{ color: "var(--sr-blue)", fontWeight: 700 }}>—</span> Temp. mín.</span>
               <span><span style={{ color: "#93c5fd", fontWeight: 700 }}>■</span> Precipitação (mm)</span>
             </div>
             <div className="sr-combo-chart">
@@ -103,8 +103,8 @@ export function PrevisaoTab({ ctx }) {
                       <br />
                       {dd.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
                     </div>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: "#dc2626" }}>{tx.toFixed(0)}°</div>
-                    <div style={{ fontSize: 9, color: "#2563eb" }}>{tn.toFixed(0)}°</div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "var(--sr-red)" }}>{tx.toFixed(0)}°</div>
+                    <div style={{ fontSize: 9, color: "var(--sr-blue)" }}>{tn.toFixed(0)}°</div>
                     <div className="sr-combo-bar-fill" style={{ height: `${(p / maxPrecip) * 80}px` }} title={`${p.toFixed(1)} mm`} />
                     <div style={{ fontSize: 9, color: "var(--sr-blue)", fontWeight: 600 }}>{p.toFixed(1)}</div>
                   </div>
@@ -152,11 +152,11 @@ export function PrevisaoTab({ ctx }) {
           <div className="sr-kpi-row">
             <div className="sr-card-v2">
               <div className="sr-kpi-label">Temp. máx. média</div>
-              <div className="sr-kpi-value" style={{ color: "#dc2626" }}>{avgMax != null ? `${avgMax.toFixed(1)} °C` : "—"}</div>
+              <div className="sr-kpi-value" style={{ color: "var(--sr-red)" }}>{avgMax != null ? `${avgMax.toFixed(1)} °C` : "—"}</div>
             </div>
             <div className="sr-card-v2">
               <div className="sr-kpi-label">Temp. mín. média</div>
-              <div className="sr-kpi-value" style={{ color: "#2563eb" }}>{avgMin != null ? `${avgMin.toFixed(1)} °C` : "—"}</div>
+              <div className="sr-kpi-value" style={{ color: "var(--sr-blue)" }}>{avgMin != null ? `${avgMin.toFixed(1)} °C` : "—"}</div>
             </div>
             <div className="sr-card-v2">
               <div className="sr-kpi-label">Precipitação total</div>

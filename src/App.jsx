@@ -1101,7 +1101,7 @@ export default function SentinelaRS() {
     return (
       <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
         onClick={onClose}>
-        <div onClick={e => e.stopPropagation()} style={{ background: dark ? "#0f172a" : "#ffffff", border: `1px solid ${t.border}`, borderRadius: 10, padding: 22, maxWidth: 560, width: "100%", maxHeight: "85vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
+        <div onClick={e => e.stopPropagation()} style={{ background: "var(--sr-card)", border: `1px solid ${t.border}`, borderRadius: 10, padding: 22, maxWidth: 560, width: "100%", maxHeight: "85vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
             <div>
               <div style={{ fontSize: 9, color: t.textMuted, letterSpacing: 2 }}>{station.type.toUpperCase()} · {station.rioRef || ""}</div>
@@ -1294,7 +1294,7 @@ export default function SentinelaRS() {
             />
 
             {officialHeaderAlert && activeTab !== "dashboard" && activeTab !== "alertas" && (
-              <div className="sr-info-banner" style={{ background: "var(--sr-red-bg)", color: "#991b1b" }}>
+              <div className="sr-info-banner" style={{ background: "var(--sr-red-bg)", color: "var(--sr-red)" }}>
                 <span><strong>Defesa Civil RS:</strong> {officialHeaderAlert.message}</span>
                 <button type="button" onClick={() => setActiveTab("alertas")}>Abrir alertas</button>
               </div>

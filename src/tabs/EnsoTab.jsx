@@ -224,7 +224,7 @@ export function EnsoTab({ ctx }) {
               <NavIcon name="clock" size={16} />
               <span>Última atualização:<br />{fetchedAt ? formatDateTimeBR(fetchedAt) : "--"}</span>
             </div>
-            <div className="sr-btn-outline" style={{ fontSize: 13, fontWeight: 600, borderRadius: 20, padding: "8px 14px", border: "1px solid #cbd5e1", background: "#f1f5f9" }}>Fonte: NOAA / CPC <NavIcon name="info" size={14} /></div>
+            <div className="sr-btn-outline" style={{ fontSize: 13, fontWeight: 600, borderRadius: 20, padding: "8px 14px", border: "1px solid var(--sr-border)", background: "var(--sr-bg)" }}>Fonte: NOAA / CPC <NavIcon name="info" size={14} /></div>
           </div>
         </div>
  
@@ -234,7 +234,7 @@ export function EnsoTab({ ctx }) {
             ["Tendência (3 meses)", trendText(forecast), probReady ? "IRI/CCSR probabilístico" : "Sem curva validada", "elNino", phaseColors.elNino],
             ["Atualização", fetchedAt ? formatDateTimeBR(fetchedAt).split(",")[0] : "--", "dados oficiais", "neutral", phaseColors.neutral],
           ].map(([label, value, sub, colorKey, borderColor]) => (
-            <div key={label} className="sr-card-v2" style={{ margin: 0, padding: "clamp(12px, 3vw, 18px)", borderRadius: 8, borderLeft: `4px solid ${borderColor}`, background: borderColor === phaseColors.elNino ? "#fef2f2" : borderColor === phaseColors.laNina ? "#f0f9ff" : "var(--sr-card-bg)" }}>
+            <div key={label} className="sr-card-v2" style={{ margin: 0, padding: "clamp(12px, 3vw, 18px)", borderRadius: 8, borderLeft: `4px solid ${borderColor}`, background: "var(--sr-card)" }}>
               <div className="sr-kpi-label" style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px", color: "var(--sr-text-muted)" }}>{label}</div>
               <div style={{ fontSize: "clamp(20px, 4.5vw, 28px)", fontWeight: 900, color: borderColor, marginTop: 10, marginBottom: 8 }}>{value}</div>
               <div className="sr-kpi-sublabel" style={{ fontSize: 12, color: "var(--sr-text-muted)", fontWeight: 600 }}>{sub}</div>
@@ -244,11 +244,11 @@ export function EnsoTab({ ctx }) {
       </div>
 
       <div className="sr-enso-two-col">
-        <div className="sr-card-v2" style={{ background: "linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%)", borderTop: `3px solid ${phaseColors.elNino}`, gridColumn: 1 }}>
-          <div style={{ marginBottom: 16 }}>
-            <h3 className="sr-card-title" style={{ fontSize: 18, fontWeight: 800, color: "#0c2d4a", margin: "0 0 4px" }}>Previsão 12 meses</h3>
+        <div className="sr-card-v2" style={{ background: "var(--sr-card)", borderTop: `3px solid ${phaseColors.elNino}`, gridColumn: 1 }}>
+          <header style={{ marginBottom: 16 }}>
+            <h3 className="sr-card-title" style={{ fontSize: 18, fontWeight: 800, color: "var(--sr-text)", margin: "0 0 4px" }}>Previsão 12 meses</h3>
             <div style={{ color: "var(--sr-text-muted)", fontSize: 13, fontWeight: 500 }}>Probabilidade IRI/CCSR para próximos trimestres</div>
-          </div>
+          </header>
           {probReady ? (
             <>
               <ForecastTable forecast={forecast} />
@@ -272,7 +272,7 @@ export function EnsoTab({ ctx }) {
 
         <div style={{ display: "grid", gap: 16, gridTemplateRows: "1fr 1fr" }}>
           <div className="sr-card-v2" style={{ borderTop: `3px solid #94a3b8` }}>
-            <h3 className="sr-card-title" style={{ fontSize: 18, fontWeight: 800, color: "#0c2d4a", marginBottom: 14 }}>Impactos históricos no RS</h3>
+            <h3 className="sr-card-title" style={{ fontSize: 18, fontWeight: 800, color: "var(--sr-text)", marginBottom: 14 }}>Impactos históricos no RS</h3>
             {[
               ["La Niña", "Maior chance de chuvas abaixo da média no RS", phaseColors.laNina],
               ["Neutro", "Comportamento mais próximo da normalidade", "#64748b"],
@@ -289,7 +289,7 @@ export function EnsoTab({ ctx }) {
           </div>
 
           <div className="sr-card-v2" style={{ borderTop: `3px solid #dc2626` }}>
-            <h3 className="sr-card-title" style={{ fontSize: 18, fontWeight: 800, color: "#0c2d4a", marginBottom: 14 }}>Últimos eventos</h3>
+            <h3 className="sr-card-title" style={{ fontSize: 18, fontWeight: 800, color: "var(--sr-text)", marginBottom: 14 }}>Últimos eventos</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {historicalEvents.map((item, idx) => (
                 <button

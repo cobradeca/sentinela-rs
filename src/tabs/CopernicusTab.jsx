@@ -127,7 +127,7 @@ function EmsAoiMap() {
     <div style={{ borderRadius: 10, overflow: "hidden", border: "1.5px solid #bfdbfe" }}>
       <div style={{
         padding: "12px 16px",
-        background: "linear-gradient(135deg, #eff6ff 0%, #fff 100%)",
+        background: "var(--sr-card)",
         borderBottom: "1px solid #bfdbfe",
         display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap",
       }}>
@@ -180,7 +180,7 @@ export function CopernicusTab({ ctx }) {
         <div style={{
           padding: "14px 16px", borderRadius: 10,
           border: "1.5px solid #fca5a5",
-          background: "linear-gradient(135deg, #fff1f2 0%, #fff 100%)",
+          background: "var(--sr-card)",
           display: "grid", gap: 10,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
@@ -222,7 +222,7 @@ export function CopernicusTab({ ctx }) {
         <div style={{
           padding: "14px 16px", borderRadius: 10,
           border: "1.5px solid #d8b4fe",
-          background: "linear-gradient(135deg, #faf5ff 0%, #fff 100%)",
+          background: "var(--sr-card)",
           display: "grid", gap: 10,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
@@ -272,7 +272,7 @@ export function CopernicusTab({ ctx }) {
       {/* MUP-RS */}
       <div style={{
         padding: "14px 16px", borderRadius: 10,
-        background: "linear-gradient(135deg, #eef2ff 0%, #fff 100%)",
+        background: "var(--sr-card)",
         border: "1px solid rgba(99,102,241,0.32)",
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>

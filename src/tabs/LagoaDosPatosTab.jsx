@@ -164,7 +164,7 @@ function LagoaSVGMap({ points, selectedStationId, setSelectedStationId, lagoaSta
               height: sel ? 14 : 10,
               borderRadius: "50%",
               background: color,
-              border: `${sel ? 2.5 : 1.5}px solid ${sel ? "#1e293b" : "white"}`,
+              border: `${sel ? 2.5 : 1.5}px solid ${sel ? "var(--sr-text)" : "white"}`,
               transform: "translate(-50%,-50%)",
               transition: "all 0.2s",
               boxShadow: "0 1px 4px rgba(0,0,0,0.5)",
@@ -326,7 +326,7 @@ export function LagoaDosPatosTab({ ctx }) {
             <span><span className="sr-status-dot green" /> Normal</span>
             <span><span className="sr-status-dot orange" /> Atenção</span>
             <span><span className="sr-status-dot red" /> Alerta</span>
-            <span><span className="sr-status-dot" style={{ background: "#94a3b8" }} /> Sem leitura</span>
+            <span><span className="sr-status-dot" style={{ background: "var(--sr-text-faint)" }} /> Sem leitura</span>
           </div>
         </div>
 
@@ -404,7 +404,7 @@ export function LagoaDosPatosTab({ ctx }) {
               points={selectedHistory}
               width={480}
               height={190}
-              color="#1a6fd4"
+              color="var(--sr-blue)"
               referenceY={0}
               label={shortName(selectedPoint?.point || {})}
             />

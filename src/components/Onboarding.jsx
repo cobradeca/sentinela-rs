@@ -27,7 +27,7 @@ export function Onboarding({ t, dark }) {
     padding: 16,
   };
   const box = {
-    background: dark ? "#07111d" : "#f8fafc",
+    background: "var(--sr-bg)",
     border: `1px solid ${dark ? "rgba(34,211,238,0.25)" : "rgba(8,145,178,0.2)"}`,
     borderRadius: 8, padding: "24px 20px",
     maxWidth: 420, width: "100%",
@@ -60,7 +60,7 @@ export function Onboarding({ t, dark }) {
           onClick={close}
           style={{
             width: "100%", padding: "10px 0",
-            background: t.accent, color: "#000",
+            background: t.accent, color: "var(--sr-navy-deep)",
             border: "none", borderRadius: 5,
             fontSize: 12, fontWeight: 700,
             cursor: "pointer", fontFamily: "inherit",

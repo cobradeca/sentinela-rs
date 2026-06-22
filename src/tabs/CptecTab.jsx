@@ -45,7 +45,7 @@ export function CptecTab({ ctx }) {
               <div style={{ fontSize: 8, color: "#22c55e", border: "1px solid #22c55e55", borderRadius: 4, padding: "3px 6px" }}>OK</div>
             </div>
             <a href={p.url} target="_blank" rel="noreferrer">
-              <img src={p.url} alt={p.title} style={{ width: "100%", borderRadius: 6, border: `1px solid ${t.border}`, background: "#fff" }} />
+              <img src={p.url} alt={p.title} style={{ width: "100%", borderRadius: 6, border: `1px solid ${t.border}`, background: "var(--sr-card)" }} />
             </a>
             <div style={{ marginTop: 7, fontSize: 8, color: t.textMuted }}>
               Fonte: CPTEC/INPE · produto gráfico oficial · {p.contentLength ? `${Math.round(p.contentLength / 1024)} KB` : "tamanho não informado"}

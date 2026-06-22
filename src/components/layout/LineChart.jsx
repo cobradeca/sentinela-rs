@@ -23,7 +23,7 @@ function buildSmoothPath(xs, ys) {
   return d;
 }
 
-export function LineChart({ points, width = 320, height = 120, color = "#1a6fd4", referenceY = null, dashed = false, label = "" }) {
+export function LineChart({ points, width = 320, height = 120, color = "var(--sr-blue)", referenceY = null, dashed = false, label = "" }) {
   const gradientId = useId();
 
   if (!points || points.length < 2) {
@@ -59,7 +59,7 @@ export function LineChart({ points, width = 320, height = 120, color = "#1a6fd4"
           </linearGradient>
         </defs>
         {refY !== null && (
-          <line x1={padX} y1={refY} x2={width - padX} y2={refY} stroke="#94a3b8" strokeWidth="1" strokeDasharray="4 4" />
+          <line x1={padX} y1={refY} x2={width - padX} y2={refY} stroke="var(--sr-text-faint)" strokeWidth="1" strokeDasharray="4 4" />
         )}
         <path d={areaPath} fill={`url(#sr-area-${gradientId})`} stroke="none" />
         <path
@@ -74,7 +74,7 @@ export function LineChart({ points, width = 320, height = 120, color = "#1a6fd4"
         {points.map((p, i) => (
           <g key={i}>
             <circle cx={xs[i]} cy={ys[i]} r="4" fill={color} />
-            <text x={xs[i]} y={ys[i] - 8} textAnchor="middle" fontSize="9" fill="#64748b">
+            <text x={xs[i]} y={ys[i] - 8} textAnchor="middle" fontSize="9" fill="var(--sr-text-muted)">
               {p.v.toFixed(2).replace(".", ",")}
             </text>
           </g>

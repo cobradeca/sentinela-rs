@@ -125,11 +125,11 @@ export function PrevisaoRioGrande({ className = "", onNavigate, userCity }) {
 
   if (state.loading) {
     return (
-      <section className={`sr-mod-card ${className}`} style={{ background: "#ffffff", border: "1px solid #dadce0", borderRadius: 16, padding: 20 }}>
-        <div className="sr-mod-skeleton h-5 w-1-2" style={{ backgroundColor: "#e2e8f0" }} />
+      <section className={`sr-mod-card ${className}`}>
+        <div className="sr-mod-skeleton h-5 w-1-2" style={{ backgroundColor: "var(--sr-border)" }} />
         <div style={{ display: "flex", gap: 8, marginTop: 20, overflowX: "auto" }}>
           {Array.from({ length: 8 }).map((_, index) => (
-            <div key={index} className="sr-mod-skeleton h-36" style={{ flex: "1 0 70px", backgroundColor: "#e2e8f0", borderRadius: 8 }} />
+            <div key={index} className="sr-mod-skeleton h-36" style={{ flex: "1 0 70px", backgroundColor: "var(--sr-border)", borderRadius: 8 }} />
           ))}
         </div>
       </section>
@@ -138,10 +138,10 @@ export function PrevisaoRioGrande({ className = "", onNavigate, userCity }) {
 
   if (state.error) {
     return (
-      <section className={`sr-mod-card ${className}`} style={{ background: "#ffffff", border: "1px solid #dadce0", borderRadius: 16, padding: 20 }}>
-        <div className="sr-mod-error" style={{ color: "#721c24", backgroundColor: "#f8d7da", borderColor: "#f5c6cb" }}>
+      <section className={`sr-mod-card ${className}`}>
+        <div className="sr-mod-error" style={{ color: "var(--sr-text)", backgroundColor: "var(--sr-red-bg)", borderColor: "var(--sr-red)" }}>
           <span>{state.error}</span>
-          <button type="button" onClick={load} style={{ border: "1px solid #f5c6cb", borderRadius: 8, padding: "6px 12px", background: "#fff", cursor: "pointer" }}>
+          <button type="button" onClick={load} className="sr-btn-outline" style={{ marginTop: 8 }}>
             Tentar novamente
           </button>
         </div>
@@ -230,21 +230,15 @@ export function PrevisaoRioGrande({ className = "", onNavigate, userCity }) {
 
   return (
     <section className={`sr-mod-card ${className}`} style={{
-      background: "#ffffff",
-      color: "#202124",
-      border: "1px solid #dadce0",
-      borderRadius: 16,
       padding: "20px 24px",
-      boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04)",
       display: "flex",
       flexDirection: "column",
       gap: 16,
-      fontFamily: "var(--sr-font)",
       minHeight: 480
     }}>
       <header className="sr-mod-header" style={{ marginBottom: 0, width: "100%" }}>
         <div className="sr-mod-title"><span>☁</span> PREVISÃO</div>
-        <div className="sr-mod-badge" style={{ color: "#70757a" }}>
+        <div className="sr-mod-badge" style={{ color: "var(--sr-text-muted)" }}>
           Fonte: Open-Meteo • Atualizado: {state.updatedAt?.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
         </div>
       </header>
@@ -256,16 +250,16 @@ export function PrevisaoRioGrande({ className = "", onNavigate, userCity }) {
             <WeatherIcon code={codeVal} size={54} />
           </div>
           <div style={{ display: "flex", alignItems: "flex-start" }}>
-            <span style={{ fontSize: 52, fontWeight: 400, lineHeight: 1, color: "#202124" }}>
+            <span style={{ fontSize: 52, fontWeight: 400, lineHeight: 1, color: "var(--sr-text)" }}>
               {formatTemp(tempVal)}
             </span>
-            <div style={{ display: "flex", gap: 3, fontSize: 16, color: "#70757a", marginTop: 4, marginLeft: 2 }}>
+            <div style={{ display: "flex", gap: 3, fontSize: 16, color: "var(--sr-text-muted)", marginTop: 4, marginLeft: 2 }}>
               <button
                 type="button"
                 onClick={() => setTempUnit("C")}
                 style={{
                   background: "none", border: "none", padding: 0, cursor: "pointer",
-                  color: tempUnit === "C" ? "#212121" : "#70757a",
+                  color: tempUnit === "C" ? "var(--sr-text)" : "var(--sr-text-muted)",
                   fontWeight: tempUnit === "C" ? 600 : 400,
                   fontSize: 16
                 }}
@@ -278,7 +272,7 @@ export function PrevisaoRioGrande({ className = "", onNavigate, userCity }) {
                 onClick={() => setTempUnit("F")}
                 style={{
                   background: "none", border: "none", padding: 0, cursor: "pointer",
-                  color: tempUnit === "F" ? "#212121" : "#70757a",
+                  color: tempUnit === "F" ? "var(--sr-text)" : "var(--sr-text-muted)",
                   fontWeight: tempUnit === "F" ? 600 : 400,
                   fontSize: 16
                 }}
@@ -288,7 +282,7 @@ export function PrevisaoRioGrande({ className = "", onNavigate, userCity }) {
             </div>
           </div>
           
-          <div style={{ display: "flex", flexDirection: "column", fontSize: 13, color: "#70757a", marginLeft: 16, lineHeight: 1.45 }}>
+          <div style={{ display: "flex", flexDirection: "column", fontSize: 13, color: "var(--sr-text-muted)", marginLeft: 16, lineHeight: 1.45 }}>
             <div>Chuva: {rainProbVal}%</div>
             <div>Umidade: {Math.round(humidityVal)}%</div>
             <div>Vento: {Math.round(windVal)} km/h</div>
@@ -296,13 +290,13 @@ export function PrevisaoRioGrande({ className = "", onNavigate, userCity }) {
         </div>
 
         <div style={{ textAlign: "right", minWidth: 120 }}>
-          <div style={{ fontSize: 20, fontWeight: 600, color: "#202124" }}>
+          <div style={{ fontSize: 20, fontWeight: 600, color: "var(--sr-text)" }}>
             {typeof userCity === "string" ? userCity : (userCity?.name || "Rio Grande")}
           </div>
-          <div style={{ fontSize: 13, color: "#70757a", marginTop: 2 }}>
+          <div style={{ fontSize: 13, color: "var(--sr-text-muted)", marginTop: 2 }}>
             {headerTimeLabel}
           </div>
-          <div style={{ fontSize: 13, color: "#70757a", marginTop: 2, fontWeight: 500 }}>
+          <div style={{ fontSize: 13, color: "var(--sr-text-muted)", marginTop: 2, fontWeight: 500 }}>
             {getWeatherDesc(codeVal)}
           </div>
         </div>
@@ -332,7 +326,7 @@ export function PrevisaoRioGrande({ className = "", onNavigate, userCity }) {
               cursor: "pointer",
               fontSize: 14,
               fontWeight: 500,
-              color: selectedTab === tab.id ? "#202124" : "#70757a",
+              color: selectedTab === tab.id ? "var(--sr-text)" : "var(--sr-text-muted)",
               position: "relative"
             }}
           >
@@ -344,7 +338,7 @@ export function PrevisaoRioGrande({ className = "", onNavigate, userCity }) {
                 left: 0,
                 right: 0,
                 height: 3,
-                background: "#eab308",
+                background: "var(--sr-yellow)",
                 borderRadius: "3px 3px 0 0"
               }} />
             )}
@@ -389,7 +383,7 @@ export function PrevisaoRioGrande({ className = "", onNavigate, userCity }) {
                   x={x}
                   y={yCoords[idx] - 12}
                   textAnchor="middle"
-                  fill="#202124"
+                  fill="var(--sr-text)"
                   fontSize={11}
                   fontWeight={600}
                 >
@@ -420,7 +414,7 @@ export function PrevisaoRioGrande({ className = "", onNavigate, userCity }) {
                   x={x}
                   y={122}
                   textAnchor="middle"
-                  fill="#70757a"
+                  fill="var(--sr-text-muted)"
                   fontSize={11}
                   fontWeight={isActive ? 600 : 400}
                 >
@@ -482,22 +476,22 @@ export function PrevisaoRioGrande({ className = "", onNavigate, userCity }) {
                 padding: "7px 4px",
                 borderRadius: 12,
                 cursor: "pointer",
-                background: isSelected ? "#f1f3f4" : (isHovered ? "#f8f9fa" : "transparent"),
-                border: isSelected ? "1px solid #dadce0" : "1px solid transparent",
+                background: isSelected ? "var(--sr-blue-light)" : (isHovered ? "var(--sr-bg)" : "transparent"),
+                border: isSelected ? "1px solid var(--sr-border)" : "1px solid transparent",
                 transition: "background 0.2s, border 0.2s",
                 boxSizing: "border-box"
               }}
               className="sr-forecast-day-item"
             >
-              <span style={{ fontSize: 12, fontWeight: 500, color: "#202124", textTransform: "capitalize" }}>
+              <span style={{ fontSize: 12, fontWeight: 500, color: "var(--sr-text)", textTransform: "capitalize" }}>
                 {getShortDayName(day.date, index)}
               </span>
               <div style={{ margin: "3px 0", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <WeatherIcon code={day.code} size={28} />
               </div>
               <div style={{ display: "flex", gap: 4, fontSize: 11, justifyContent: "center", width: "100%" }}>
-                <span style={{ fontWeight: 600, color: "#202124" }}>{formatTemp(day.max)}°</span>
-                <span style={{ color: "#70757a" }}>{formatTemp(day.min)}°</span>
+                <span style={{ fontWeight: 600, color: "var(--sr-text)" }}>{formatTemp(day.max)}°</span>
+                <span style={{ color: "var(--sr-text-muted)" }}>{formatTemp(day.min)}°</span>
               </div>
             </div>
           );
