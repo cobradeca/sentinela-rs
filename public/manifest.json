@@ -73,12 +73,16 @@
   },
   "scope_extensions": [
     { "origin": "https://api.open-meteo.com" },
+    { "origin": "https://marine-api.open-meteo.com" },
+    { "origin": "https://api-medidas-porto-7bni.onrender.com" },
     { "origin": "https://apiprevmet3.inmet.gov.br" },
-    { "origin": "https://ykaaxrzkfeaxatrnkkxj.supabase.co" },
+    { "origin": "https://ipapi.co" },
     { "origin": "https://rapidmapping.emergency.copernicus.eu" },
     { "origin": "https://riskandrecovery.emergency.copernicus.eu" },
-    { "origin": "https://queimadas.dgi.inpe.br" },
-    { "origin": "https://redemet.decea.mil.br" }
+    { "origin": "https://www.cpc.ncep.noaa.gov" },
+    { "origin": "https://www.defesacivil.rs.gov.br" },
+    { "origin": "https://www.snirh.gov.br" },
+    { "origin": "https://ykaaxrzkfeaxatrnkkxj.supabase.co" }
   ],
   "icons": [
     {
