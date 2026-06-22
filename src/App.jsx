@@ -695,7 +695,7 @@ export default function SentinelaRS() {
     const sensorsMap = sensorsResult.status === "fulfilled" ? (sensorsResult.value?.sensors || {}) : {};
     const riverLevelsData = riverLevelsResult.status === "fulfilled" ? riverLevelsResult.value : null;
     const roadBlocksData = roadBlocksResult.status === "fulfilled" ? roadBlocksResult.value : null;
-    const officialAlerts = defesaResult.status === "fulfilled" ? defesaResult.value : [];
+    const officialAlerts = defesaResult.status === "fulfilled" ? (defesaResult.value?.alerts || []) : [];
     if (riverLevelsData) {
       health["ANA Telemetria Rios"] = {
         ...(health["ANA Telemetria Rios"] || {}),
@@ -1259,8 +1259,6 @@ export default function SentinelaRS() {
           onNavigate={setActiveTab}
           lastUpdate={lastUpdate}
           formatDateTime={formatDateTimeBR}
-          dark={dark}
-          setDark={setDark}
         />
 
         <div className="sr-main-v2">

@@ -61,7 +61,7 @@ export function AlertasTab({ ctx }) {
 
       {orderedAlerts.length > 0 && (
         <div style={{ display: "grid", gap: 10 }}>
-          {orderedAlerts.map((alert, i) => {
+          {orderedAlerts.slice(1).map((alert, i) => {
             const level = alert.risk_level || "ALERTA";
             const risk = RISK_LEVELS[level] || RISK_LEVELS.ALERTA;
             const riskColor = getRiskColor(level);
