@@ -375,7 +375,7 @@ export function CopernicusTab({ ctx }) {
         border: "1px solid var(--color-border-tertiary)",
         background: "var(--color-background-primary)",
       }}>
-        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>🏛 Obras & Registros Históricos Pós-Evento</div>
+        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>🏛 Literaturas & Registros Históricos</div>
         <div style={{ fontSize: 12, color: "var(--color-text-secondary)", marginBottom: 12, lineHeight: 1.5 }}>
           Documentos oficiais e estudos técnicos produzidos após maio de 2024 — legislação, impacto socioeconômico, gestão hídrica e resposta institucional.
         </div>
@@ -394,10 +394,10 @@ export function CopernicusTab({ ctx }) {
               style={{ borderRadius: 4, flexShrink: 0, objectFit: "contain" }}
               onError={e => { e.target.style.display="none"; }} />
             <div>
-              <div style={{ fontSize: 12, fontWeight: "bold", color: "white" }}>
+              <div style={{ fontSize: 12, fontWeight: "bold", color: "var(--sr-text)" }}>
                 Além da Calamidade — Respostas e Reconstrução do RS
               </div>
-              <div style={{ fontSize: 11, color: "white", fontWeight: "normal", marginTop: 2 }}>
+              <div style={{ fontSize: 11, color: "var(--sr-text)", fontWeight: "normal", marginTop: 2 }}>
                 Senado Federal · Análise legislativa e institucional das respostas ao desastre, propostas de reconstrução e lacunas de governança
               </div>
             </div>
@@ -417,10 +417,10 @@ export function CopernicusTab({ ctx }) {
               style={{ borderRadius: 4, flexShrink: 0, objectFit: "contain" }}
               onError={e => { e.target.style.display="none"; }} />
             <div>
-              <div style={{ fontSize: 12, fontWeight: "bold", color: "white" }}>
+              <div style={{ fontSize: 12, fontWeight: "bold", color: "var(--sr-text)" }}>
                 Impactos Socioeconômicos — 1 ano após o desastre
               </div>
-              <div style={{ fontSize: 11, color: "white", fontWeight: "normal", marginTop: 2 }}>
+              <div style={{ fontSize: 11, color: "var(--sr-text)", fontWeight: "normal", marginTop: 2 }}>
                 SEPLAN-RS · Quantificação de perdas por setor (agropecuária, indústria, infraestrutura) e análise regional do impacto econômico acumulado
               </div>
             </div>
@@ -440,10 +440,10 @@ export function CopernicusTab({ ctx }) {
               style={{ borderRadius: 4, flexShrink: 0, objectFit: "contain" }}
               onError={e => { e.target.style.display="none"; }} />
             <div>
-              <div style={{ fontSize: 12, fontWeight: "bold", color: "white" }}>
+              <div style={{ fontSize: 12, fontWeight: "bold", color: "var(--sr-text)" }}>
                 Relatório Técnico ANA — Gestão Hídrica na Crise
               </div>
-              <div style={{ fontSize: 11, color: "white", fontWeight: "normal", marginTop: 2 }}>
+              <div style={{ fontSize: 11, color: "var(--sr-text)", fontWeight: "normal", marginTop: 2 }}>
                 Agência Nacional de Águas · Avaliação das barragens, níveis fluviais, operação do sistema e recomendações para monitoramento futuro
               </div>
             </div>
@@ -463,10 +463,10 @@ export function CopernicusTab({ ctx }) {
               style={{ borderRadius: 4, flexShrink: 0, objectFit: "contain" }}
               onError={e => { e.target.style.display="none"; }} />
             <div>
-              <div style={{ fontSize: 12, fontWeight: "bold", color: "white" }}>
+              <div style={{ fontSize: 12, fontWeight: "bold", color: "var(--sr-text)" }}>
                 Guia de Gestão de Calamidade — CGU
               </div>
-              <div style={{ fontSize: 11, color: "white", fontWeight: "normal", marginTop: 2 }}>
+              <div style={{ fontSize: 11, color: "var(--sr-text)", fontWeight: "normal", marginTop: 2 }}>
                 Controladoria-Geral da União · Orientações sobre controle, transparência e prestação de contas dos recursos federais destinados à reconstrução do RS
               </div>
             </div>
