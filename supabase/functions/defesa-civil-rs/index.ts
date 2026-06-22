@@ -97,11 +97,47 @@ function parsePublishedAt(value: string | null, fallback: Date): string {
 function isRelevantAlert(title: string, description: string): boolean {
   const text = normalizeText(`${title} ${description}`);
   return (
+    // Condições e níveis de risco
     text.includes("CONDICAO DE ALERTA") ||
+    text.includes("CONDICAO DE ATENCAO") ||
     text.includes("RISCO ALTO") ||
     text.includes("RISCO MUITO ALTO") ||
     text.includes("RISCO EXTREMO") ||
-    text.includes("ATENCAO")
+    text.includes("RISCO MODERADO") ||
+    text.includes("ATENCAO") ||
+    text.includes("ALERTA") ||
+    // Avisos genéricos
+    text.includes("AVISO DE") ||
+    text.includes("AVISO METEOROLOGICO") ||
+    text.includes("AVISO ESPECIAL") ||
+    // Fenômenos meteorológicos
+    text.includes("FRIO") ||
+    text.includes("GEADA") ||
+    text.includes("NEVE") ||
+    text.includes("GRANIZO") ||
+    text.includes("TEMPESTADE") ||
+    text.includes("CHUVA FORTE") ||
+    text.includes("CHUVA INTENSA") ||
+    text.includes("CHUVA VOLUMOSA") ||
+    text.includes("VENDAVAL") ||
+    text.includes("VENTO FORTE") ||
+    text.includes("RAJADA") ||
+    text.includes("CICLONE") ||
+    text.includes("FRENTE FRIA") ||
+    text.includes("MASSA DE AR FRIO") ||
+    text.includes("INSTABILIDADE") ||
+    text.includes("TROVOADA") ||
+    text.includes("ALAGAMENTO") ||
+    text.includes("INUNDACAO") ||
+    text.includes("ENCHENTE") ||
+    text.includes("DESLIZAMENTO") ||
+    text.includes("ENXURRADA") ||
+    // Operacional
+    text.includes("EMERGENCIA") ||
+    text.includes("EVACUACAO") ||
+    text.includes("DESASTRE") ||
+    text.includes("CALAMIDADE") ||
+    text.includes("DEFESA CIVIL")
   );
 }
 

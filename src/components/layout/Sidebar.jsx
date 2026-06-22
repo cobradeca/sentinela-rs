@@ -1,7 +1,7 @@
 import { NAV_ITEMS } from "../../config/navigation";
 import { NavIcon, SentinelaLogo } from "./NavIcons";
 
-export function Sidebar({ activeTab, onNavigate, lastUpdate, formatDateTime }) {
+export function Sidebar({ activeTab, onNavigate, lastUpdate, formatDateTime, dark, setDark }) {
   return (
     <aside className="sr-sidebar-v2">
       <div className="sr-sidebar-brand">
@@ -36,7 +36,18 @@ export function Sidebar({ activeTab, onNavigate, lastUpdate, formatDateTime }) {
       </a>
 
       <div className="sr-sidebar-footer">
-        <div>Dados oficiais de fontes governamentais</div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", marginBottom: "8px" }}>
+          <div>Dados oficiais de fontes governamentais</div>
+          <button 
+            type="button" 
+            onClick={() => setDark(!dark)} 
+            className="sr-btn-outline" 
+            style={{ padding: "4px 8px", fontSize: 14, cursor: "pointer", border: "1px solid var(--sr-border)", background: "var(--sr-card)", borderRadius: "6px" }}
+            aria-label="Alternar tema"
+          >
+            {dark ? "☀️" : "🌙"}
+          </button>
+        </div>
         {lastUpdate && (
           <div className="sr-sidebar-updated">
             <NavIcon name="clock" size={12} />
