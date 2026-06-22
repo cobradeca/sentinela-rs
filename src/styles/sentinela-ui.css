@@ -2098,8 +2098,8 @@ body[data-theme="dark"] .sr-weather-temp {
   }
 
   .sr-emergency-action-link {
-    color: white;
-    border-color: white;
+    color: var(--sr-text);
+    border-color: var(--sr-text);
     font-weight: normal;
   }
 }
