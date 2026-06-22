@@ -54,7 +54,7 @@ export function PrevisaoTab({ ctx }) {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 18 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "var(--sr-text-muted)" }}>
           <NavIcon name="forecast" size={18} />
-          <strong style={{ color: "var(--sr-navy)" }}>{selStation.name} — RS</strong>
+          <strong style={{ color: "var(--sr-text)" }}>{selStation.name} — RS</strong>
         </div>
         <div style={{ position: "relative" }}>
           <select
@@ -67,8 +67,8 @@ export function PrevisaoTab({ ctx }) {
               borderRadius: 8,
               background: "var(--sr-card)",
               fontSize: 13,
-              fontWeight: 600,
-              color: "var(--sr-navy)",
+              fontWeight: "bold",
+              color: "var(--sr-text)",
               cursor: "pointer",
             }}
           >
