@@ -132,7 +132,7 @@ function EmsAoiMap() {
         display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap",
       }}>
         <div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#1e40af" }}>
+          <div style={{ fontSize: 13, fontWeight: "bold", color: "var(--sr-text)" }}>
             🛰 Mapeamento de Inundação — EMSN194 · Porto Alegre / mai 2024
           </div>
           <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginTop: 2 }}>

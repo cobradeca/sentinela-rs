@@ -2094,7 +2094,13 @@ body[data-theme="dark"] .sr-weather-temp {
   }
 
   .sr-emergency-actions {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .sr-emergency-action-link {
+    color: white;
+    border-color: white;
+    font-weight: normal;
   }
 }
 
