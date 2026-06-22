@@ -695,7 +695,7 @@ export default function SentinelaRS() {
     const sensorsMap = sensorsResult.status === "fulfilled" ? (sensorsResult.value?.sensors || {}) : {};
     const riverLevelsData = riverLevelsResult.status === "fulfilled" ? riverLevelsResult.value : null;
     const roadBlocksData = roadBlocksResult.status === "fulfilled" ? roadBlocksResult.value : null;
-    const officialAlerts = defesaResult.status === "fulfilled" ? (defesaResult.value?.alerts || []) : [];
+    const officialAlerts = defesaResult.status === "fulfilled" ? (defesaResult.value || []) : [];
     if (riverLevelsData) {
       health["ANA Telemetria Rios"] = {
         ...(health["ANA Telemetria Rios"] || {}),
