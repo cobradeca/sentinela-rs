@@ -7,3 +7,6 @@ dist/
 
 # SW version é gerado em prebuild
 public/sw.js
+
+.codex-remote-attachments/
+scripts/endpoint-report.json
