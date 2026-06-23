@@ -1259,6 +1259,8 @@ export default function SentinelaRS() {
           onNavigate={setActiveTab}
           lastUpdate={lastUpdate}
           formatDateTime={formatDateTimeBR}
+          dark={dark}
+          setDark={setDark}
         />
 
         <div className="sr-main-v2">
