@@ -54,6 +54,9 @@ export function Sidebar({ activeTab, onNavigate, lastUpdate, formatDateTime, dar
             {formatDateTime(lastUpdate)}
           </div>
         )}
+        <div style={{ marginTop: "12px", fontSize: "11px", color: "var(--sr-text-muted)", textAlign: "center" }}>
+          Direitos de Propriedade Intelectual a André d'Eça
+        </div>
       </div>
     </aside>
   );
